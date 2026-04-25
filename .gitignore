@@ -11,3 +11,6 @@ apps/android/local.properties
 dist/
 .gradle/
 build/
+
+tsconfig.tsbuildinfo
+*.tsbuildinfo
