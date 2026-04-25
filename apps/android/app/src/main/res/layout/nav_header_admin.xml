@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="20dp"
+    android:background="@color/sidebar_bg">
+
+    <!-- JJT Logo — place ic_jjt_logo.png in res/drawable/ -->
+    <ImageView
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:src="@drawable/ic_jjt_logo"
+        android:scaleType="fitCenter"
+        android:contentDescription="JJT PisoTab Logo"
+        android:layout_marginBottom="12dp" />
+
+    <!-- Business name (dynamic — set from prefs in AdminActivity) -->
+    <TextView
+        android:id="@+id/tv_business_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="JJT PisoTab"
+        android:textColor="@color/text_primary"
+        android:textSize="20sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Admin Panel"
+        android:textColor="@color/text_secondary"
+        android:textSize="12sp"
+        android:layout_marginTop="2dp"
+        android:layout_marginBottom="16dp" />
+
+</LinearLayout>

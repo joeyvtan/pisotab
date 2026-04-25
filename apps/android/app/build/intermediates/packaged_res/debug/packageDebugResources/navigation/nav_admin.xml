@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_admin"
+    app:startDestination="@id/dashboardFragment">
+
+    <fragment
+        android:id="@+id/dashboardFragment"
+        android:name="com.pisotab.app.ui.admin.DashboardFragment"
+        android:label="Dashboard" />
+
+    <fragment
+        android:id="@+id/sessionsFragment"
+        android:name="com.pisotab.app.ui.admin.SessionsFragment"
+        android:label="Sessions" />
+
+    <fragment
+        android:id="@+id/earningsFragment"
+        android:name="com.pisotab.app.ui.admin.EarningsFragment"
+        android:label="Earnings" />
+
+    <fragment
+        android:id="@+id/appearanceFragment"
+        android:name="com.pisotab.app.ui.admin.AppearanceFragment"
+        android:label="Appearance" />
+
+    <fragment
+        android:id="@+id/settingsFragment"
+        android:name="com.pisotab.app.ui.admin.SettingsFragment"
+        android:label="Settings" />
+
+    <fragment
+        android:id="@+id/aboutFragment"
+        android:name="com.pisotab.app.ui.admin.AboutFragment"
+        android:label="About" />
+
+    <!-- Sub-destination from SettingsFragment, no menu item -->
+    <fragment
+        android:id="@+id/allowedAppsFragment"
+        android:name="com.pisotab.app.ui.admin.AllowedAppsFragment"
+        android:label="Allowed Apps" />
+
+</navigation>

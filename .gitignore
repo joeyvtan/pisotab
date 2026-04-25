@@ -1,0 +1,13 @@
+﻿node_modules/
+.env
+*.db
+*.db-shm
+*.db-wal
+*.log
+firebase-service-account.json
+apps/backend/uploads/
+apps/android/local.properties
+.next/
+dist/
+.gradle/
+build/

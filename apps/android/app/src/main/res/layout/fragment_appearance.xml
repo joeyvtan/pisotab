@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/screen_bg"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- Dark / Light Mode toggle -->
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Display Mode" android:textColor="@color/text_secondary" android:textSize="12sp"
+            android:layout_marginBottom="6dp"/>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal" android:gravity="center_vertical"
+            android:background="@color/card_bg" android:padding="14dp"
+            android:layout_marginBottom="20dp">
+            <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Dark Mode" android:textColor="@color/text_primary" android:textSize="14sp"/>
+            <androidx.appcompat.widget.SwitchCompat
+                android:id="@+id/sw_dark_mode"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:checked="true" />
+        </LinearLayout>
+
+        <!-- Business Name -->
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Business Name" android:textColor="@color/text_secondary" android:textSize="12sp"
+            android:layout_marginBottom="6dp"/>
+        <EditText android:id="@+id/et_business_name"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:backgroundTint="@color/edit_bg" android:textColor="@color/text_primary"
+            android:textColorHint="@color/text_hint"
+            android:hint="JJT PisoTab" android:padding="12dp" android:layout_marginBottom="20dp"/>
+
+        <!-- Theme -->
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Accent Theme" android:textColor="@color/text_secondary" android:textSize="12sp"
+            android:layout_marginBottom="10dp"/>
+        <RadioGroup android:id="@+id/rg_theme"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal" android:layout_marginBottom="20dp">
+            <RadioButton android:id="@+id/rb_theme_orange"
+                android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+                android:text="Orange" android:textColor="@color/text_primary" android:buttonTint="#F97316"/>
+            <RadioButton android:id="@+id/rb_theme_blue"
+                android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+                android:text="Blue" android:textColor="@color/text_primary" android:buttonTint="#3B82F6"/>
+            <RadioButton android:id="@+id/rb_theme_green"
+                android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+                android:text="Green" android:textColor="@color/text_primary" android:buttonTint="#22C55E"/>
+        </RadioGroup>
+
+        <!-- Portrait Wallpaper -->
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Portrait Wallpaper" android:textColor="@color/text_secondary" android:textSize="12sp"
+            android:layout_marginBottom="8dp"/>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal" android:layout_marginBottom="20dp">
+            <Button android:id="@+id/btn_pick_portrait"
+                android:layout_width="0dp" android:layout_height="40dp" android:layout_weight="1"
+                android:text="Pick Image" android:backgroundTint="@color/edit_bg"
+                android:textColor="@color/text_primary" android:layout_marginEnd="8dp"/>
+            <Button android:id="@+id/btn_clear_portrait"
+                android:layout_width="wrap_content" android:layout_height="40dp"
+                android:text="Clear" android:backgroundTint="#7F1D1D" android:textColor="#FFFFFF"/>
+        </LinearLayout>
+        <ImageView android:id="@+id/iv_portrait_preview"
+            android:layout_width="match_parent" android:layout_height="160dp"
+            android:scaleType="centerCrop" android:background="@color/card_bg"
+            android:layout_marginBottom="20dp" android:visibility="gone"/>
+
+        <!-- Landscape Wallpaper -->
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Landscape Wallpaper" android:textColor="@color/text_secondary" android:textSize="12sp"
+            android:layout_marginBottom="8dp"/>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal" android:layout_marginBottom="20dp">
+            <Button android:id="@+id/btn_pick_landscape"
+                android:layout_width="0dp" android:layout_height="40dp" android:layout_weight="1"
+                android:text="Pick Image" android:backgroundTint="@color/edit_bg"
+                android:textColor="@color/text_primary" android:layout_marginEnd="8dp"/>
+            <Button android:id="@+id/btn_clear_landscape"
+                android:layout_width="wrap_content" android:layout_height="40dp"
+                android:text="Clear" android:backgroundTint="#7F1D1D" android:textColor="#FFFFFF"/>
+        </LinearLayout>
+        <ImageView android:id="@+id/iv_landscape_preview"
+            android:layout_width="match_parent" android:layout_height="100dp"
+            android:scaleType="centerCrop" android:background="@color/card_bg"
+            android:layout_marginBottom="20dp" android:visibility="gone"/>
+
+        <!-- Lock Screen Audio -->
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Lock Screen Audio" android:textColor="@color/text_secondary" android:textSize="12sp"
+            android:layout_marginBottom="8dp"/>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal" android:layout_marginBottom="20dp">
+            <Button android:id="@+id/btn_pick_audio"
+                android:layout_width="0dp" android:layout_height="40dp" android:layout_weight="1"
+                android:text="Pick Audio" android:backgroundTint="@color/edit_bg"
+                android:textColor="@color/text_primary" android:layout_marginEnd="8dp"/>
+            <Button android:id="@+id/btn_clear_audio"
+                android:layout_width="wrap_content" android:layout_height="40dp"
+                android:text="Clear" android:backgroundTint="#7F1D1D" android:textColor="#FFFFFF"/>
+        </LinearLayout>
+        <TextView android:id="@+id/tv_audio_name"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="No audio selected" android:textColor="@color/text_hint" android:textSize="12sp"
+            android:layout_marginBottom="20dp"/>
+
+        <!-- Save + Reset -->
+        <Button android:id="@+id/btn_save_appearance"
+            android:layout_width="match_parent" android:layout_height="48dp"
+            android:text="Save Appearance" android:backgroundTint="#F97316"
+            android:textColor="#FFFFFF" android:layout_marginBottom="8dp"/>
+        <Button android:id="@+id/btn_reset_appearance"
+            android:layout_width="match_parent" android:layout_height="48dp"
+            android:text="Reset to Defaults" android:backgroundTint="@color/edit_bg"
+            android:textColor="@color/text_primary"/>
+
+    </LinearLayout>
+</ScrollView>

@@ -1,0 +1,67 @@
+com.pisotab.app-navigation-fragment-ktx-2.7.7-0 C:\Users\adria\.gradle\caches\8.9\transforms\044ad8997e8434967b41de883dca03bd\transformed\navigation-fragment-ktx-2.7.7\res
+com.pisotab.app-lifecycle-viewmodel-release-1 C:\Users\adria\.gradle\caches\8.9\transforms\05515f0211e8d044e9cc4bf7a7ad34cd\transformed\lifecycle-viewmodel-release\res
+com.pisotab.app-fragment-1.6.2-2 C:\Users\adria\.gradle\caches\8.9\transforms\08da37f242c9f0ffca64a276a6cb3702\transformed\fragment-1.6.2\res
+com.pisotab.app-sqlite-framework-2.4.0-3 C:\Users\adria\.gradle\caches\8.9\transforms\104fa6a45485d5983b24be80c11d0a81\transformed\sqlite-framework-2.4.0\res
+com.pisotab.app-firebase-common-21.0.0-4 C:\Users\adria\.gradle\caches\8.9\transforms\126dbf6bf12a30b1a4c47c672a19f88a\transformed\firebase-common-21.0.0\res
+com.pisotab.app-navigation-runtime-ktx-2.7.7-5 C:\Users\adria\.gradle\caches\8.9\transforms\130a8497ed367b55ab64e704b7ac0acc\transformed\navigation-runtime-ktx-2.7.7\res
+com.pisotab.app-core-ktx-1.13.1-6 C:\Users\adria\.gradle\caches\8.9\transforms\21dd4d8254f367afefea3ce6352cbd5f\transformed\core-ktx-1.13.1\res
+com.pisotab.app-startup-runtime-1.1.1-7 C:\Users\adria\.gradle\caches\8.9\transforms\264034b130e34e4a3fa154a708d64be6\transformed\startup-runtime-1.1.1\res
+com.pisotab.app-appcompat-1.7.0-8 C:\Users\adria\.gradle\caches\8.9\transforms\28d07182d1ac2bf6f14aeffed5688771\transformed\appcompat-1.7.0\res
+com.pisotab.app-swiperefreshlayout-1.1.0-9 C:\Users\adria\.gradle\caches\8.9\transforms\2df24c2e6a0e1076f58509fea26be56f\transformed\swiperefreshlayout-1.1.0\res
+com.pisotab.app-work-runtime-ktx-2.9.1-10 C:\Users\adria\.gradle\caches\8.9\transforms\2df6ff44a9978162a6d74e5e38eef211\transformed\work-runtime-ktx-2.9.1\res
+com.pisotab.app-viewpager2-1.1.0-beta02-11 C:\Users\adria\.gradle\caches\8.9\transforms\37b0610f680aff3ac51b0c30c65c4646\transformed\viewpager2-1.1.0-beta02\res
+com.pisotab.app-navigation-runtime-2.7.7-12 C:\Users\adria\.gradle\caches\8.9\transforms\381f4c91a3862f58e5ece3b0a3b03ca3\transformed\navigation-runtime-2.7.7\res
+com.pisotab.app-lifecycle-livedata-core-ktx-2.8.4-13 C:\Users\adria\.gradle\caches\8.9\transforms\3910c07624560ba2684192df90b24e19\transformed\lifecycle-livedata-core-ktx-2.8.4\res
+com.pisotab.app-cardview-1.0.0-14 C:\Users\adria\.gradle\caches\8.9\transforms\3942663480c3d9981eca2023fcaa483f\transformed\cardview-1.0.0\res
+com.pisotab.app-room-ktx-2.6.1-15 C:\Users\adria\.gradle\caches\8.9\transforms\40895735f7da15b19ec92063739eb7ab\transformed\room-ktx-2.6.1\res
+com.pisotab.app-work-runtime-2.9.1-16 C:\Users\adria\.gradle\caches\8.9\transforms\4188fee27818ea06046f65b61a786bcd\transformed\work-runtime-2.9.1\res
+com.pisotab.app-emoji2-1.3.0-17 C:\Users\adria\.gradle\caches\8.9\transforms\4794036548bea008ff803756f4a958df\transformed\emoji2-1.3.0\res
+com.pisotab.app-lifecycle-viewmodel-savedstate-2.8.4-18 C:\Users\adria\.gradle\caches\8.9\transforms\546d53821441c9401434f79fdfc999ad\transformed\lifecycle-viewmodel-savedstate-2.8.4\res
+com.pisotab.app-drawerlayout-1.1.1-19 C:\Users\adria\.gradle\caches\8.9\transforms\55f6c52a0be9c358a0c91865fe4ef4be\transformed\drawerlayout-1.1.1\res
+com.pisotab.app-lifecycle-process-2.8.4-20 C:\Users\adria\.gradle\caches\8.9\transforms\5a38b6685938201c92b55a6709420256\transformed\lifecycle-process-2.8.4\res
+com.pisotab.app-constraintlayout-2.1.4-21 C:\Users\adria\.gradle\caches\8.9\transforms\5b3a859af8a874896d589f5b18bc3c05\transformed\constraintlayout-2.1.4\res
+com.pisotab.app-lifecycle-service-2.8.4-22 C:\Users\adria\.gradle\caches\8.9\transforms\5ceb5771d487f61cc12c54fe73f96394\transformed\lifecycle-service-2.8.4\res
+com.pisotab.app-annotation-experimental-1.4.0-23 C:\Users\adria\.gradle\caches\8.9\transforms\5f485a90f986fba62f346be98a450b33\transformed\annotation-experimental-1.4.0\res
+com.pisotab.app-navigation-common-ktx-2.7.7-24 C:\Users\adria\.gradle\caches\8.9\transforms\6109f83bbd42ff35a84d251aaa6b1799\transformed\navigation-common-ktx-2.7.7\res
+com.pisotab.app-activity-ktx-1.9.1-25 C:\Users\adria\.gradle\caches\8.9\transforms\74c7a2193030418fb84cba06c1e7c9b7\transformed\activity-ktx-1.9.1\res
+com.pisotab.app-lifecycle-runtime-release-26 C:\Users\adria\.gradle\caches\8.9\transforms\76706a4df4de2cdfac69275fe584756f\transformed\lifecycle-runtime-release\res
+com.pisotab.app-datastore-release-27 C:\Users\adria\.gradle\caches\8.9\transforms\7b65283ead4fa9adeb2051c45dfb7481\transformed\datastore-release\res
+com.pisotab.app-emoji2-views-helper-1.3.0-28 C:\Users\adria\.gradle\caches\8.9\transforms\9287eace4028350ec61507009303536d\transformed\emoji2-views-helper-1.3.0\res
+com.pisotab.app-window-1.0.0-29 C:\Users\adria\.gradle\caches\8.9\transforms\92a7a72e29efd1ed04d28682f8145330\transformed\window-1.0.0\res
+com.pisotab.app-lifecycle-viewmodel-ktx-2.8.4-30 C:\Users\adria\.gradle\caches\8.9\transforms\9ae7710594a53886911ab34fafbbf206\transformed\lifecycle-viewmodel-ktx-2.8.4\res
+com.pisotab.app-core-runtime-2.2.0-31 C:\Users\adria\.gradle\caches\8.9\transforms\9e5769e723f0d81c2b80ecb6f9121386\transformed\core-runtime-2.2.0\res
+com.pisotab.app-core-1.13.1-32 C:\Users\adria\.gradle\caches\8.9\transforms\9f0820c493668e59c38d6672eca32dc3\transformed\core-1.13.1\res
+com.pisotab.app-fragment-ktx-1.6.2-33 C:\Users\adria\.gradle\caches\8.9\transforms\a2ea981c83f327df97451021021855da\transformed\fragment-ktx-1.6.2\res
+com.pisotab.app-play-services-basement-18.3.0-34 C:\Users\adria\.gradle\caches\8.9\transforms\a485bc5a83c5c266ebea2e2d1c2c4109\transformed\play-services-basement-18.3.0\res
+com.pisotab.app-datastore-preferences-release-35 C:\Users\adria\.gradle\caches\8.9\transforms\a567f837e84730341e8f92bfa407a019\transformed\datastore-preferences-release\res
+com.pisotab.app-slidingpanelayout-1.2.0-36 C:\Users\adria\.gradle\caches\8.9\transforms\a87c2248bfa3bdf7495f4d92a0b1e489\transformed\slidingpanelayout-1.2.0\res
+com.pisotab.app-lifecycle-livedata-2.8.4-37 C:\Users\adria\.gradle\caches\8.9\transforms\a88c123426cb19eb9e680d67c7038ede\transformed\lifecycle-livedata-2.8.4\res
+com.pisotab.app-savedstate-1.2.1-38 C:\Users\adria\.gradle\caches\8.9\transforms\b04c3d5c9fd5677454aeadf82c89405e\transformed\savedstate-1.2.1\res
+com.pisotab.app-activity-1.9.1-39 C:\Users\adria\.gradle\caches\8.9\transforms\b05c319bfd78da4fba1c0bc86b018e0a\transformed\activity-1.9.1\res
+com.pisotab.app-customview-poolingcontainer-1.0.0-40 C:\Users\adria\.gradle\caches\8.9\transforms\b3c43100b08477693a4c0ab7b2e8c23f\transformed\customview-poolingcontainer-1.0.0\res
+com.pisotab.app-savedstate-ktx-1.2.1-41 C:\Users\adria\.gradle\caches\8.9\transforms\b5ae5b0c328c4bbf85cc2bb269806977\transformed\savedstate-ktx-1.2.1\res
+com.pisotab.app-navigation-ui-2.7.7-42 C:\Users\adria\.gradle\caches\8.9\transforms\b8f6c85c2b6103669e2ec03c20b45cf0\transformed\navigation-ui-2.7.7\res
+com.pisotab.app-navigation-ui-ktx-2.7.7-43 C:\Users\adria\.gradle\caches\8.9\transforms\b96980f355ff0e90e2d86c17f31a438d\transformed\navigation-ui-ktx-2.7.7\res
+com.pisotab.app-firebase-messaging-24.0.0-44 C:\Users\adria\.gradle\caches\8.9\transforms\c52de5808304960b948c48d73b7b404b\transformed\firebase-messaging-24.0.0\res
+com.pisotab.app-transition-1.5.0-45 C:\Users\adria\.gradle\caches\8.9\transforms\cc0d84df032be26ab42508408ef390c5\transformed\transition-1.5.0\res
+com.pisotab.app-appcompat-resources-1.7.0-46 C:\Users\adria\.gradle\caches\8.9\transforms\cd59990e1c1c6d8502cdd628d00a4b03\transformed\appcompat-resources-1.7.0\res
+com.pisotab.app-lifecycle-livedata-core-2.8.4-47 C:\Users\adria\.gradle\caches\8.9\transforms\dbadbfdb48b275652f57fd29fdd7db0e\transformed\lifecycle-livedata-core-2.8.4\res
+com.pisotab.app-profileinstaller-1.3.1-48 C:\Users\adria\.gradle\caches\8.9\transforms\dbe86a0b33edc0e84764dc9ae05b2875\transformed\profileinstaller-1.3.1\res
+com.pisotab.app-play-services-base-18.0.1-49 C:\Users\adria\.gradle\caches\8.9\transforms\e4487426934c5af1d4a4b9594e100c3c\transformed\play-services-base-18.0.1\res
+com.pisotab.app-datastore-core-release-50 C:\Users\adria\.gradle\caches\8.9\transforms\e8cbf2b1101ce3328f35f562f1ae5a67\transformed\datastore-core-release\res
+com.pisotab.app-navigation-common-2.7.7-51 C:\Users\adria\.gradle\caches\8.9\transforms\eea70d45f6f9b859381964b6fdba525e\transformed\navigation-common-2.7.7\res
+com.pisotab.app-coordinatorlayout-1.1.0-52 C:\Users\adria\.gradle\caches\8.9\transforms\f13924ad46ebe1be1adabf07b8ed484c\transformed\coordinatorlayout-1.1.0\res
+com.pisotab.app-sqlite-2.4.0-53 C:\Users\adria\.gradle\caches\8.9\transforms\f1689e2db583c975dc6c49df6394c96f\transformed\sqlite-2.4.0\res
+com.pisotab.app-room-runtime-2.6.1-54 C:\Users\adria\.gradle\caches\8.9\transforms\f1e271e911d4902e7116f7ad0f12d21d\transformed\room-runtime-2.6.1\res
+com.pisotab.app-navigation-fragment-2.7.7-55 C:\Users\adria\.gradle\caches\8.9\transforms\f63408cd31c6ff3d186d3ae68c720dbb\transformed\navigation-fragment-2.7.7\res
+com.pisotab.app-material-1.12.0-56 C:\Users\adria\.gradle\caches\8.9\transforms\f76cbef8a1db78094891655ee22c3669\transformed\material-1.12.0\res
+com.pisotab.app-lifecycle-runtime-ktx-release-57 C:\Users\adria\.gradle\caches\8.9\transforms\f9f6044397bd3a09a3b874651aad2949\transformed\lifecycle-runtime-ktx-release\res
+com.pisotab.app-recyclerview-1.3.2-58 C:\Users\adria\.gradle\caches\8.9\transforms\fefb9e6699f383d2b297a3e58639ded5\transformed\recyclerview-1.3.2\res
+com.pisotab.app-pngs-59 C:\Users\adria\Desktop\My Build apps\Piso tab project\apps\android\app\build\generated\res\pngs\debug
+com.pisotab.app-res-60 C:\Users\adria\Desktop\My Build apps\Piso tab project\apps\android\app\build\generated\res\processDebugGoogleServices
+com.pisotab.app-resValues-61 C:\Users\adria\Desktop\My Build apps\Piso tab project\apps\android\app\build\generated\res\resValues\debug
+com.pisotab.app-packageDebugResources-62 C:\Users\adria\Desktop\My Build apps\Piso tab project\apps\android\app\build\intermediates\incremental\debug\packageDebugResources\merged.dir
+com.pisotab.app-packageDebugResources-63 C:\Users\adria\Desktop\My Build apps\Piso tab project\apps\android\app\build\intermediates\incremental\debug\packageDebugResources\stripped.dir
+com.pisotab.app-debug-64 C:\Users\adria\Desktop\My Build apps\Piso tab project\apps\android\app\build\intermediates\merged_res\debug\mergeDebugResources
+com.pisotab.app-debug-65 C:\Users\adria\Desktop\My Build apps\Piso tab project\apps\android\app\src\debug\res
+com.pisotab.app-main-66 C:\Users\adria\Desktop\My Build apps\Piso tab project\apps\android\app\src\main\res

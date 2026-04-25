@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0F172A">
+
+    <!-- Wallpaper — sits behind all content; GONE when no wallpaper is set -->
+    <ImageView
+        android:id="@+id/iv_wallpaper_lock"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"
+        android:visibility="gone" />
+
+    <!-- Semi-transparent overlay so text stays readable over any wallpaper -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="32dp">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:background="#B31E293B"
+            android:padding="32dp">
+
+            <TextView
+                android:text="🔒"
+                android:textSize="80sp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center" />
+
+            <TextView
+                android:text="Session Expired"
+                android:textSize="28sp"
+                android:textColor="#F1F5F9"
+                android:textStyle="bold"
+                android:layout_marginTop="24dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center" />
+
+            <TextView
+                android:text="Insert a coin to start a new session"
+                android:textSize="16sp"
+                android:textColor="#94A3B8"
+                android:layout_marginTop="12dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:layout_gravity="center" />
+
+            <TextView
+                android:id="@+id/tv_deep_freeze_label"
+                android:text="Cleaning up for next customer..."
+                android:textSize="14sp"
+                android:textColor="#F97316"
+                android:layout_marginTop="32dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:layout_gravity="center"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/tv_deep_freeze_countdown"
+                android:text="30"
+                android:textSize="56sp"
+                android:textColor="#F97316"
+                android:textStyle="bold"
+                android:fontFamily="monospace"
+                android:layout_marginTop="8dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:visibility="gone" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- Hidden admin long-press button (bottom-right corner) -->
+    <View
+        android:id="@+id/btn_admin_lock"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:layout_gravity="bottom|end"
+        android:background="@android:color/transparent"
+        android:clickable="true"
+        android:focusable="true"
+        android:longClickable="true" />
+
+</FrameLayout>

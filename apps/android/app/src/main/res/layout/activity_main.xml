@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0F172A"
+    android:paddingBottom="0dp"
+    android:fitsSystemWindows="false">
+
+    <!-- Wallpaper background — sits behind both screens; GONE when no wallpaper is set -->
+    <ImageView
+        android:id="@+id/iv_wallpaper"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"
+        android:visibility="gone" />
+
+    <!-- IDLE screen — shown when no session is active -->
+    <LinearLayout
+        android:id="@+id/screen_idle"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="32dp"
+        android:visibility="visible">
+
+        <TextView
+            android:id="@+id/tv_business_name_idle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="PisoTab"
+            android:textColor="#F1F5F9"
+            android:textStyle="bold"
+            android:textSize="28sp" />
+
+        <TextView
+            android:id="@+id/tv_device_name_idle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="4dp"
+            android:text=""
+            android:textColor="#F1F5F9"
+            android:textStyle="bold"
+            android:textSize="24sp" />
+
+        <TextView
+            android:id="@+id/tv_connection_idle"
+            android:text="● Connecting..."
+            android:textSize="13sp"
+            android:textColor="#94A3B8"
+            android:layout_marginTop="6dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center" />
+
+        <TextView
+            android:text="🪙"
+            android:textSize="64sp"
+            android:layout_marginTop="32dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center" />
+
+        <TextView
+            android:text="Insert Coin to Start"
+            android:textSize="24sp"
+            android:textColor="?attr/colorPrimary"
+            android:textStyle="bold"
+            android:layout_marginTop="16dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center" />
+
+    </LinearLayout>
+
+    <!-- ACTIVE session screen — kiosk launcher -->
+    <LinearLayout
+        android:id="@+id/screen_active"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:visibility="gone"
+        xmlns:app="http://schemas.android.com/apk/res-auto">
+
+        <!-- Top bar: vertical centered — business name, device name, status, timer -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:background="#B31E293B"
+            android:paddingTop="16dp"
+            android:paddingBottom="16dp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp">
+
+            <TextView
+                android:id="@+id/tv_business_name_launcher"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="PisoTab"
+                android:textColor="#F1F5F9"
+                android:textStyle="bold"
+                android:textSize="26sp" />
+
+            <TextView
+                android:id="@+id/tv_device_name_launcher"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text=""
+                android:textColor="#F1F5F9"
+                android:textStyle="bold"
+                android:textSize="22sp" />
+
+            <TextView
+                android:id="@+id/tv_connection"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="● Connecting..."
+                android:textColor="#94A3B8"
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/tv_timer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="00:00"
+                android:textColor="#F1F5F9"
+                android:textStyle="bold"
+                android:fontFamily="monospace"
+                android:textSize="36sp" />
+
+            <TextView
+                android:id="@+id/tv_status"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text=""
+                android:textSize="11sp"
+                android:textColor="#64748B"
+                android:visibility="gone" />
+
+        </LinearLayout>
+
+        <!-- Whitelisted apps grid -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rv_launcher"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:padding="8dp"
+            android:clipToPadding="false" />
+
+    </LinearLayout>
+
+    <!-- License expired overlay — blocks all interaction when trial/license is expired -->
+    <LinearLayout
+        android:id="@+id/screen_license_expired"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="32dp"
+        android:background="#EF111827"
+        android:visibility="gone">
+
+        <TextView
+            android:text="🔒"
+            android:textSize="72sp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center" />
+
+        <TextView
+            android:text="Trial Expired"
+            android:textSize="28sp"
+            android:textColor="#EF4444"
+            android:textStyle="bold"
+            android:layout_marginTop="24dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center" />
+
+        <TextView
+            android:text="This device's trial period has ended.\nContact your administrator to activate a license."
+            android:textSize="16sp"
+            android:textColor="#94A3B8"
+            android:gravity="center"
+            android:layout_marginTop="12dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center" />
+
+    </LinearLayout>
+
+    <!-- Hidden admin trigger — bottom-right corner, long press to open admin PIN.
+         Positioned as a FrameLayout child so it overlays both idle and active screens. -->
+    <View
+        android:id="@+id/btn_admin"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:layout_gravity="bottom|end"
+        android:background="@android:color/transparent"
+        android:clickable="true"
+        android:focusable="true"
+        android:longClickable="true" />
+
+    <!-- Anti-theft alarm banner -->
+    <LinearLayout
+        android:id="@+id/alarm_banner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top"
+        android:background="#DC2626"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="16dp"
+        android:visibility="gone">
+
+        <TextView
+            android:text="⚠ ANTI-THEFT ALARM"
+            android:textSize="20sp"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <TextView
+            android:id="@+id/tv_alarm_reason"
+            android:text=""
+            android:textSize="14sp"
+            android:textColor="#FEE2E2"
+            android:layout_marginTop="4dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+    </LinearLayout>
+
+
+</FrameLayout>

@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(curl -s -X POST http://localhost:4000/api/auth/login -H \"Content-Type: application/json\" -d \"{\"\"username\"\":\"\"admin\"\",\"\"password\"\":\"\"admin123\"\"}\")",
+      "Bash(node -e \"const b = require\\(''bcryptjs''\\); console.log\\(b.hashSync\\(''admin123'', 10\\)\\);\")",
+      "Bash(rm -f pisotab.db)",
+      "Bash(node --experimental-sqlite src/db/setup.js)",
+      "Bash(node --experimental-sqlite -e \":*)",
+      "Bash(netstat -ano)",
+      "Bash(ipconfig)",
+      "Bash(node -e \"const {DatabaseSync} = require\\('node:sqlite'\\); const db = new DatabaseSync\\('pisotab.db'\\); console.log\\('ACTIVE SESSIONS:', JSON.stringify\\(db.prepare\\(\\\\\"SELECT id,device_id,status,time_remaining_secs FROM sessions WHERE status IN \\('active','paused'\\)\\\\\"\\).all\\(\\), null, 2\\)\\);\")",
+      "Bash(npx tsc *)"
+    ]
+  }
+}

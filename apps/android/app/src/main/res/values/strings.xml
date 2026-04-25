@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">JJT PisoTab</string>
+    <string name="insert_coin">Insert Coin to Start</string>
+    <string name="time_remaining">Time Remaining</string>
+    <string name="session_expired">Session Expired</string>
+    <string name="session_expired_msg">Your rental time has ended. Please insert a coin to continue.</string>
+    <string name="device_admin_label">JJT PisoTab Device Admin</string>
+    <string name="device_admin_description">Allows JJT PisoTab to lock the device and manage kiosk mode.</string>
+    <string name="nav_open">Open navigation drawer</string>
+    <string name="nav_close">Close navigation drawer</string>
+</resources>

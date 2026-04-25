@@ -1,0 +1,11 @@
+{
+  "name": "pisotab",
+  "private": true,
+  "workspaces": ["apps/backend", "apps/dashboard"],
+  "scripts": {
+    "backend": "cd apps/backend && npm run dev",
+    "dashboard": "cd apps/dashboard && npm run dev",
+    "install:all": "npm install && cd apps/backend && npm install && cd ../dashboard && npm install",
+    "setup-db": "cd apps/backend && node src/db/setup.js"
+  }
+}

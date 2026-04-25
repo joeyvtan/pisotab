@@ -1,0 +1,8 @@
+com.pisotab.app-pngs-0 C:\Users\adria\Desktop\My Build apps\Piso tab project\apps\android\app\build\generated\res\pngs\debug
+com.pisotab.app-resValues-1 C:\Users\adria\Desktop\My Build apps\Piso tab project\apps\android\app\build\generated\res\resValues\debug
+com.pisotab.app-updated_navigation_xml-2 C:\Users\adria\Desktop\My Build apps\Piso tab project\apps\android\app\build\generated\updated_navigation_xml\debug
+com.pisotab.app-packageDebugResources-3 C:\Users\adria\Desktop\My Build apps\Piso tab project\apps\android\app\build\intermediates\incremental\debug\packageDebugResources\merged.dir
+com.pisotab.app-packageDebugResources-4 C:\Users\adria\Desktop\My Build apps\Piso tab project\apps\android\app\build\intermediates\incremental\debug\packageDebugResources\stripped.dir
+com.pisotab.app-debug-5 C:\Users\adria\Desktop\My Build apps\Piso tab project\apps\android\app\build\intermediates\merged_res\debug\mergeDebugResources
+com.pisotab.app-debug-6 C:\Users\adria\Desktop\My Build apps\Piso tab project\apps\android\app\src\debug\res
+com.pisotab.app-main-7 C:\Users\adria\Desktop\My Build apps\Piso tab project\apps\android\app\src\main\res

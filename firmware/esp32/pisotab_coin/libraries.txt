@@ -1,0 +1,13 @@
+# Required Arduino libraries for PisoTab ESP32 firmware
+# Install via Arduino IDE Library Manager or PlatformIO
+
+ArduinoJson          @ 6.21.3   # JSON serialization
+PubSubClient         @ 2.8      # MQTT client
+WiFiManager          @ 2.0.17   # WiFi provisioning portal
+ESP32 BLE Arduino    @ 1.0.1    # BLE (built into ESP32 Arduino core)
+
+# Board: ESP32 Arduino (espressif32)
+# Board URL: https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
+# Board version: >= 2.0.11
+# Upload speed: 921600
+# Flash mode: QIO

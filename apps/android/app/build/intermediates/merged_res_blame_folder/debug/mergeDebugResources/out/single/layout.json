@@ -1,0 +1,66 @@
+[
+    {
+        "merged": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-mergeDebugResources-63:\\layout\\item_app_row.xml",
+        "source": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-main-66:\\layout\\item_app_row.xml"
+    },
+    {
+        "merged": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-mergeDebugResources-63:\\layout\\activity_setup.xml",
+        "source": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-main-66:\\layout\\activity_setup.xml"
+    },
+    {
+        "merged": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-mergeDebugResources-63:\\layout\\fragment_appearance.xml",
+        "source": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-main-66:\\layout\\fragment_appearance.xml"
+    },
+    {
+        "merged": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-mergeDebugResources-63:\\layout\\fragment_allowed_apps.xml",
+        "source": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-main-66:\\layout\\fragment_allowed_apps.xml"
+    },
+    {
+        "merged": "com.pisotab.app-mergeDebugResources-63:/layout/activity_main.xml",
+        "source": "com.pisotab.app-main-66:/layout/activity_main.xml"
+    },
+    {
+        "merged": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-mergeDebugResources-63:\\layout\\item_launcher_app.xml",
+        "source": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-main-66:\\layout\\item_launcher_app.xml"
+    },
+    {
+        "merged": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-mergeDebugResources-63:\\layout\\item_session_row.xml",
+        "source": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-main-66:\\layout\\item_session_row.xml"
+    },
+    {
+        "merged": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-mergeDebugResources-63:\\layout\\activity_main.xml",
+        "source": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-main-66:\\layout\\activity_main.xml"
+    },
+    {
+        "merged": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-mergeDebugResources-63:\\layout\\fragment_about.xml",
+        "source": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-main-66:\\layout\\fragment_about.xml"
+    },
+    {
+        "merged": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-mergeDebugResources-63:\\layout\\fragment_dashboard.xml",
+        "source": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-main-66:\\layout\\fragment_dashboard.xml"
+    },
+    {
+        "merged": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-mergeDebugResources-63:\\layout\\fragment_sessions.xml",
+        "source": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-main-66:\\layout\\fragment_sessions.xml"
+    },
+    {
+        "merged": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-mergeDebugResources-63:\\layout\\fragment_earnings.xml",
+        "source": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-main-66:\\layout\\fragment_earnings.xml"
+    },
+    {
+        "merged": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-mergeDebugResources-63:\\layout\\activity_lock_screen.xml",
+        "source": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-main-66:\\layout\\activity_lock_screen.xml"
+    },
+    {
+        "merged": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-mergeDebugResources-63:\\layout\\nav_header_admin.xml",
+        "source": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-main-66:\\layout\\nav_header_admin.xml"
+    },
+    {
+        "merged": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-mergeDebugResources-63:\\layout\\activity_admin.xml",
+        "source": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-main-66:\\layout\\activity_admin.xml"
+    },
+    {
+        "merged": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-mergeDebugResources-63:\\layout\\fragment_settings.xml",
+        "source": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-main-66:\\layout\\fragment_settings.xml"
+    }
+]

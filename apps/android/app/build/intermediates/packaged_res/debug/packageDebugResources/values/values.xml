@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="background_dark">#0F172A</color>
+    <color name="card_bg">#FFFFFF</color>
+    <color name="divider">#CBD5E1</color>
+    <color name="edit_bg">#E2E8F0</color>
+    <color name="nav_item_color">#334155</color>
+    <color name="orange_dark">#EA580C</color>
+    <color name="orange_primary">#F97316</color>
+    <color name="screen_bg">#F8FAFC</color>
+    <color name="sidebar_bg">#F1F5F9</color>
+    <color name="slate_400">#94A3B8</color>
+    <color name="text_hint">#94A3B8</color>
+    <color name="text_primary">#1E293B</color>
+    <color name="text_secondary">#475569</color>
+    <color name="toolbar_bg">#F1F5F9</color>
+    <color name="white">#FFFFFF</color>
+    <string name="app_name">JJT PisoTab</string>
+    <string name="device_admin_description">Allows JJT PisoTab to lock the device and manage kiosk mode.</string>
+    <string name="device_admin_label">JJT PisoTab Device Admin</string>
+    <string name="gcm_defaultSenderId" translatable="false">255958695592</string>
+    <string name="google_api_key" translatable="false">AIzaSyCGp9wakmU_D0cbMJC_EPKpm9eLIrBw7pA</string>
+    <string name="google_app_id" translatable="false">1:255958695592:android:be7dd5679ba0d08f380c9d</string>
+    <string name="google_crash_reporting_api_key" translatable="false">AIzaSyCGp9wakmU_D0cbMJC_EPKpm9eLIrBw7pA</string>
+    <string name="google_storage_bucket" translatable="false">jjt-pisotab.firebasestorage.app</string>
+    <string name="insert_coin">Insert Coin to Start</string>
+    <string name="nav_close">Close navigation drawer</string>
+    <string name="nav_open">Open navigation drawer</string>
+    <string name="project_id" translatable="false">jjt-pisotab</string>
+    <string name="session_expired">Session Expired</string>
+    <string name="session_expired_msg">Your rental time has ended. Please insert a coin to continue.</string>
+    <string name="time_remaining">Time Remaining</string>
+    <style name="NavItemText">
+        <item name="android:textSize">14sp</item>
+    </style>
+    <style name="Theme.PisoTab" parent="Theme.MaterialComponents.DayNight.NoActionBar.Bridge">
+        <item name="colorPrimary">#F97316</item>
+        <item name="colorPrimaryDark">#EA580C</item>
+        <item name="colorAccent">#F97316</item>
+        <item name="android:windowBackground">@color/screen_bg</item>
+        <item name="android:statusBarColor">@color/toolbar_bg</item>
+        <item name="android:navigationBarColor">@color/screen_bg</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+    <style name="Theme.PisoTab.Blue" parent="Theme.MaterialComponents.DayNight.NoActionBar.Bridge">
+        <item name="colorPrimary">#3B82F6</item>
+        <item name="colorPrimaryDark">#2563EB</item>
+        <item name="colorAccent">#3B82F6</item>
+        <item name="android:windowBackground">@color/screen_bg</item>
+        <item name="android:statusBarColor">@color/toolbar_bg</item>
+        <item name="android:navigationBarColor">@color/screen_bg</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+    <style name="Theme.PisoTab.Fullscreen" parent="Theme.PisoTab">
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:statusBarColor">#000000</item>
+    </style>
+    <style name="Theme.PisoTab.Green" parent="Theme.MaterialComponents.DayNight.NoActionBar.Bridge">
+        <item name="colorPrimary">#22C55E</item>
+        <item name="colorPrimaryDark">#16A34A</item>
+        <item name="colorAccent">#22C55E</item>
+        <item name="android:windowBackground">@color/screen_bg</item>
+        <item name="android:statusBarColor">@color/toolbar_bg</item>
+        <item name="android:navigationBarColor">@color/screen_bg</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+    <style name="ToolbarDarkOverlay" parent="ThemeOverlay.MaterialComponents.Dark.ActionBar">
+        <item name="colorControlNormal">#FFFFFF</item>
+        <item name="android:textColorPrimary">#FFFFFF</item>
+    </style>
+</resources>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Semantic — DARK MODE overrides (applied when AppCompatDelegate.MODE_NIGHT_YES) -->
+    <color name="screen_bg">#0F172A</color>
+    <color name="card_bg">#1E293B</color>
+    <color name="toolbar_bg">#1E293B</color>
+    <color name="sidebar_bg">#1E293B</color>
+    <color name="text_primary">#FFFFFF</color>
+    <color name="text_secondary">#CBD5E1</color>
+    <color name="text_hint">#64748B</color>
+    <color name="nav_item_color">#CBD5E1</color>
+    <color name="edit_bg">#334155</color>
+    <color name="divider">#334155</color>
+</resources>

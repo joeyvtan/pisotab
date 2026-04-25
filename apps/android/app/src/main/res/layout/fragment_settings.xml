@@ -1,0 +1,318 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/screen_bg"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- CONNECTION -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@color/card_bg"
+            android:padding="16dp"
+            android:layout_marginBottom="12dp">
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="CONNECTION" android:textColor="#F97316"
+                android:textSize="11sp" android:textStyle="bold" android:layout_marginBottom="14dp"/>
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Server URL" android:textColor="@color/text_secondary"
+                android:textSize="12sp" android:layout_marginBottom="4dp"/>
+            <EditText android:id="@+id/et_server_url"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:backgroundTint="@color/edit_bg" android:textColor="@color/text_primary"
+                android:padding="12dp" android:layout_marginBottom="14dp" android:inputType="textUri"/>
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Device ID" android:textColor="@color/text_secondary"
+                android:textSize="12sp" android:layout_marginBottom="4dp"/>
+            <EditText android:id="@+id/et_device_id"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:backgroundTint="@color/edit_bg" android:textColor="@color/text_primary"
+                android:padding="12dp" android:layout_marginBottom="14dp"/>
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Device Name" android:textColor="@color/text_secondary"
+                android:textSize="12sp" android:layout_marginBottom="4dp"/>
+            <EditText android:id="@+id/et_device_name"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:backgroundTint="@color/edit_bg" android:textColor="@color/text_primary"
+                android:padding="12dp" android:layout_marginBottom="14dp"/>
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Connection Mode" android:textColor="@color/text_secondary"
+                android:textSize="12sp" android:layout_marginBottom="6dp"/>
+            <RadioGroup android:id="@+id/rg_connection_mode"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal">
+                <RadioButton android:id="@+id/rb_mode_esp32"
+                    android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+                    android:text="ESP32" android:textColor="@color/text_primary" android:buttonTint="#F97316"/>
+                <RadioButton android:id="@+id/rb_mode_usb"
+                    android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+                    android:text="USB Timer" android:textColor="@color/text_primary" android:buttonTint="#F97316"/>
+            </RadioGroup>
+
+        </LinearLayout>
+
+        <!-- BACKEND CREDENTIALS -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@color/card_bg"
+            android:padding="16dp"
+            android:layout_marginBottom="12dp">
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="BACKEND CREDENTIALS" android:textColor="#F97316"
+                android:textSize="11sp" android:textStyle="bold" android:layout_marginBottom="14dp"/>
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Dashboard Username" android:textColor="@color/text_secondary"
+                android:textSize="12sp" android:layout_marginBottom="4dp"/>
+            <EditText android:id="@+id/et_backend_username"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:backgroundTint="@color/edit_bg" android:textColor="@color/text_primary"
+                android:padding="12dp" android:layout_marginBottom="14dp" android:inputType="text"/>
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Dashboard Password" android:textColor="@color/text_secondary"
+                android:textSize="12sp" android:layout_marginBottom="4dp"/>
+            <EditText android:id="@+id/et_backend_password"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:backgroundTint="@color/edit_bg" android:textColor="@color/text_primary"
+                android:padding="12dp" android:inputType="textPassword"/>
+
+        </LinearLayout>
+
+        <!-- SECURITY -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@color/card_bg"
+            android:padding="16dp"
+            android:layout_marginBottom="12dp">
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="SECURITY" android:textColor="#F97316"
+                android:textSize="11sp" android:textStyle="bold" android:layout_marginBottom="14dp"/>
+
+            <Button android:id="@+id/btn_change_pin"
+                android:layout_width="match_parent" android:layout_height="44dp"
+                android:text="Change Admin PIN"
+                android:backgroundTint="@color/edit_bg" android:textColor="@color/text_primary"
+                android:layout_marginBottom="12dp"/>
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:gravity="center_vertical">
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:text="Kiosk Mode"
+                    android:textColor="@color/text_primary" android:textSize="14sp"/>
+                <Switch android:id="@+id/sw_kiosk"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:thumbTint="#F97316" android:trackTint="@color/edit_bg"/>
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- COIN TIMER -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@color/card_bg"
+            android:padding="16dp"
+            android:layout_marginBottom="12dp">
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="COIN TIMER" android:textColor="#F97316"
+                android:textSize="11sp" android:textStyle="bold" android:layout_marginBottom="14dp"/>
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Rate (₱/min)" android:textColor="@color/text_secondary"
+                android:textSize="12sp" android:layout_marginBottom="4dp"/>
+            <EditText android:id="@+id/et_rate_per_min"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:backgroundTint="@color/edit_bg" android:textColor="@color/text_primary"
+                android:padding="12dp" android:layout_marginBottom="14dp" android:inputType="numberDecimal"/>
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Seconds per Coin Pulse" android:textColor="@color/text_secondary"
+                android:textSize="12sp" android:layout_marginBottom="4dp"/>
+            <EditText android:id="@+id/et_secs_per_coin"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:backgroundTint="@color/edit_bg" android:textColor="@color/text_primary"
+                android:padding="12dp" android:inputType="number"/>
+
+        </LinearLayout>
+
+        <!-- KIOSK -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@color/card_bg"
+            android:padding="16dp"
+            android:layout_marginBottom="12dp">
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="KIOSK" android:textColor="#F97316"
+                android:textSize="11sp" android:textStyle="bold" android:layout_marginBottom="14dp"/>
+
+            <Button android:id="@+id/btn_allowed_apps"
+                android:layout_width="match_parent" android:layout_height="44dp"
+                android:text="Allowed Apps ›"
+                android:backgroundTint="@color/edit_bg" android:textColor="@color/text_primary"
+                android:layout_marginBottom="12dp"/>
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:gravity="center_vertical">
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:text="Floating Timer"
+                    android:textColor="@color/text_primary" android:textSize="14sp"/>
+                <Switch android:id="@+id/sw_floating_timer"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:thumbTint="#F97316" android:trackTint="@color/edit_bg"/>
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- DEEP FREEZE -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@color/card_bg"
+            android:padding="16dp"
+            android:layout_marginBottom="12dp">
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="DEEP FREEZE" android:textColor="#F97316"
+                android:textSize="11sp" android:textStyle="bold" android:layout_marginBottom="14dp"/>
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:gravity="center_vertical"
+                android:layout_marginBottom="12dp">
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:text="Enable Deep Freeze"
+                    android:textColor="@color/text_primary" android:textSize="14sp"/>
+                <Switch android:id="@+id/sw_deep_freeze"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:thumbTint="#F97316" android:trackTint="@color/edit_bg"/>
+            </LinearLayout>
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Grace Period (seconds)" android:textColor="@color/text_secondary"
+                android:textSize="12sp" android:layout_marginBottom="4dp"/>
+            <EditText android:id="@+id/et_deep_freeze_grace"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:backgroundTint="@color/edit_bg" android:textColor="@color/text_primary"
+                android:padding="12dp" android:inputType="number"/>
+
+        </LinearLayout>
+
+        <!-- ANTI-THEFT ALARM -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@color/card_bg"
+            android:padding="16dp"
+            android:layout_marginBottom="12dp">
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="ANTI-THEFT ALARM" android:textColor="#F97316"
+                android:textSize="11sp" android:textStyle="bold" android:layout_marginBottom="14dp"/>
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:gravity="center_vertical"
+                android:layout_marginBottom="12dp">
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:text="Alarm on WiFi Disconnect"
+                    android:textColor="@color/text_primary" android:textSize="14sp"/>
+                <Switch android:id="@+id/sw_alarm_wifi"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:thumbTint="#F97316" android:trackTint="@color/edit_bg"/>
+            </LinearLayout>
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:gravity="center_vertical"
+                android:layout_marginBottom="12dp">
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:text="Alarm on Charger Unplug"
+                    android:textColor="@color/text_primary" android:textSize="14sp"/>
+                <Switch android:id="@+id/sw_alarm_charger"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:thumbTint="#F97316" android:trackTint="@color/edit_bg"/>
+            </LinearLayout>
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:gravity="center_vertical"
+                android:layout_marginBottom="14dp">
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:text="During Session Only"
+                    android:textColor="@color/text_primary" android:textSize="14sp"/>
+                <Switch android:id="@+id/sw_alarm_session_only"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:thumbTint="#F97316" android:trackTint="@color/edit_bg"/>
+            </LinearLayout>
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Alarm Delay (seconds)" android:textColor="@color/text_secondary"
+                android:textSize="12sp" android:layout_marginBottom="4dp"/>
+            <EditText android:id="@+id/et_alarm_delay"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:backgroundTint="@color/edit_bg" android:textColor="@color/text_primary"
+                android:padding="12dp" android:layout_marginBottom="12dp" android:inputType="number"/>
+
+            <Button android:id="@+id/btn_alarm_sound"
+                android:layout_width="match_parent" android:layout_height="44dp"
+                android:text="Select Alarm Sound"
+                android:backgroundTint="@color/edit_bg" android:textColor="@color/text_primary"/>
+
+        </LinearLayout>
+
+        <!-- ACTIONS -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@color/card_bg"
+            android:padding="16dp"
+            android:layout_marginBottom="24dp">
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="ACTIONS" android:textColor="#F97316"
+                android:textSize="11sp" android:textStyle="bold" android:layout_marginBottom="14dp"/>
+
+            <Button android:id="@+id/btn_save"
+                android:layout_width="match_parent" android:layout_height="48dp"
+                android:text="Save Settings" android:backgroundTint="#F97316"
+                android:textColor="#FFFFFF" android:layout_marginBottom="8dp"/>
+
+            <Button android:id="@+id/btn_restart_app"
+                android:layout_width="match_parent" android:layout_height="44dp"
+                android:text="Restart App"
+                android:backgroundTint="@color/edit_bg" android:textColor="@color/text_primary"
+                android:layout_marginBottom="8dp"/>
+
+            <Button android:id="@+id/btn_restart_device"
+                android:layout_width="match_parent" android:layout_height="44dp"
+                android:text="Restart Device"
+                android:backgroundTint="#7F1D1D" android:textColor="#FFFFFF"/>
+
+        </LinearLayout>
+
+    </LinearLayout>
+</ScrollView>

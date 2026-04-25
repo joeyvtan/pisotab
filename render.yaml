@@ -1,0 +1,74 @@
+# Render Blueprint — PisoTab
+# ─────────────────────────────────────────────────────────────────────────────
+# How to use:
+#   1. Push this repo to GitHub
+#   2. Go to Render → New → Blueprint → connect your repo
+#   3. Render will create all 3 services below automatically
+#   4. After first deploy, manually add the secret env vars listed at the bottom
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+  # ── Backend API (Node.js) ──────────────────────────────────────────────────
+  - type: web
+    name: pisotab-backend
+    runtime: node
+    rootDir: apps/backend
+    buildCommand: npm install
+    startCommand: npm start
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4000
+      # PostgreSQL — auto-wired from the database below
+      - key: DATABASE_URL
+        fromDatabase:
+          name: pisotab-db
+          property: connectionString
+      # Internal Render DB connections do not require SSL
+      - key: DB_SSL
+        value: false
+      # Auto-generated strong secret — do NOT change after first deploy
+      - key: JWT_SECRET
+        generateValue: true
+      # ── Set these manually in Render dashboard after first deploy ──────────
+      # TELEGRAM_BOT_TOKEN      your Telegram bot token
+      # TELEGRAM_CHAT_ID        your Telegram chat ID
+      # FIREBASE_SERVICE_ACCOUNT_JSON  full contents of firebase-service-account.json
+      # SMTP_HOST               e.g. smtp.gmail.com
+      # SMTP_PORT               587
+      # SMTP_SECURE             false
+      # SMTP_USER               your Gmail address
+      # SMTP_PASS               your Gmail App Password
+      # SMTP_FROM               JJT PisoTab <noreply@jjtpisotab.com>
+      # APP_URL                 https://jjtpisotab.com
+      # MQTT_BROKER_URL         mqtt://your-broker-url  (optional)
+
+  # ── Dashboard (Next.js) ───────────────────────────────────────────────────
+  - type: web
+    name: pisotab-dashboard
+    runtime: node
+    rootDir: apps/dashboard
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    plan: free
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Points the dashboard at the backend API
+      # After setting custom domain api.jjtpisotab.com, change these values
+      - key: NEXT_PUBLIC_API_URL
+        value: https://api.jjtpisotab.com
+      - key: NEXT_PUBLIC_WS_URL
+        value: https://api.jjtpisotab.com
+      - key: PORT
+        value: 3000
+
+# ── PostgreSQL Database ────────────────────────────────────────────────────
+databases:
+  - name: pisotab-db
+    databaseName: pisotab
+    user: pisotab_user
+    plan: free
