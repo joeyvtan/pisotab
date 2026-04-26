@@ -25,10 +25,11 @@ router.patch('/:key', requireAuth, requireSuperAdmin, async (req, res) => {
 
   try {
     const db = getDb();
-    const existing = await db.get('SELECT key FROM app_settings WHERE key = ?', [key]);
-    if (!existing) return res.status(404).json({ error: 'Setting not found' });
-
-    await db.run('UPDATE app_settings SET value = ? WHERE key = ?', [String(value), key]);
+    // Upsert — create the key if it doesn't exist yet
+    await db.run(
+      'INSERT INTO app_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value',
+      [key, String(value)]
+    );
     res.json({ key, value: String(value) });
   } catch (err) { console.error(err); res.status(500).json({ error: 'Server error' }); }
 });

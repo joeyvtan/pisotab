@@ -1,6 +1,6 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
-import { api, DownloadFile, FirmwareInfo } from '@/lib/api';
+import { useState, useEffect } from 'react';
+import { api, FirmwareInfo } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 
 const STORAGE_KEY = 'pisotab_guide_links';
@@ -23,15 +23,11 @@ export default function GuidesPage() {
   const { user } = useAuth();
   const isSuperAdmin = user?.role === 'superadmin';
 
-  const [apk, setApk]           = useState<DownloadFile | null>(null);
-  const [firmware, setFirmware] = useState<FirmwareInfo | null>(null);
-  const [links, setLinks]       = useState<GuideLink[]>([]);
-
-  // APK upload state
-  const [apkFile, setApkFile]       = useState<File | null>(null);
-  const [apkVersion, setApkVersion] = useState('');
-  const [uploading, setUploading]   = useState(false);
-  const apkRef = useRef<HTMLInputElement>(null);
+  const [firmware, setFirmware]   = useState<FirmwareInfo | null>(null);
+  const [apkUrl, setApkUrl]       = useState('');
+  const [apkUrlInput, setApkUrlInput] = useState('');
+  const [savingApk, setSavingApk] = useState(false);
+  const [links, setLinks]         = useState<GuideLink[]>([]);
 
   // Guide links state
   const [showAdd, setShowAdd] = useState(false);
@@ -41,29 +37,29 @@ export default function GuidesPage() {
   const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.jjtpisotab.com';
 
   useEffect(() => {
-    api.getDownloads().then(d => setApk(d.apk)).catch(() => {});
     api.getFirmware().then(f => setFirmware(f)).catch(() => {});
+    api.getAppSettings().then(s => {
+      const url = s['apk_download_url'] || '';
+      setApkUrl(url);
+      setApkUrlInput(url);
+    }).catch(() => {});
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) setLinks(JSON.parse(saved));
   }, []);
 
+  async function saveApkUrl() {
+    setSavingApk(true);
+    try {
+      await api.updateAppSetting('apk_download_url', apkUrlInput.trim());
+      setApkUrl(apkUrlInput.trim());
+    } catch (e: unknown) {
+      alert('Failed: ' + (e instanceof Error ? e.message : String(e)));
+    } finally { setSavingApk(false); }
+  }
+
   function saveLinks(updated: GuideLink[]) {
     setLinks(updated);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-  }
-
-  async function handleApkUpload() {
-    if (!apkFile || !apkVersion.trim()) return;
-    setUploading(true);
-    try {
-      const result = await api.uploadApk(apkFile, apkVersion.trim());
-      setApk(result as unknown as DownloadFile);
-      setApkFile(null);
-      setApkVersion('');
-      if (apkRef.current) apkRef.current.value = '';
-    } catch (e: unknown) {
-      alert('Upload failed: ' + (e instanceof Error ? e.message : String(e)));
-    } finally { setUploading(false); }
   }
 
   function addLink() {
@@ -95,55 +91,54 @@ export default function GuidesPage() {
       <h1 className="text-2xl font-bold text-white">User Guides & Downloads</h1>
 
       {/* Downloads */}
-      <div className="card">
+      <div className="card space-y-0">
         <h2 className="font-bold text-white mb-4">Downloads</h2>
 
-        {/* APK */}
-        <div className="flex items-center justify-between py-3 border-b border-slate-700">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">📱</span>
-            <div>
-              <div className="text-white text-sm font-medium">Android Kiosk App (APK)</div>
-              <div className="text-slate-500 text-xs">
-                {apk ? `v${apk.version} · ${formatBytes(apk.size)}` : 'Not yet uploaded'}
+        {/* APK row */}
+        <div className="py-3 border-b border-slate-700">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">📱</span>
+              <div>
+                <div className="text-white text-sm font-medium">Android Kiosk App (APK)</div>
+                <div className="text-slate-500 text-xs">
+                  {apkUrl ? 'Hosted on Google Drive' : 'No download URL set'}
+                </div>
               </div>
             </div>
+            {apkUrl && (
+              <a href={apkUrl} target="_blank" rel="noopener noreferrer"
+                className="text-xs px-3 py-1.5 rounded bg-orange-600 hover:bg-orange-500 text-white transition-colors">
+                Download
+              </a>
+            )}
           </div>
-          {apk && (
-            <a href={apk.download_url}
-              className="text-xs px-3 py-1.5 rounded bg-orange-600 hover:bg-orange-500 text-white transition-colors">
-              Download
-            </a>
+
+          {/* Superadmin: set external APK URL */}
+          {isSuperAdmin && (
+            <div className="mt-3 space-y-1">
+              <label className="block text-xs text-slate-400">Google Drive APK Download URL</label>
+              <div className="flex gap-2">
+                <input className="input text-xs flex-1" placeholder="https://drive.usercontent.google.com/download?id=..."
+                  value={apkUrlInput} onChange={e => setApkUrlInput(e.target.value)} />
+                <button className="btn-primary text-xs shrink-0" onClick={saveApkUrl} disabled={savingApk}>
+                  {savingApk ? 'Saving...' : 'Save'}
+                </button>
+                {apkUrl && (
+                  <button className="btn-secondary text-xs shrink-0" onClick={() => {
+                    setApkUrlInput('');
+                    api.updateAppSetting('apk_download_url', '').then(() => setApkUrl(''));
+                  }}>Clear</button>
+                )}
+              </div>
+              <p className="text-xs text-slate-500">
+                Paste the direct download link from Google Drive. See instructions below on how to get it.
+              </p>
+            </div>
           )}
         </div>
 
-        {/* APK upload — superadmin only */}
-        {isSuperAdmin && (
-          <div className="py-3 border-b border-slate-700 space-y-2">
-            <p className="text-xs text-slate-400">
-              Upload a new APK file. Note: files are stored on the server — re-upload after each backend redeploy, or host on Google Drive and use the external link below.
-            </p>
-            <div className="flex flex-wrap gap-2 items-end">
-              <div>
-                <label className="block text-xs text-slate-500 mb-1">Version</label>
-                <input className="input text-xs w-28" placeholder="1.0.0"
-                  value={apkVersion} onChange={e => setApkVersion(e.target.value)} />
-              </div>
-              <div>
-                <label className="block text-xs text-slate-500 mb-1">APK file</label>
-                <input ref={apkRef} type="file" accept=".apk"
-                  className="block text-xs text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-slate-700 file:text-white cursor-pointer"
-                  onChange={e => setApkFile(e.target.files?.[0] ?? null)} />
-              </div>
-              <button className="btn-primary text-xs" onClick={handleApkUpload}
-                disabled={uploading || !apkFile || !apkVersion.trim()}>
-                {uploading ? 'Uploading...' : 'Upload APK'}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Firmware */}
+        {/* Firmware row */}
         <div className="flex items-center justify-between py-3 border-b border-slate-700">
           <div className="flex items-center gap-3">
             <span className="text-2xl">🔌</span>
@@ -151,20 +146,20 @@ export default function GuidesPage() {
               <div className="text-white text-sm font-medium">ESP32 Firmware (.bin)</div>
               <div className="text-slate-500 text-xs">
                 {firmware?.version
-                  ? `v${firmware.version} · ${firmware.size ? formatBytes(firmware.size) : ''}`
+                  ? `v${firmware.version}${firmware.size ? ' · ' + formatBytes(firmware.size) : ''} — uploaded via Firmware OTA`
                   : 'Not yet uploaded — go to Firmware OTA to upload'}
               </div>
             </div>
           </div>
           {firmware?.version && (
-            <a href={`${BASE_URL}/api/firmware/download`}
+            <a href={`${BASE_URL}/api/firmware/download`} target="_blank" rel="noopener noreferrer"
               className="text-xs px-3 py-1.5 rounded bg-orange-600 hover:bg-orange-500 text-white transition-colors">
               Download
             </a>
           )}
         </div>
 
-        {/* Flash Tool */}
+        {/* Flash Tool row */}
         <div className="flex items-center justify-between py-3">
           <div className="flex items-center gap-3">
             <span className="text-2xl">⚡</span>
@@ -181,10 +176,28 @@ export default function GuidesPage() {
         </div>
       </div>
 
-      {/* Video / Document Links */}
+      {/* Google Drive APK link instructions — superadmin only */}
+      {isSuperAdmin && (
+        <div className="card bg-slate-800/50 border border-slate-700 space-y-2">
+          <h3 className="text-white text-sm font-semibold">How to get a Google Drive direct download link</h3>
+          <ol className="list-decimal list-inside space-y-1 text-xs text-slate-400">
+            <li>Upload the APK (renamed to <code className="bg-slate-700 px-1 rounded">jjtpisotab.apk</code>) to Google Drive</li>
+            <li>Right-click the file → <strong className="text-slate-300">Share</strong> → <strong className="text-slate-300">Anyone with the link</strong> → Copy link</li>
+            <li>From the share link, copy the <strong className="text-slate-300">FILE_ID</strong> (the long string between <code className="bg-slate-700 px-1 rounded">/d/</code> and <code className="bg-slate-700 px-1 rounded">/view</code>)</li>
+            <li>Build the direct download URL: <code className="bg-slate-700 px-1 rounded text-orange-400 break-all">https://drive.usercontent.google.com/download?id=FILE_ID&export=download&authuser=0</code></li>
+            <li>Paste that URL in the field above and click Save</li>
+          </ol>
+          <p className="text-xs text-slate-500">This same process works for the ESP32 Flash Tool and any PDF/document you want to share.</p>
+        </div>
+      )}
+
+      {/* Video / Document / PDF Links */}
       <div className="card">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-bold text-white">Guides & Resources</h2>
+          <div>
+            <h2 className="font-bold text-white">Guides & Resources</h2>
+            <p className="text-slate-500 text-xs mt-0.5">Videos, PDF guides, Google Drive documents — any link</p>
+          </div>
           {isSuperAdmin && (
             <button className="btn-primary text-sm"
               onClick={() => { setShowAdd(!showAdd); setEditId(null); setForm({ title: '', url: '', type: 'video' }); }}>
@@ -207,14 +220,14 @@ export default function GuidesPage() {
                 <select className="input text-sm" value={form.type}
                   onChange={e => setForm(f => ({ ...f, type: e.target.value as GuideLink['type'] }))}>
                   <option value="video">Video</option>
-                  <option value="document">Document</option>
+                  <option value="document">Document / PDF</option>
                   <option value="other">Other</option>
                 </select>
               </div>
             </div>
             <div>
-              <label className="block text-xs text-slate-400 mb-1">URL *</label>
-              <input className="input text-sm" placeholder="https://youtube.com/..."
+              <label className="block text-xs text-slate-400 mb-1">URL * (YouTube, Google Drive, any link)</label>
+              <input className="input text-sm" placeholder="https://youtube.com/... or https://drive.google.com/..."
                 value={form.url} onChange={e => setForm(f => ({ ...f, url: e.target.value }))} />
             </div>
             <div className="flex gap-2">
@@ -226,7 +239,7 @@ export default function GuidesPage() {
 
         {links.length === 0 ? (
           <p className="text-slate-500 text-sm">
-            {isSuperAdmin ? 'No links added yet. Click "+ Add Link" to add a video or document guide.' : 'No guides available yet.'}
+            {isSuperAdmin ? 'No links added yet. Click "+ Add Link" to add a video, PDF, or document guide.' : 'No guides available yet.'}
           </p>
         ) : (
           <div className="divide-y divide-slate-700">
