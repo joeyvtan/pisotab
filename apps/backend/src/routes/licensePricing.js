@@ -29,7 +29,7 @@ router.get('/', requireAuth, async (req, res) => {
     const effective   = userRule || defaultRule || null;
 
     res.json({ pricing: rows, effective });
-  } catch (err) { console.error(err); res.status(500).json({ error: 'Server error' }); }
+  } catch (err) { console.error(err); res.status(500).json({ error: err.message || 'Server error' }); }
 });
 
 // POST /api/license-pricing — superadmin creates a pricing rule
@@ -52,10 +52,12 @@ router.post('/', requireAuth, requireSuperAdmin, async (req, res) => {
     }
 
     // Replace existing rule for same user+plan combination
-    const existing = await db.get(
-      `SELECT id FROM license_pricing WHERE plan = ? AND (user_id = ? OR (user_id IS NULL AND ? IS NULL))`,
-      [plan || 'paid', user_id || null, user_id || null]
-    );
+    // Use separate queries for NULL vs non-NULL user_id to avoid ? IS NULL PostgreSQL issues
+    const planVal = plan || 'paid';
+    const userIdVal = user_id || null;
+    const existing = userIdVal
+      ? await db.get('SELECT id FROM license_pricing WHERE plan = ? AND user_id = ?', [planVal, userIdVal])
+      : await db.get('SELECT id FROM license_pricing WHERE plan = ? AND user_id IS NULL', [planVal]);
 
     const id = existing?.id || ('lpr_' + uuidv4().replace(/-/g, '').slice(0, 8));
 
@@ -73,7 +75,7 @@ router.post('/', requireAuth, requireSuperAdmin, async (req, res) => {
     }
 
     res.status(201).json(await db.get('SELECT * FROM license_pricing WHERE id = ?', [id]));
-  } catch (err) { console.error(err); res.status(500).json({ error: 'Server error' }); }
+  } catch (err) { console.error(err); res.status(500).json({ error: err.message || 'Server error' }); }
 });
 
 // DELETE /api/license-pricing/:id — superadmin removes a pricing rule
