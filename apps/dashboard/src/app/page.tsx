@@ -134,9 +134,17 @@ export default function LandingPage() {
   const { user, loading } = useAuth();
   const [activeTab, setActiveTab] = useState<'android' | 'esp32'>('android');
   const [downloads, setDownloads] = useState<{ apk: DownloadFile | null; firmware: DownloadFile | null }>({ apk: null, firmware: null });
+  const [apkUrl, setApkUrl]           = useState('');
+  const [firmwareUrl, setFirmwareUrl] = useState('');
+  const [flasherUrl, setFlasherUrl]   = useState('');
 
   useEffect(() => {
     api.getDownloads().then(d => setDownloads({ apk: d.apk, firmware: d.firmware })).catch(() => {});
+    api.getAppSettings().then(s => {
+      setApkUrl(s['apk_download_url'] || '');
+      setFirmwareUrl(s['firmware_download_url'] || '');
+      setFlasherUrl(s['flasher_download_url'] || '');
+    }).catch(() => {});
   }, []);
 
   const isLoggedIn = !loading && !!user;
@@ -227,13 +235,17 @@ export default function LandingPage() {
           <p className="text-slate-400">Get the latest version of the kiosk app and ESP32 firmware</p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-6">
-          <DownloadCard label="Android APK" icon="📱" file={downloads.apk} />
-          <DownloadCard label="ESP32 Firmware (.bin)" icon="🔌" file={downloads.firmware} />
+          {apkUrl
+            ? <ExternalDownloadCard label="Android APK" icon="📱" desc="PisoTab kiosk app for Android tablets." href={apkUrl} />
+            : <DownloadCard label="Android APK" icon="📱" file={downloads.apk} />}
+          {firmwareUrl
+            ? <ExternalDownloadCard label="ESP32 Firmware (.bin)" icon="🔌" desc="Latest firmware for the coin acceptor module." href={firmwareUrl} />
+            : <DownloadCard label="ESP32 Firmware (.bin)" icon="🔌" file={downloads.firmware} />}
           <ExternalDownloadCard
             label="ESP32 Flash Tool"
             icon="⚡"
             desc="Windows GUI tool by Espressif for flashing .bin firmware to ESP32."
-            href="https://www.espressif.com/en/support/download/other-tools"
+            href={flasherUrl || 'https://www.espressif.com/en/support/download/other-tools'}
           />
         </div>
         <p className="text-center text-slate-500 text-sm">
