@@ -187,6 +187,19 @@ export const api = {
 
   // Downloads
   getDownloads: () => request<DownloadsData>('/api/downloads'),
+  uploadApk: async (file: File, version: string): Promise<DownloadFile> => {
+    const token = getToken();
+    const form = new FormData();
+    form.append('apk', file);
+    form.append('version', version);
+    const res = await fetch(`${BASE}/api/downloads/upload-apk`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: form,
+    });
+    if (!res.ok) { const e = await res.json().catch(() => ({ error: res.statusText })); throw new Error(e.error || 'Upload failed'); }
+    return res.json();
+  },
 
   // Audit log
   getAuditLog: (params?: Record<string, string>) => {

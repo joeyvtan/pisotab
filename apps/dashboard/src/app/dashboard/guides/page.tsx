@@ -1,6 +1,6 @@
 'use client';
-import { useState, useEffect } from 'react';
-import { api, DownloadFile } from '@/lib/api';
+import { useState, useEffect, useRef } from 'react';
+import { api, DownloadFile, FirmwareInfo } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 
 const STORAGE_KEY = 'pisotab_guide_links';
@@ -17,68 +17,63 @@ function formatBytes(bytes: number) {
   return (bytes / 1024).toFixed(0) + ' KB';
 }
 
-function DownloadRow({ icon, label, file }: { icon: string; label: string; file: DownloadFile | null }) {
-  if (!file) {
-    return (
-      <div className="flex items-center justify-between py-3 border-b border-slate-700 last:border-0">
-        <div className="flex items-center gap-3">
-          <span className="text-2xl">{icon}</span>
-          <div>
-            <div className="text-white text-sm font-medium">{label}</div>
-            <div className="text-slate-500 text-xs">Not yet uploaded</div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-  return (
-    <div className="flex items-center justify-between py-3 border-b border-slate-700 last:border-0">
-      <div className="flex items-center gap-3">
-        <span className="text-2xl">{icon}</span>
-        <div>
-          <div className="text-white text-sm font-medium">{label}</div>
-          <div className="text-slate-500 text-xs">v{file.version} · {formatBytes(file.size)}</div>
-        </div>
-      </div>
-      <a href={file.download_url}
-        className="text-xs px-3 py-1.5 rounded bg-orange-600 hover:bg-orange-500 text-white transition-colors">
-        Download
-      </a>
-    </div>
-  );
-}
-
 const TYPE_ICONS: Record<string, string> = { video: '🎬', document: '📄', other: '🔗' };
 
 export default function GuidesPage() {
   const { user } = useAuth();
   const isSuperAdmin = user?.role === 'superadmin';
 
-  const [downloads, setDownloads] = useState<{ apk: DownloadFile | null; firmware: DownloadFile | null }>({ apk: null, firmware: null });
-  const [links, setLinks]         = useState<GuideLink[]>([]);
-  const [showAdd, setShowAdd]     = useState(false);
-  const [form, setForm]           = useState({ title: '', url: '', type: 'video' as GuideLink['type'] });
-  const [editId, setEditId]       = useState<string | null>(null);
+  const [apk, setApk]           = useState<DownloadFile | null>(null);
+  const [firmware, setFirmware] = useState<FirmwareInfo | null>(null);
+  const [links, setLinks]       = useState<GuideLink[]>([]);
+
+  // APK upload state
+  const [apkFile, setApkFile]       = useState<File | null>(null);
+  const [apkVersion, setApkVersion] = useState('');
+  const [uploading, setUploading]   = useState(false);
+  const apkRef = useRef<HTMLInputElement>(null);
+
+  // Guide links state
+  const [showAdd, setShowAdd] = useState(false);
+  const [form, setForm]       = useState({ title: '', url: '', type: 'video' as GuideLink['type'] });
+  const [editId, setEditId]   = useState<string | null>(null);
+
+  const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.jjtpisotab.com';
 
   useEffect(() => {
-    api.getDownloads().then(d => setDownloads({ apk: d.apk, firmware: d.firmware })).catch(() => {});
+    api.getDownloads().then(d => setApk(d.apk)).catch(() => {});
+    api.getFirmware().then(f => setFirmware(f)).catch(() => {});
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) setLinks(JSON.parse(saved));
   }, []);
 
-  function save(updated: GuideLink[]) {
+  function saveLinks(updated: GuideLink[]) {
     setLinks(updated);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+  }
+
+  async function handleApkUpload() {
+    if (!apkFile || !apkVersion.trim()) return;
+    setUploading(true);
+    try {
+      const result = await api.uploadApk(apkFile, apkVersion.trim());
+      setApk(result as unknown as DownloadFile);
+      setApkFile(null);
+      setApkVersion('');
+      if (apkRef.current) apkRef.current.value = '';
+    } catch (e: unknown) {
+      alert('Upload failed: ' + (e instanceof Error ? e.message : String(e)));
+    } finally { setUploading(false); }
   }
 
   function addLink() {
     if (!form.title.trim() || !form.url.trim()) return;
     const url = form.url.startsWith('http') ? form.url : 'https://' + form.url;
     if (editId) {
-      save(links.map(l => l.id === editId ? { ...l, ...form, url } : l));
+      saveLinks(links.map(l => l.id === editId ? { ...l, ...form, url } : l));
       setEditId(null);
     } else {
-      save([...links, { id: Date.now().toString(), ...form, url }]);
+      saveLinks([...links, { id: Date.now().toString(), ...form, url }]);
     }
     setForm({ title: '', url: '', type: 'video' });
     setShowAdd(false);
@@ -92,7 +87,7 @@ export default function GuidesPage() {
 
   function removeLink(id: string) {
     if (!confirm('Remove this link?')) return;
-    save(links.filter(l => l.id !== id));
+    saveLinks(links.filter(l => l.id !== id));
   }
 
   return (
@@ -102,8 +97,74 @@ export default function GuidesPage() {
       {/* Downloads */}
       <div className="card">
         <h2 className="font-bold text-white mb-4">Downloads</h2>
-        <DownloadRow icon="📱" label="Android Kiosk App (APK)" file={downloads.apk} />
-        <DownloadRow icon="🔌" label="ESP32 Firmware (.bin)" file={downloads.firmware} />
+
+        {/* APK */}
+        <div className="flex items-center justify-between py-3 border-b border-slate-700">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">📱</span>
+            <div>
+              <div className="text-white text-sm font-medium">Android Kiosk App (APK)</div>
+              <div className="text-slate-500 text-xs">
+                {apk ? `v${apk.version} · ${formatBytes(apk.size)}` : 'Not yet uploaded'}
+              </div>
+            </div>
+          </div>
+          {apk && (
+            <a href={apk.download_url}
+              className="text-xs px-3 py-1.5 rounded bg-orange-600 hover:bg-orange-500 text-white transition-colors">
+              Download
+            </a>
+          )}
+        </div>
+
+        {/* APK upload — superadmin only */}
+        {isSuperAdmin && (
+          <div className="py-3 border-b border-slate-700 space-y-2">
+            <p className="text-xs text-slate-400">
+              Upload a new APK file. Note: files are stored on the server — re-upload after each backend redeploy, or host on Google Drive and use the external link below.
+            </p>
+            <div className="flex flex-wrap gap-2 items-end">
+              <div>
+                <label className="block text-xs text-slate-500 mb-1">Version</label>
+                <input className="input text-xs w-28" placeholder="1.0.0"
+                  value={apkVersion} onChange={e => setApkVersion(e.target.value)} />
+              </div>
+              <div>
+                <label className="block text-xs text-slate-500 mb-1">APK file</label>
+                <input ref={apkRef} type="file" accept=".apk"
+                  className="block text-xs text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-slate-700 file:text-white cursor-pointer"
+                  onChange={e => setApkFile(e.target.files?.[0] ?? null)} />
+              </div>
+              <button className="btn-primary text-xs" onClick={handleApkUpload}
+                disabled={uploading || !apkFile || !apkVersion.trim()}>
+                {uploading ? 'Uploading...' : 'Upload APK'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Firmware */}
+        <div className="flex items-center justify-between py-3 border-b border-slate-700">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">🔌</span>
+            <div>
+              <div className="text-white text-sm font-medium">ESP32 Firmware (.bin)</div>
+              <div className="text-slate-500 text-xs">
+                {firmware?.version
+                  ? `v${firmware.version} · ${firmware.size ? formatBytes(firmware.size) : ''}`
+                  : 'Not yet uploaded — go to Firmware OTA to upload'}
+              </div>
+            </div>
+          </div>
+          {firmware?.version && (
+            <a href={`${BASE_URL}/api/firmware/download`}
+              className="text-xs px-3 py-1.5 rounded bg-orange-600 hover:bg-orange-500 text-white transition-colors">
+              Download
+            </a>
+          )}
+        </div>
+
+        {/* Flash Tool */}
         <div className="flex items-center justify-between py-3">
           <div className="flex items-center gap-3">
             <span className="text-2xl">⚡</span>
@@ -207,7 +268,7 @@ export default function GuidesPage() {
             <ol className="list-decimal list-inside space-y-1 text-xs">
               <li>Install the APK on your Android tablet</li>
               <li>Long-press bottom-right corner → enter PIN <code className="bg-slate-700 px-1 rounded">1234</code></li>
-              <li>Set Backend URL to <code className="bg-slate-700 px-1 rounded">{process.env.NEXT_PUBLIC_API_URL || 'https://api.jjtpisotab.com'}</code></li>
+              <li>Set Backend URL to <code className="bg-slate-700 px-1 rounded">{BASE_URL}</code></li>
               <li>Copy the Device ID from the Devices page and paste it in the app</li>
               <li>Enable Kiosk Mode last, after everything is working</li>
             </ol>
