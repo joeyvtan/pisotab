@@ -153,7 +153,14 @@ router.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
     if (req.user.role === 'admin' && device.owner_user_id !== req.user.id) {
       return res.status(403).json({ error: 'Access denied' });
     }
-    await db.run('DELETE FROM devices WHERE id = ?', [req.params.id]);
+    const id = req.params.id;
+    // Delete child records first to avoid FK constraint violations
+    await db.run('DELETE FROM device_configs WHERE device_id = ?', [id]);
+    await db.run('DELETE FROM coin_events WHERE device_id = ?', [id]);
+    await db.run('DELETE FROM session_time_additions WHERE session_id IN (SELECT id FROM sessions WHERE device_id = ?)', [id]);
+    await db.run('DELETE FROM sessions WHERE device_id = ?', [id]);
+    await db.run('UPDATE licenses SET device_id = NULL WHERE device_id = ?', [id]);
+    await db.run('DELETE FROM devices WHERE id = ?', [id]);
     res.status(204).end();
   } catch (err) {
     console.error(err);

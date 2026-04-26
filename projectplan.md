@@ -3,6 +3,33 @@
 
 ---
 
+## PHASE 13 — UX Improvements, Security & Mobile (2026-04-26)
+
+### Tasks
+
+| # | Task | Status |
+|---|------|--------|
+| 1 | Remove pricing section from landing page | ✅ Done |
+| 2 | Add esptool download card + update ESP32 guide to use .bin flashing | ✅ Done |
+| 3 | Strong password validation (uppercase + lowercase + number + special char) | ✅ Done |
+| 4 | Change password feature in dashboard settings | ✅ Done |
+| 5 | Superadmin can set any user role including superadmin | ✅ Done |
+| 6 | Fix Device ID not showing after adding device | ✅ Done |
+| 7 | User Guides page in dashboard sidebar (videos, docs, downloads) | ✅ Done |
+| 8 | Admin PIN reset via remote config in dashboard | ✅ Done |
+| 9 | Mobile-responsive dashboard (collapsible sidebar) | ✅ Done |
+| 10 | PWA support (manifest + service worker) | ✅ Done |
+
+### Design Decisions
+- Password policy: min 8 chars, must include uppercase, lowercase, digit, and special character. Applied at backend (auth.js register + reset-password + users.js POST) and frontend (register, reset-password, settings change-password forms).
+- Role promotion to superadmin: Only superadmin can promote others. Added `PATCH /api/users/:id/role` endpoint.
+- Device ID display: Bug was frontend not refreshing device list after creation — fixed by returning full device object and refreshing list.
+- User Guides page: Static page in dashboard where superadmin can store video links and document links. Downloads (APK + firmware) also listed here.
+- Mobile sidebar: Converted to overlay drawer with hamburger toggle. Backdrop closes it on mobile.
+- PWA: Uses next-pwa with offline support via workbox. Manifest added to /public.
+
+---
+
 ## PHASE 12 — Production Deployment: PostgreSQL + HTTPS (2026-04-25)
 
 ### Problem Statement

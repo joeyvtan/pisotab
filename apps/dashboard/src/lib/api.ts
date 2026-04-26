@@ -91,11 +91,22 @@ export const api = {
 
   // Users
   getUsers: () => request<StaffUser[]>('/api/users'),
-  createUser: (username: string, password: string, role: 'admin' | 'staff') =>
+  createUser: (username: string, password: string, role: 'superadmin' | 'admin' | 'staff') =>
     request<StaffUser>('/api/users', { method: 'POST', body: JSON.stringify({ username, password, role }) }),
   deleteUser: (id: string) => request('/api/users/' + id, { method: 'DELETE' }),
   approveUser: (id: string) => request(`/api/users/${id}/approve`, { method: 'PATCH' }),
   suspendUser: (id: string) => request(`/api/users/${id}/suspend`, { method: 'PATCH' }),
+  changeUserRole: (id: string, role: string) =>
+    request(`/api/users/${id}/role`, { method: 'PATCH', body: JSON.stringify({ role }) }),
+  changePassword: (current_password: string, new_password: string) =>
+    request<{ message: string }>('/api/auth/change-password', {
+      method: 'POST', body: JSON.stringify({ current_password, new_password }),
+    }),
+  updateTelegram: (telegram_bot_token: string, telegram_chat_id: string) =>
+    request<{ ok: boolean }>('/api/auth/me/telegram', {
+      method: 'PATCH', body: JSON.stringify({ telegram_bot_token, telegram_chat_id }),
+    }),
+  getMe: () => request<{ telegram_bot_token?: string; telegram_chat_id?: string } & Record<string, unknown>>('/api/auth/me'),
 
   // Locations
   getLocations: () => request<Location[]>('/api/locations'),
@@ -303,4 +314,5 @@ export interface DeviceConfig {
   updated_at:         number;
   applied_at:         number | null;
   config_pending:     boolean;
+  admin_pin:          string | null;
 }

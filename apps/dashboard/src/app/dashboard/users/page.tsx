@@ -17,6 +17,26 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
+function PasswordStrength({ password }: { password: string }) {
+  const checks = [
+    { label: '8+ chars', ok: password.length >= 8 },
+    { label: 'A-Z', ok: /[A-Z]/.test(password) },
+    { label: 'a-z', ok: /[a-z]/.test(password) },
+    { label: '0-9', ok: /[0-9]/.test(password) },
+    { label: '#@!', ok: /[^A-Za-z0-9]/.test(password) },
+  ];
+  if (!password) return null;
+  return (
+    <div className="flex gap-1 mt-1 flex-wrap">
+      {checks.map(c => (
+        <span key={c.label} className={`text-xs px-1.5 py-0.5 rounded ${c.ok ? 'bg-green-900/50 text-green-400' : 'bg-slate-700 text-slate-500'}`}>
+          {c.label}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 export default function UsersPage() {
   const { user } = useAuth();
   const router    = useRouter();
@@ -24,7 +44,7 @@ export default function UsersPage() {
   const [users, setUsers]     = useState<StaffUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
-  const [form, setForm]       = useState({ username: '', password: '', role: 'staff' as 'admin' | 'staff' });
+  const [form, setForm]       = useState({ username: '', password: '', role: 'staff' as 'superadmin' | 'admin' | 'staff' });
   const [busy, setBusy]       = useState<string | null>(null);
   const [error, setError]     = useState('');
 
@@ -81,6 +101,14 @@ export default function UsersPage() {
     finally { setBusy(null); }
   }
 
+  async function changeRole(id: string, username: string, newRole: string) {
+    if (!confirm(`Change "${username}" role to ${newRole}?`)) return;
+    setBusy(id + '_role');
+    try { await api.changeUserRole(id, newRole); load(); }
+    catch (e: unknown) { alert(e instanceof Error ? e.message : 'Failed'); }
+    finally { setBusy(null); }
+  }
+
   const pending  = users.filter(u => u.status === 'pending');
   const approved = users.filter(u => u.status !== 'pending');
 
@@ -99,7 +127,7 @@ export default function UsersPage() {
         <div className="card space-y-3">
           <h2 className="text-white font-medium">New User</h2>
           {error && <p className="text-red-400 text-sm">{error}</p>}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label className="block text-xs text-slate-400 mb-1">Username *</label>
               <input className="input text-sm" placeholder="e.g., staff01"
@@ -109,13 +137,15 @@ export default function UsersPage() {
               <label className="block text-xs text-slate-400 mb-1">Password *</label>
               <input className="input text-sm" type="password"
                 value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} />
+              <PasswordStrength password={form.password} />
             </div>
             <div>
               <label className="block text-xs text-slate-400 mb-1">Role</label>
               <select className="input text-sm" value={form.role}
-                onChange={e => setForm(f => ({ ...f, role: e.target.value as 'admin' | 'staff' }))}>
+                onChange={e => setForm(f => ({ ...f, role: e.target.value as 'superadmin' | 'admin' | 'staff' }))}>
                 <option value="staff">Staff</option>
                 {isSuperAdmin && <option value="admin">Admin</option>}
+                {isSuperAdmin && <option value="superadmin">Super Admin</option>}
               </select>
             </div>
           </div>
@@ -165,13 +195,13 @@ export default function UsersPage() {
       ) : (
         <div className="card divide-y divide-slate-700">
           {approved.map(u => (
-            <div key={u.id} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
+            <div key={u.id} className="flex items-center justify-between py-3 first:pt-0 last:pb-0 gap-3 flex-wrap">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-slate-700 flex items-center justify-center text-white font-bold text-sm">
+                <div className="w-9 h-9 rounded-full bg-slate-700 flex items-center justify-center text-white font-bold text-sm shrink-0">
                   {u.username[0].toUpperCase()}
                 </div>
                 <div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-white font-medium">{u.username}</span>
                     <StatusBadge status={u.status} />
                   </div>
@@ -185,7 +215,19 @@ export default function UsersPage() {
                 </div>
               </div>
               {u.id !== user?.id && (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  {/* Role change dropdown — superadmin only */}
+                  {isSuperAdmin && (
+                    <select
+                      disabled={busy === u.id + '_role'}
+                      value={u.role}
+                      onChange={e => changeRole(u.id, u.username, e.target.value)}
+                      className="text-xs px-2 py-1 rounded bg-slate-700 border border-slate-600 text-slate-300 focus:outline-none">
+                      <option value="staff">Staff</option>
+                      <option value="admin">Admin</option>
+                      <option value="superadmin">Super Admin</option>
+                    </select>
+                  )}
                   {isSuperAdmin && u.status === 'approved' && u.role !== 'superadmin' && (
                     <button
                       disabled={busy === u.id}

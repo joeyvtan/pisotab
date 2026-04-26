@@ -152,6 +152,14 @@ async function main() {
       applied_at         INTEGER
     )`);
     await db.exec(`INSERT INTO device_configs (device_id) SELECT id FROM devices ON CONFLICT DO NOTHING`);
+    // Migration: add admin_pin column if missing
+    try { await db.exec(`ALTER TABLE device_configs ADD COLUMN admin_pin TEXT`); } catch (_) {}
+  } catch (_) {}
+
+  // Migration: add per-user telegram columns
+  try {
+    try { await db.exec(`ALTER TABLE users ADD COLUMN telegram_bot_token TEXT`); } catch (_) {}
+    try { await db.exec(`ALTER TABLE users ADD COLUMN telegram_chat_id TEXT`); } catch (_) {}
   } catch (_) {}
 
   // ── Seed ─────────────────────────────────────────────────────────────────

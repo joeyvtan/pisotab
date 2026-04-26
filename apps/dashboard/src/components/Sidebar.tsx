@@ -26,6 +26,7 @@ const NAV: { href: string; icon: string; label: string; visibleTo: string; badge
   { href: '/dashboard/licenses',          icon: '🔑', label: 'Licenses',          visibleTo: 'admin'      },
   { href: '/dashboard/gcash-settings',    icon: '💳', label: 'GCash Settings',    visibleTo: 'superadmin' },
   { href: '/dashboard/firmware',          icon: '🔧', label: 'Firmware OTA',      visibleTo: 'admin'      },
+  { href: '/dashboard/guides',            icon: '📖', label: 'User Guides',        visibleTo: 'all'        },
   { href: '/dashboard/settings',          icon: '⚙️', label: 'Settings',          visibleTo: 'all'        },
 ];
 
@@ -38,7 +39,7 @@ function canSee(visibleTo: string, role: string | undefined) {
   return false;
 }
 
-export default function Sidebar() {
+export default function Sidebar({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const router = useRouter();
@@ -54,14 +55,19 @@ export default function Sidebar() {
 
   return (
     <aside className="w-60 h-screen bg-slate-900 border-r border-slate-700 flex flex-col flex-shrink-0">
-      <div className="p-5 border-b border-slate-700">
+      <div className="p-4 border-b border-slate-700">
         <div className="flex items-center gap-2">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/jjt-logo.png" alt="JJT Logo" className="w-9 h-9 rounded-full object-contain flex-shrink-0" />
-          <div>
+          <div className="flex-1 min-w-0">
             <div className="font-bold text-white text-base leading-none">JJT PisoTab</div>
             <div className="text-xs text-slate-400">Admin Panel</div>
           </div>
+          {onClose && (
+            <button onClick={onClose} className="lg:hidden text-slate-400 hover:text-white text-xl leading-none ml-1">
+              ×
+            </button>
+          )}
         </div>
       </div>
 

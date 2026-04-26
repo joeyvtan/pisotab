@@ -12,6 +12,15 @@ const { sendPasswordReset, SMTP_CONFIGURED } = require('../services/mailer');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret';
 
+function validatePassword(password) {
+  if (!password || password.length < 8) return 'Password must be at least 8 characters';
+  if (!/[A-Z]/.test(password)) return 'Password must contain at least one uppercase letter';
+  if (!/[a-z]/.test(password)) return 'Password must contain at least one lowercase letter';
+  if (!/[0-9]/.test(password)) return 'Password must contain at least one number';
+  if (!/[^A-Za-z0-9]/.test(password)) return 'Password must contain at least one special character';
+  return null;
+}
+
 // POST /api/auth/login
 router.post('/login', async (req, res) => {
   const { username, password } = req.body;
@@ -52,7 +61,8 @@ router.post('/login', async (req, res) => {
 router.post('/register', async (req, res) => {
   const { username, password, email, full_name, business_name } = req.body;
   if (!username || !password) return res.status(400).json({ error: 'username and password required' });
-  if (password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' });
+  const pwError = validatePassword(password);
+  if (pwError) return res.status(400).json({ error: pwError });
 
   try {
     const db = getDb();
@@ -120,7 +130,8 @@ router.post('/forgot-password', async (req, res) => {
 router.post('/reset-password', async (req, res) => {
   const { token, new_password } = req.body;
   if (!token || !new_password) return res.status(400).json({ error: 'token and new_password required' });
-  if (new_password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' });
+  const pwError = validatePassword(new_password);
+  if (pwError) return res.status(400).json({ error: pwError });
 
   try {
     const db = getDb();
@@ -147,11 +158,53 @@ router.get('/me', requireAuth, async (req, res) => {
   try {
     const db = getDb();
     const user = await db.get(
-      'SELECT id, username, role, email, full_name, business_name, status, created_at FROM users WHERE id = ?',
+      'SELECT id, username, role, email, full_name, business_name, status, created_at, telegram_bot_token, telegram_chat_id FROM users WHERE id = ?',
       [req.user.id]
     );
     if (!user) return res.status(404).json({ error: 'User not found' });
     res.json(user);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// PATCH /api/auth/me/telegram
+router.patch('/me/telegram', requireAuth, async (req, res) => {
+  const { telegram_bot_token, telegram_chat_id } = req.body;
+  try {
+    const db = getDb();
+    await db.run(
+      'UPDATE users SET telegram_bot_token = ?, telegram_chat_id = ? WHERE id = ?',
+      [telegram_bot_token || null, telegram_chat_id || null, req.user.id]
+    );
+    res.json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// POST /api/auth/change-password
+router.post('/change-password', requireAuth, async (req, res) => {
+  const { current_password, new_password } = req.body;
+  if (!current_password || !new_password) {
+    return res.status(400).json({ error: 'current_password and new_password required' });
+  }
+  const pwError = validatePassword(new_password);
+  if (pwError) return res.status(400).json({ error: pwError });
+
+  try {
+    const db = getDb();
+    const user = await db.get('SELECT id, password FROM users WHERE id = ?', [req.user.id]);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const valid = bcrypt.compareSync(current_password, user.password);
+    if (!valid) return res.status(400).json({ error: 'Current password is incorrect' });
+
+    const hashed = bcrypt.hashSync(new_password, 10);
+    await db.run('UPDATE users SET password = ? WHERE id = ?', [hashed, req.user.id]);
+    res.json({ message: 'Password changed successfully' });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
@@ -186,4 +239,4 @@ function requireSuperAdmin(req, res, next) {
   next();
 }
 
-module.exports = { router, requireAuth, requireAdmin, requireSuperAdmin };
+module.exports = { router, requireAuth, requireAdmin, requireSuperAdmin, validatePassword };

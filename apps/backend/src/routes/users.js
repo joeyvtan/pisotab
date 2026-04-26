@@ -8,7 +8,7 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const { v4: uuidv4 } = require('uuid');
 const { getDb } = require('../db');
-const { requireAuth, requireAdmin, requireSuperAdmin } = require('./auth');
+const { requireAuth, requireAdmin, requireSuperAdmin, validatePassword } = require('./auth');
 const { emitBadges } = require('../services/badges');
 const { sendAccountApproved } = require('../services/mailer');
 
@@ -33,9 +33,11 @@ router.post('/', requireAuth, requireAdmin, async (req, res) => {
   if (!username || !password) {
     return res.status(400).json({ error: 'username and password required' });
   }
+  const pwError = validatePassword(password);
+  if (pwError) return res.status(400).json({ error: pwError });
 
-  // Admins can only create staff; superadmin can create admin or staff
-  const allowedRoles = req.user.role === 'superadmin' ? ['admin', 'staff'] : ['staff'];
+  // Admins can only create staff; superadmin can create admin, staff, or superadmin
+  const allowedRoles = req.user.role === 'superadmin' ? ['superadmin', 'admin', 'staff'] : ['staff'];
   const assignedRole = allowedRoles.includes(role) ? role : 'staff';
 
   try {
@@ -90,6 +92,25 @@ router.patch('/:id/suspend', requireAuth, requireSuperAdmin, async (req, res) =>
 
     await db.run("UPDATE users SET status = 'suspended' WHERE id = ?", [req.params.id]);
     res.json({ ok: true, status: 'suspended' });
+  } catch (err) { console.error(err); res.status(500).json({ error: 'Server error' }); }
+});
+
+// PATCH /api/users/:id/role — superadmin changes a user's role
+router.patch('/:id/role', requireAuth, requireSuperAdmin, async (req, res) => {
+  if (req.params.id === req.user.id) {
+    return res.status(400).json({ error: 'Cannot change your own role' });
+  }
+  const { role } = req.body;
+  const validRoles = ['superadmin', 'admin', 'staff'];
+  if (!validRoles.includes(role)) {
+    return res.status(400).json({ error: 'Invalid role. Must be superadmin, admin, or staff' });
+  }
+  try {
+    const db = getDb();
+    const user = await db.get('SELECT id FROM users WHERE id = ?', [req.params.id]);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    await db.run('UPDATE users SET role = ? WHERE id = ?', [role, req.params.id]);
+    res.json({ ok: true, role });
   } catch (err) { console.error(err); res.status(500).json({ error: 'Server error' }); }
 });
 

@@ -20,9 +20,9 @@ export default function FirmwarePage() {
   const { user } = useAuth();
   const router   = useRouter();
 
-  // Admin-only page
+  // Admin and superadmin page
   useEffect(() => {
-    if (user && user.role !== 'admin') router.replace('/dashboard');
+    if (user && user.role !== 'admin' && user.role !== 'superadmin') router.replace('/dashboard');
   }, [user, router]);
 
   const [info, setInfo]       = useState<FirmwareInfo | null>(null);
@@ -71,7 +71,7 @@ export default function FirmwarePage() {
     setTimeout(() => setOtaStatus(s => { const n = { ...s }; delete n[device_id]; return n; }), 5000);
   }
 
-  if (user?.role !== 'admin') return null;
+  if (user?.role !== 'admin' && user?.role !== 'superadmin') return null;
 
   return (
     <div className="space-y-8">

@@ -136,6 +136,18 @@ export default function DeviceCard({ device, tiers, onUpdate }: Props) {
         </div>
       )}
 
+      {/* Device ID — needed for Android app setup */}
+      <div className="flex items-center justify-between bg-slate-800 rounded px-2 py-1.5 gap-2">
+        <span className="text-xs text-slate-500 shrink-0">Device ID:</span>
+        <span className="text-xs font-mono text-slate-300 truncate">{device.id}</span>
+        <button
+          onClick={() => { navigator.clipboard.writeText(device.id); }}
+          className="text-xs text-slate-500 hover:text-orange-400 transition-colors shrink-0"
+          title="Copy Device ID">
+          📋
+        </button>
+      </div>
+
       {/* Last seen / IP */}
       {device.last_seen && (
         <p className="text-xs text-slate-500">Last seen: {timeSince(device.last_seen)}</p>

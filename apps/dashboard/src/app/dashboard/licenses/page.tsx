@@ -124,41 +124,38 @@ export default function LicensesPage() {
       ) : licenses.length === 0 ? (
         <div className="card text-slate-500 text-sm">No licenses yet.</div>
       ) : (
-        <div className="card">
-          <div className={`grid gap-3 pb-3 text-xs text-slate-400 font-medium border-b border-slate-700 ${isSuperAdmin ? 'grid-cols-[2fr_1fr_1fr_0.7fr_0.7fr_auto]' : 'grid-cols-[2fr_1fr_0.7fr_0.7fr_auto]'}`}>
-            <span>Key</span>
-            {isSuperAdmin && <span>Owner</span>}
-            <span>Device</span>
-            <span>Status</span>
-            <span>Expires</span>
-            <span>Actions</span>
-          </div>
-
+        <div className="card divide-y divide-slate-700/50">
           {licenses.map(lic => (
-            <div key={lic.id}
-              className={`grid gap-3 py-3 items-center border-b border-slate-700/50 last:border-0 ${isSuperAdmin ? 'grid-cols-[2fr_1fr_1fr_0.7fr_0.7fr_auto]' : 'grid-cols-[2fr_1fr_0.7fr_0.7fr_auto]'}`}>
-              <span className="font-mono text-orange-400 text-sm tracking-wide">{lic.key}</span>
-              {isSuperAdmin && (
-                <span className="text-slate-400 text-xs">{lic.owner_username ?? '—'}</span>
-              )}
-              <span className="text-slate-300 text-sm truncate">{lic.device_name ?? '—'}</span>
-              <span>{statusBadge(lic)}</span>
-              <span className="text-slate-400 text-xs">{formatDate(lic.expires_at)}</span>
-              <div className="flex gap-1">
+            <div key={lic.id} className="py-3 first:pt-0 last:pb-0 space-y-2">
+              {/* Key + status row */}
+              <div className="flex items-start justify-between gap-2 flex-wrap">
+                <span className="font-mono text-orange-400 text-sm tracking-wide break-all">{lic.key}</span>
+                {statusBadge(lic)}
+              </div>
+              {/* Meta row */}
+              <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-400">
+                {isSuperAdmin && lic.owner_username && (
+                  <span>Owner: <span className="text-slate-300">{lic.owner_username}</span></span>
+                )}
+                <span>Device: <span className="text-slate-300">{lic.device_name ?? '—'}</span></span>
+                <span>Expires: <span className="text-slate-300">{formatDate(lic.expires_at)}</span></span>
+              </div>
+              {/* Action buttons */}
+              <div className="flex flex-wrap gap-2">
                 {lic.device_id && (
                   <button disabled={busy === lic.id} onClick={() => handleAction(lic.id, 'unbind')}
-                    className="text-xs px-2 py-1 rounded bg-slate-700 hover:bg-blue-700 text-slate-300 hover:text-white transition-colors">
+                    className="text-xs px-3 py-1.5 rounded bg-slate-700 hover:bg-blue-700 text-slate-300 hover:text-white transition-colors">
                     Unbind
                   </button>
                 )}
                 {isSuperAdmin && (
                   <>
                     <button disabled={busy === lic.id} onClick={() => handleAction(lic.id, 'deactivate')}
-                      className="text-xs px-2 py-1 rounded bg-slate-700 hover:bg-amber-700 text-slate-300 hover:text-white transition-colors">
+                      className="text-xs px-3 py-1.5 rounded bg-slate-700 hover:bg-amber-700 text-slate-300 hover:text-white transition-colors">
                       Deactivate
                     </button>
                     <button disabled={busy === lic.id} onClick={() => handleAction(lic.id, 'delete')}
-                      className="text-xs px-2 py-1 rounded bg-slate-700 hover:bg-red-700 text-slate-300 hover:text-white transition-colors">
+                      className="text-xs px-3 py-1.5 rounded bg-slate-700 hover:bg-red-700 text-slate-300 hover:text-white transition-colors">
                       Delete
                     </button>
                   </>

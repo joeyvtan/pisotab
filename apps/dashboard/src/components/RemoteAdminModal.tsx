@@ -32,6 +32,7 @@ export default function RemoteAdminModal({ deviceId, deviceName, onClose }: Prop
   const [alarmCharger, setAlarmCharger] = useState(false);
   const [alarmSessionOnly, setAlarmSessionOnly] = useState(true);
   const [alarmDelay, setAlarmDelay]   = useState('30');
+  const [newPin, setNewPin]           = useState('');
 
   function showToast(msg: string) {
     setToast(msg);
@@ -77,7 +78,9 @@ export default function RemoteAdminModal({ deviceId, deviceName, onClose }: Prop
         alarm_charger:      alarmCharger,
         alarm_session_only: alarmSessionOnly,
         alarm_delay_secs:   parseInt(alarmDelay) || 30,
+        ...(newPin.trim() ? { admin_pin: newPin.trim() } : {}),
       });
+      if (newPin.trim()) setNewPin('');
       setCfg(result);
       showToast(result.pushed ? '✓ Config saved and pushed to device' : '✓ Config saved — will apply on next heartbeat');
     } catch (e: unknown) {
@@ -219,6 +222,24 @@ export default function RemoteAdminModal({ deviceId, deviceName, onClose }: Prop
                     value={alarmDelay} onChange={e => setAlarmDelay(e.target.value)} />
                 </div>
               </div>
+            </section>
+
+            {/* Admin PIN Reset */}
+            <section>
+              <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Admin PIN Reset</h3>
+              <p className="text-xs text-slate-500 mb-2">
+                Set a new PIN for the tablet setup screen. Leave blank to keep current PIN.
+                {cfg?.admin_pin && <span className="text-amber-400"> Current PIN has been set remotely.</span>}
+              </p>
+              <input
+                className="input text-sm"
+                type="text"
+                inputMode="numeric"
+                maxLength={8}
+                placeholder="Enter new PIN (e.g. 1234)"
+                value={newPin}
+                onChange={e => setNewPin(e.target.value.replace(/\D/g, ''))}
+              />
             </section>
 
             {/* Save button */}

@@ -34,7 +34,6 @@ function Navbar({ isLoggedIn }: { isLoggedIn: boolean }) {
           <a href="#features" className="hover:text-white transition-colors">Features</a>
           <a href="#how-it-works" className="hover:text-white transition-colors">How It Works</a>
           <a href="#downloads" className="hover:text-white transition-colors">Downloads</a>
-          <a href="#pricing" className="hover:text-white transition-colors">Pricing</a>
         </div>
         <div className="flex items-center gap-3">
           {isLoggedIn ? (
@@ -79,6 +78,20 @@ function StepCard({ step, title, desc }: { step: number; title: string; desc: st
         <h3 className="text-white font-semibold mb-1">{title}</h3>
         <p className="text-slate-400 text-sm leading-relaxed max-w-xs">{desc}</p>
       </div>
+    </div>
+  );
+}
+
+function ExternalDownloadCard({ label, icon, desc, href }: { label: string; icon: string; desc: string; href: string }) {
+  return (
+    <div className="bg-slate-800 border border-slate-700 rounded-xl p-6">
+      <div className="text-4xl mb-2">{icon}</div>
+      <h3 className="text-white font-semibold mb-1">{label}</h3>
+      <p className="text-slate-400 text-xs mb-4">{desc}</p>
+      <a href={href} target="_blank" rel="noopener noreferrer"
+        className="w-full block text-center py-2.5 rounded-lg bg-red-600 hover:bg-red-500 text-white text-sm font-medium transition-colors">
+        Download
+      </a>
     </div>
   );
 }
@@ -213,9 +226,15 @@ export default function LandingPage() {
           <h2 className="text-3xl font-bold text-white mb-3">Downloads</h2>
           <p className="text-slate-400">Get the latest version of the kiosk app and ESP32 firmware</p>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-6">
           <DownloadCard label="Android APK" icon="📱" file={downloads.apk} />
           <DownloadCard label="ESP32 Firmware (.bin)" icon="🔌" file={downloads.firmware} />
+          <ExternalDownloadCard
+            label="ESP32 Flash Tool"
+            icon="⚡"
+            desc="Windows GUI tool by Espressif for flashing .bin firmware to ESP32."
+            href="https://www.espressif.com/en/support/download/other-tools"
+          />
         </div>
         <p className="text-center text-slate-500 text-sm">
           7-day free trial included · No license key needed to start
@@ -267,12 +286,14 @@ export default function LandingPage() {
           {activeTab === 'esp32' && (
             <ol className="space-y-4">
               {[
-                'Download the ESP32 Flash Tool (esptool or ESP Flash Download Tool).',
-                'Download the `pisotab_esp32.bin` firmware file from the Downloads section above.',
-                'Connect your ESP32 board to your PC via USB.',
-                'Flash the firmware:\n`esptool.py write_flash 0x0 pisotab_esp32.bin`',
-                'On first boot, connect to the "PisoTab-Setup" WiFi AP and enter your WiFi credentials.',
-                'The coin box will connect to your local MQTT server automatically and start detecting coins.',
+                'Download the ESP32 Flash Tool and the firmware (.bin) from the Downloads section above.',
+                'Install the ESP32 Flash Tool on your PC (Windows/Mac/Linux).',
+                'Connect your ESP32 board to your PC via USB cable.',
+                'Open the Flash Tool → select your COM port → set address to 0x0 → select the pisotab_esp32.bin file.',
+                'Click "Flash" — wait until it shows "Done".',
+                'On first boot, connect your phone/PC to the WiFi network named "PisoTab-Coin" (no password).',
+                'A setup page will open — enter your WiFi SSID and password, then click Save.',
+                'The ESP32 reboots and connects to your network. LED blinks when connected.',
               ].map((step, i) => (
                 <li key={i} className="flex gap-4">
                   <span className="w-7 h-7 rounded-full bg-red-600/20 border border-red-600/40 flex items-center justify-center text-red-400 text-sm font-bold shrink-0 mt-0.5">
@@ -284,55 +305,6 @@ export default function LandingPage() {
             </ol>
           )}
         </div>
-      </section>
-
-      {/* ── Pricing ───────────────────────────────────────────────────────── */}
-      <section id="pricing" className="py-24 px-6 max-w-4xl mx-auto">
-        <div className="text-center mb-14">
-          <h2 className="text-3xl font-bold text-white mb-3">Simple Pricing</h2>
-          <p className="text-slate-400">One license per device — pay once, use forever</p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Free Trial */}
-          <div className="bg-slate-800 border border-slate-700 rounded-xl p-8">
-            <div className="text-2xl font-bold text-white mb-1">Free Trial</div>
-            <div className="text-4xl font-bold text-red-500 mb-4">₱0</div>
-            <ul className="space-y-2 text-sm text-slate-400 mb-8">
-              {['7-day free trial', 'All features included', 'No credit card required', 'One device'].map(f => (
-                <li key={f} className="flex items-center gap-2">
-                  <span className="text-green-400">✓</span> {f}
-                </li>
-              ))}
-            </ul>
-            <Link href="/register"
-              className="block text-center py-3 rounded-lg border border-slate-600 hover:border-red-500 text-slate-300 hover:text-white font-medium transition-colors text-sm">
-              Start Free Trial
-            </Link>
-          </div>
-          {/* Paid License */}
-          <div className="bg-slate-800 border border-red-600/50 rounded-xl p-8 relative">
-            <div className="absolute -top-3 right-6 px-3 py-1 bg-red-600 rounded-full text-xs text-white font-medium">
-              Most Popular
-            </div>
-            <div className="text-2xl font-bold text-white mb-1">Per Device License</div>
-            <div className="text-4xl font-bold text-red-500 mb-1">₱299</div>
-            <div className="text-slate-500 text-sm mb-4">per device / year</div>
-            <ul className="space-y-2 text-sm text-slate-400 mb-8">
-              {['Full access — all features', 'Unlimited sessions', 'Priority support', 'GCash payment accepted', 'Transferable between devices'].map(f => (
-                <li key={f} className="flex items-center gap-2">
-                  <span className="text-green-400">✓</span> {f}
-                </li>
-              ))}
-            </ul>
-            <Link href="/register"
-              className="block text-center py-3 rounded-lg bg-red-600 hover:bg-red-500 text-white font-medium transition-colors text-sm">
-              Get Started
-            </Link>
-          </div>
-        </div>
-        <p className="text-center text-slate-500 text-sm mt-6">
-          Licenses purchased from inside the dashboard via GCash · Contact your admin for bulk pricing
-        </p>
       </section>
 
       {/* ── CTA Banner ────────────────────────────────────────────────────── */}
@@ -377,7 +349,6 @@ export default function LandingPage() {
           <div className="flex gap-6 text-sm text-slate-500">
             <Link href="/login" className="hover:text-slate-300 transition-colors">Dashboard</Link>
             <a href="#downloads" className="hover:text-slate-300 transition-colors">Downloads</a>
-            <a href="#pricing" className="hover:text-slate-300 transition-colors">Pricing</a>
           </div>
         </div>
       </footer>

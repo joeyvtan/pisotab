@@ -33,6 +33,7 @@ function formatConfig(cfg) {
     updated_at:         cfg.updated_at,
     applied_at:         cfg.applied_at,
     config_pending:     cfg.applied_at === null || cfg.applied_at < cfg.updated_at,
+    admin_pin:          cfg.admin_pin ?? null,
   };
 }
 
@@ -63,6 +64,7 @@ router.patch('/:id/config', requireAuth, requireAdmin, async (req, res) => {
       connection_mode, rate_per_min, secs_per_coin, coin_rates,
       kiosk_mode, floating_timer, deep_freeze, deep_freeze_grace,
       alarm_wifi, alarm_charger, alarm_session_only, alarm_delay_secs,
+      admin_pin,
     } = req.body;
 
     // Upsert config — applied_at reset to NULL so device knows it's pending
@@ -71,8 +73,8 @@ router.patch('/:id/config', requireAuth, requireAdmin, async (req, res) => {
         connection_mode, rate_per_min, secs_per_coin, coin_rates,
         kiosk_mode, floating_timer, deep_freeze, deep_freeze_grace,
         alarm_wifi, alarm_charger, alarm_session_only, alarm_delay_secs,
-        updated_at, applied_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, unixepoch(), NULL)
+        admin_pin, updated_at, applied_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, unixepoch(), NULL)
        ON CONFLICT(device_id) DO UPDATE SET
          connection_mode    = excluded.connection_mode,
          rate_per_min       = excluded.rate_per_min,
@@ -86,6 +88,7 @@ router.patch('/:id/config', requireAuth, requireAdmin, async (req, res) => {
          alarm_charger      = excluded.alarm_charger,
          alarm_session_only = excluded.alarm_session_only,
          alarm_delay_secs   = excluded.alarm_delay_secs,
+         admin_pin          = COALESCE(excluded.admin_pin, device_configs.admin_pin),
          updated_at         = unixepoch(),
          applied_at         = NULL`,
       [
@@ -102,6 +105,7 @@ router.patch('/:id/config', requireAuth, requireAdmin, async (req, res) => {
         alarm_charger ? 1 : 0,
         alarm_session_only ? 1 : 0,
         alarm_delay_secs ?? 30,
+        admin_pin || null,
       ]
     );
 
