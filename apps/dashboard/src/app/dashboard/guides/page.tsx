@@ -19,17 +19,63 @@ function formatBytes(bytes: number) {
 
 const TYPE_ICONS: Record<string, string> = { video: '🎬', document: '📄', other: '🔗' };
 
+interface UrlFieldProps {
+  label: string;
+  settingKey: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+}
+
+function UrlField({ label, settingKey, value, onChange, placeholder }: UrlFieldProps) {
+  const [input, setInput] = useState(value);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => { setInput(value); }, [value]);
+
+  async function save() {
+    setSaving(true);
+    try {
+      await api.updateAppSetting(settingKey, input.trim());
+      onChange(input.trim());
+    } catch (e: unknown) {
+      alert('Failed: ' + (e instanceof Error ? e.message : String(e)));
+    } finally { setSaving(false); }
+  }
+
+  async function clear() {
+    setInput('');
+    await api.updateAppSetting(settingKey, '').catch(() => {});
+    onChange('');
+  }
+
+  return (
+    <div className="mt-3 space-y-1">
+      <label className="block text-xs text-slate-400">{label}</label>
+      <div className="flex gap-2">
+        <input className="input text-xs flex-1" placeholder={placeholder || 'https://...'}
+          value={input} onChange={e => setInput(e.target.value)} />
+        <button className="btn-primary text-xs shrink-0" onClick={save} disabled={saving}>
+          {saving ? 'Saving...' : 'Save'}
+        </button>
+        {value && (
+          <button className="btn-secondary text-xs shrink-0" onClick={clear}>Clear</button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function GuidesPage() {
   const { user } = useAuth();
   const isSuperAdmin = user?.role === 'superadmin';
 
-  const [firmware, setFirmware]   = useState<FirmwareInfo | null>(null);
-  const [apkUrl, setApkUrl]       = useState('');
-  const [apkUrlInput, setApkUrlInput] = useState('');
-  const [savingApk, setSavingApk] = useState(false);
-  const [links, setLinks]         = useState<GuideLink[]>([]);
+  const [firmware, setFirmware]         = useState<FirmwareInfo | null>(null);
+  const [apkUrl, setApkUrl]             = useState('');
+  const [firmwareUrl, setFirmwareUrl]   = useState('');
+  const [flasherUrl, setFlasherUrl]     = useState('');
+  const [links, setLinks]               = useState<GuideLink[]>([]);
 
-  // Guide links state
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm]       = useState({ title: '', url: '', type: 'video' as GuideLink['type'] });
   const [editId, setEditId]   = useState<string | null>(null);
@@ -39,23 +85,13 @@ export default function GuidesPage() {
   useEffect(() => {
     api.getFirmware().then(f => setFirmware(f)).catch(() => {});
     api.getAppSettings().then(s => {
-      const url = s['apk_download_url'] || '';
-      setApkUrl(url);
-      setApkUrlInput(url);
+      setApkUrl(s['apk_download_url'] || '');
+      setFirmwareUrl(s['firmware_download_url'] || '');
+      setFlasherUrl(s['flasher_download_url'] || '');
     }).catch(() => {});
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) setLinks(JSON.parse(saved));
   }, []);
-
-  async function saveApkUrl() {
-    setSavingApk(true);
-    try {
-      await api.updateAppSetting('apk_download_url', apkUrlInput.trim());
-      setApkUrl(apkUrlInput.trim());
-    } catch (e: unknown) {
-      alert('Failed: ' + (e instanceof Error ? e.message : String(e)));
-    } finally { setSavingApk(false); }
-  }
 
   function saveLinks(updated: GuideLink[]) {
     setLinks(updated);
@@ -86,15 +122,18 @@ export default function GuidesPage() {
     saveLinks(links.filter(l => l.id !== id));
   }
 
+  // Resolve firmware download: prefer external URL, fallback to backend
+  const firmwareDownloadUrl = firmwareUrl || (firmware?.version ? `${BASE_URL}/api/firmware/download` : '');
+
   return (
     <div className="space-y-6 max-w-3xl">
       <h1 className="text-2xl font-bold text-white">User Guides & Downloads</h1>
 
       {/* Downloads */}
-      <div className="card space-y-0">
+      <div className="card">
         <h2 className="font-bold text-white mb-4">Downloads</h2>
 
-        {/* APK row */}
+        {/* APK */}
         <div className="py-3 border-b border-slate-700">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -113,83 +152,80 @@ export default function GuidesPage() {
               </a>
             )}
           </div>
-
-          {/* Superadmin: set external APK URL */}
           {isSuperAdmin && (
-            <div className="mt-3 space-y-1">
-              <label className="block text-xs text-slate-400">Google Drive APK Download URL</label>
-              <div className="flex gap-2">
-                <input className="input text-xs flex-1" placeholder="https://drive.usercontent.google.com/download?id=..."
-                  value={apkUrlInput} onChange={e => setApkUrlInput(e.target.value)} />
-                <button className="btn-primary text-xs shrink-0" onClick={saveApkUrl} disabled={savingApk}>
-                  {savingApk ? 'Saving...' : 'Save'}
-                </button>
-                {apkUrl && (
-                  <button className="btn-secondary text-xs shrink-0" onClick={() => {
-                    setApkUrlInput('');
-                    api.updateAppSetting('apk_download_url', '').then(() => setApkUrl(''));
-                  }}>Clear</button>
-                )}
-              </div>
-              <p className="text-xs text-slate-500">
-                Paste the direct download link from Google Drive. See instructions below on how to get it.
-              </p>
-            </div>
+            <UrlField
+              label="APK Download URL (Google Drive)"
+              settingKey="apk_download_url"
+              value={apkUrl}
+              onChange={setApkUrl}
+              placeholder="https://drive.usercontent.google.com/download?id=..."
+            />
           )}
         </div>
 
-        {/* Firmware row */}
-        <div className="flex items-center justify-between py-3 border-b border-slate-700">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">🔌</span>
-            <div>
-              <div className="text-white text-sm font-medium">ESP32 Firmware (.bin)</div>
-              <div className="text-slate-500 text-xs">
-                {firmware?.version
-                  ? `v${firmware.version}${firmware.size ? ' · ' + formatBytes(firmware.size) : ''} — uploaded via Firmware OTA`
-                  : 'Not yet uploaded — go to Firmware OTA to upload'}
+        {/* Firmware */}
+        <div className="py-3 border-b border-slate-700">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">🔌</span>
+              <div>
+                <div className="text-white text-sm font-medium">ESP32 Firmware (.bin)</div>
+                <div className="text-slate-500 text-xs">
+                  {firmwareUrl
+                    ? 'Hosted on Google Drive'
+                    : firmware?.version
+                      ? `v${firmware.version}${firmware.size ? ' · ' + formatBytes(firmware.size) : ''}`
+                      : 'Not yet uploaded'}
+                </div>
               </div>
             </div>
+            {firmwareDownloadUrl && (
+              <a href={firmwareDownloadUrl} target="_blank" rel="noopener noreferrer"
+                className="text-xs px-3 py-1.5 rounded bg-orange-600 hover:bg-orange-500 text-white transition-colors">
+                Download
+              </a>
+            )}
           </div>
-          {firmware?.version && (
-            <a href={`${BASE_URL}/api/firmware/download`} target="_blank" rel="noopener noreferrer"
+          {isSuperAdmin && (
+            <UrlField
+              label="Firmware Download URL (Google Drive)"
+              settingKey="firmware_download_url"
+              value={firmwareUrl}
+              onChange={setFirmwareUrl}
+              placeholder="https://drive.usercontent.google.com/download?id=..."
+            />
+          )}
+        </div>
+
+        {/* Flash Tool */}
+        <div className="py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">⚡</span>
+              <div>
+                <div className="text-white text-sm font-medium">ESP32 Flash Tool</div>
+                <div className="text-slate-500 text-xs">
+                  {flasherUrl ? 'Hosted on Google Drive' : 'Espressif official website'}
+                </div>
+              </div>
+            </div>
+            <a href={flasherUrl || 'https://www.espressif.com/en/support/download/other-tools'}
+              target="_blank" rel="noopener noreferrer"
               className="text-xs px-3 py-1.5 rounded bg-orange-600 hover:bg-orange-500 text-white transition-colors">
               Download
             </a>
+          </div>
+          {isSuperAdmin && (
+            <UrlField
+              label="Flash Tool URL (Google Drive folder or file)"
+              settingKey="flasher_download_url"
+              value={flasherUrl}
+              onChange={setFlasherUrl}
+              placeholder="https://drive.google.com/drive/folders/..."
+            />
           )}
         </div>
-
-        {/* Flash Tool row */}
-        <div className="flex items-center justify-between py-3">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">⚡</span>
-            <div>
-              <div className="text-white text-sm font-medium">ESP32 Flash Tool</div>
-              <div className="text-slate-500 text-xs">Windows GUI tool by Espressif</div>
-            </div>
-          </div>
-          <a href="https://www.espressif.com/en/support/download/other-tools"
-            target="_blank" rel="noopener noreferrer"
-            className="text-xs px-3 py-1.5 rounded bg-orange-600 hover:bg-orange-500 text-white transition-colors">
-            Download
-          </a>
-        </div>
       </div>
-
-      {/* Google Drive APK link instructions — superadmin only */}
-      {isSuperAdmin && (
-        <div className="card bg-slate-800/50 border border-slate-700 space-y-2">
-          <h3 className="text-white text-sm font-semibold">How to get a Google Drive direct download link</h3>
-          <ol className="list-decimal list-inside space-y-1 text-xs text-slate-400">
-            <li>Upload the APK (renamed to <code className="bg-slate-700 px-1 rounded">jjtpisotab.apk</code>) to Google Drive</li>
-            <li>Right-click the file → <strong className="text-slate-300">Share</strong> → <strong className="text-slate-300">Anyone with the link</strong> → Copy link</li>
-            <li>From the share link, copy the <strong className="text-slate-300">FILE_ID</strong> (the long string between <code className="bg-slate-700 px-1 rounded">/d/</code> and <code className="bg-slate-700 px-1 rounded">/view</code>)</li>
-            <li>Build the direct download URL: <code className="bg-slate-700 px-1 rounded text-orange-400 break-all">https://drive.usercontent.google.com/download?id=FILE_ID&export=download&authuser=0</code></li>
-            <li>Paste that URL in the field above and click Save</li>
-          </ol>
-          <p className="text-xs text-slate-500">This same process works for the ESP32 Flash Tool and any PDF/document you want to share.</p>
-        </div>
-      )}
 
       {/* Video / Document / PDF Links */}
       <div className="card">
@@ -239,7 +275,9 @@ export default function GuidesPage() {
 
         {links.length === 0 ? (
           <p className="text-slate-500 text-sm">
-            {isSuperAdmin ? 'No links added yet. Click "+ Add Link" to add a video, PDF, or document guide.' : 'No guides available yet.'}
+            {isSuperAdmin
+              ? 'No links added yet. Click "+ Add Link" to add a video, PDF, or document guide.'
+              : 'No guides available yet.'}
           </p>
         ) : (
           <div className="divide-y divide-slate-700">
