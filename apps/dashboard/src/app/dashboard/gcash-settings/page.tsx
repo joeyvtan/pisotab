@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { api, GcashSettings, LicensePricing } from '@/lib/api';
+import { api, GcashSettings, LicensePricing, StaffUser } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 
 export default function GcashSettingsPage() {
@@ -10,6 +10,7 @@ export default function GcashSettingsPage() {
 
   const [settings, setSettings] = useState<GcashSettings | null>(null);
   const [pricing, setPricing]   = useState<LicensePricing[]>([]);
+  const [adminUsers, setAdminUsers] = useState<StaffUser[]>([]);
   const [form, setForm]         = useState({ gcash_name: '', gcash_number: '' });
   const [priceForm, setPriceForm] = useState({ user_id: '', price_pesos: '', duration_days: '365' });
   const [saving, setSaving]     = useState(false);
@@ -36,6 +37,10 @@ export default function GcashSettingsPage() {
     try {
       const appSettings = await api.getAppSettings();
       setPdfEnabled(appSettings['invoice_pdf_enabled'] === '1');
+    } catch { /* ignore */ }
+    try {
+      const users = await api.getUsers();
+      setAdminUsers(users.filter(u => u.role === 'admin' && u.status === 'approved'));
     } catch { /* ignore */ }
   }
 
@@ -154,10 +159,16 @@ export default function GcashSettingsPage() {
         </p>
         <form onSubmit={savePricing} className="grid grid-cols-3 gap-3 items-end">
           <div>
-            <label className="block text-xs text-slate-400 mb-1">User ID (blank = default)</label>
-            <input className="input text-sm" value={priceForm.user_id}
-              onChange={e => setPriceForm(f => ({ ...f, user_id: e.target.value }))}
-              placeholder="usr_xxxxxxxx" />
+            <label className="block text-xs text-slate-400 mb-1">Apply To</label>
+            <select className="input text-sm" value={priceForm.user_id}
+              onChange={e => setPriceForm(f => ({ ...f, user_id: e.target.value }))}>
+              <option value="">Default (all admins)</option>
+              {adminUsers.map(u => (
+                <option key={u.id} value={u.id}>
+                  {u.username}{u.business_name ? ` — ${u.business_name}` : ''}
+                </option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="block text-xs text-slate-400 mb-1">Price (₱) *</label>
