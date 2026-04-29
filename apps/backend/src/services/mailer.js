@@ -122,4 +122,38 @@ async function sendPasswordReset(user, token) {
   await send(user.email, 'Reset your JJT PisoTab password', html);
 }
 
-module.exports = { sendAccountApproved, sendPurchaseApproved, sendPurchaseRejected, sendPasswordReset, SMTP_CONFIGURED };
+// Sent to admin when their license is expiring soon (7 days and 3 days before)
+async function sendLicenseExpiring(user, license, daysLeft) {
+  if (!user?.email) return;
+  const urgency = daysLeft <= 3 ? '🔴' : '🟡';
+  const deviceLine = license.device_name
+    ? `<p style="color:#64748b;font-size:14px">Device: <strong>${license.device_name}</strong></p>`
+    : '';
+  const html = wrap(`
+    <h2 style="color:#1e293b;margin-top:0">${urgency} License Expiring in ${daysLeft} Day${daysLeft !== 1 ? 's' : ''}</h2>
+    <p>Hi <strong>${user.full_name || user.username}</strong>,</p>
+    <p>Your license key is expiring soon. Once it expires, your device will revert to <strong>trial mode</strong>.</p>
+    <div style="background:#fff;border:1px solid #e2e8f0;border-radius:6px;padding:16px;margin:16px 0">
+      <p style="margin:0 0 4px;color:#64748b;font-size:13px">LICENSE KEY</p>
+      <p style="margin:0;font-family:monospace;font-size:15px;color:#1e293b">${license.key}</p>
+      ${deviceLine}
+      <p style="margin:8px 0 0;color:${daysLeft <= 3 ? '#DC2626' : '#d97706'};font-size:13px;font-weight:bold">
+        Expires in ${daysLeft} day${daysLeft !== 1 ? 's' : ''}
+      </p>
+    </div>
+    <p style="color:#64748b;font-size:14px">To keep your device running, renew your license before it expires.</p>
+    <a href="${APP_URL}/dashboard/buy-license"
+       style="display:inline-block;margin-top:8px;padding:12px 24px;background:#DC2626;color:#fff;text-decoration:none;border-radius:6px;font-weight:bold">
+      Renew License
+    </a>
+    <p style="color:#94a3b8;font-size:13px;margin-top:16px">
+      If you've already renewed, you can ignore this notice.
+    </p>
+  `);
+  const subject = daysLeft <= 3
+    ? `⚠️ License expiring in ${daysLeft} day${daysLeft !== 1 ? 's' : ''} — renew now`
+    : `License expiring in ${daysLeft} days — action needed`;
+  await send(user.email, subject, html);
+}
+
+module.exports = { sendAccountApproved, sendPurchaseApproved, sendPurchaseRejected, sendPasswordReset, sendLicenseExpiring, SMTP_CONFIGURED };

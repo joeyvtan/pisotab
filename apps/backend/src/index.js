@@ -14,6 +14,7 @@ const { startSessionTimer } = require('./services/sessionTimer');
 const { startMqttBridge } = require('./services/mqttBridge');
 const { initNotifier } = require('./services/notifier');
 const { initFcm } = require('./services/fcm');
+const { startLicenseExpiryChecker } = require('./services/licenseExpiry');
 
 async function main() {
   const db = getDb();
@@ -204,6 +205,7 @@ async function main() {
   startMqttBridge(io);
   initNotifier();
   initFcm();
+  startLicenseExpiryChecker();
 
   const PORT = process.env.PORT || 4000;
   server.listen(PORT, () => {
