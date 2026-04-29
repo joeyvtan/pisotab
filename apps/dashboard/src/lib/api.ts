@@ -241,6 +241,7 @@ export interface Device {
   id: string; name: string; location_id: string; location_name?: string;
   status: 'online' | 'offline' | 'in_session' | 'locked';
   last_seen: number; ip_address?: string; android_id?: string;
+  owner_user_id?: string;
   active_session_id?: string; time_remaining_secs?: number; session_status?: string;
   session_payment_method?: string;
   license_status?: 'active' | 'trial' | 'trial_expired';

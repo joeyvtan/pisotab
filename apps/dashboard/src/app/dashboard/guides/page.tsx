@@ -311,30 +311,219 @@ export default function GuidesPage() {
       </div>
 
       {/* Quick Setup Reference */}
-      <div className="card space-y-3">
-        <h2 className="font-bold text-white">Quick Setup Reference</h2>
-        <div className="space-y-2 text-sm text-slate-400">
-          <div className="bg-slate-800 rounded-lg p-3">
-            <p className="text-slate-300 font-medium mb-1">Android App Setup</p>
-            <ol className="list-decimal list-inside space-y-1 text-xs">
-              <li>Install the APK on your Android tablet</li>
-              <li>Long-press bottom-right corner → enter PIN <code className="bg-slate-700 px-1 rounded">1234</code></li>
-              <li>Set Backend URL to <code className="bg-slate-700 px-1 rounded">{BASE_URL}</code></li>
-              <li>Copy the Device ID from the Devices page and paste it in the app</li>
-              <li>Enable Kiosk Mode last, after everything is working</li>
+      <div className="card space-y-4">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <h2 className="font-bold text-white">Setup Guide</h2>
+          <button
+            onClick={downloadSetupPDF}
+            className="text-xs px-3 py-1.5 rounded bg-orange-600 hover:bg-orange-500 text-white transition-colors flex items-center gap-1.5">
+            ⬇ Download PDF
+          </button>
+        </div>
+
+        <div className="space-y-3 text-sm">
+
+          {/* Step 1 */}
+          <div className="bg-slate-800 rounded-lg p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="w-6 h-6 rounded-full bg-orange-600 text-white text-xs font-bold flex items-center justify-center shrink-0">1</span>
+              <p className="text-slate-200 font-semibold">Register & Get Approved</p>
+            </div>
+            <ol className="list-decimal list-inside space-y-1 text-xs text-slate-400 ml-8">
+              <li>Go to the dashboard and register your admin account</li>
+              <li>Wait for superadmin approval — you'll be able to log in once approved</li>
+              <li>After approval, log in and navigate to <strong className="text-slate-300">Devices</strong> to add your tablet</li>
+              <li>Copy the generated <strong className="text-slate-300">Device ID</strong> — you'll need it in the app</li>
             </ol>
           </div>
-          <div className="bg-slate-800 rounded-lg p-3">
-            <p className="text-slate-300 font-medium mb-1">ESP32 Flashing</p>
-            <ol className="list-decimal list-inside space-y-1 text-xs">
-              <li>Download ESP32 Flash Tool and firmware (.bin) above</li>
-              <li>Connect ESP32 to PC via USB</li>
-              <li>Open Flash Tool → select COM port → set address <code className="bg-slate-700 px-1 rounded">0x0</code> → select .bin file → Flash</li>
-              <li>Connect to <code className="bg-slate-700 px-1 rounded">PisoTab-Coin</code> WiFi → enter your network credentials</li>
+
+          {/* Step 2 */}
+          <div className="bg-slate-800 rounded-lg p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="w-6 h-6 rounded-full bg-orange-600 text-white text-xs font-bold flex items-center justify-center shrink-0">2</span>
+              <p className="text-slate-200 font-semibold">Flash the ESP32 Firmware (.bin)</p>
+            </div>
+            <ol className="list-decimal list-inside space-y-1 text-xs text-slate-400 ml-8">
+              <li>Download the <strong className="text-slate-300">ESP32 Firmware (.bin)</strong> and <strong className="text-slate-300">Flash Download Tool</strong> from the Downloads section above</li>
+              <li>Install and open the <strong className="text-slate-300">ESP32 Flash Download Tool</strong></li>
+              <li>When prompted, select chip type: <code className="bg-slate-700 px-1 rounded">ESP32</code>, work mode: <code className="bg-slate-700 px-1 rounded">Develop</code>, load mode: <code className="bg-slate-700 px-1 rounded">USB</code></li>
+              <li>In the SPIDownload tab, click the <strong className="text-slate-300">...</strong> button and browse to select your <code className="bg-slate-700 px-1 rounded">.bin</code> firmware file</li>
+              <li>Set the flash address to <code className="bg-slate-700 px-1 rounded">0x0</code> and check the checkbox next to the file row</li>
+              <li>Connect the ESP32 board to your PC via USB cable</li>
+              <li>Select the correct <strong className="text-slate-300">COM port</strong> from the dropdown (check Device Manager if unsure)</li>
+              <li>Set SPI speed: <code className="bg-slate-700 px-1 rounded">40MHz</code>, SPI mode: <code className="bg-slate-700 px-1 rounded">DIO</code></li>
+              <li>Click <strong className="text-slate-300">START</strong> — the progress bar will fill to 100% when done</li>
+              <li>When complete, the tool shows <strong className="text-slate-300 text-green-400">FINISH</strong> — unplug and replug the ESP32</li>
             </ol>
           </div>
+
+          {/* Step 3 */}
+          <div className="bg-slate-800 rounded-lg p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="w-6 h-6 rounded-full bg-orange-600 text-white text-xs font-bold flex items-center justify-center shrink-0">3</span>
+              <p className="text-slate-200 font-semibold">Configure the ESP32 (WiFi + Backend)</p>
+            </div>
+            <ol className="list-decimal list-inside space-y-1 text-xs text-slate-400 ml-8">
+              <li>After powering on, the ESP32 creates a hotspot: <code className="bg-slate-700 px-1 rounded">PisoTab-Coin</code></li>
+              <li>Connect your phone or PC to that WiFi network (no password)</li>
+              <li>Open a browser and go to <code className="bg-slate-700 px-1 rounded">192.168.4.1</code></li>
+              <li>Enter your local WiFi <strong className="text-slate-300">SSID</strong> and <strong className="text-slate-300">Password</strong></li>
+              <li>Enter the Backend URL: <code className="bg-slate-700 px-1 rounded">{BASE_URL}</code></li>
+              <li>Click <strong className="text-slate-300">Save</strong> — the ESP32 reboots and connects to your WiFi</li>
+              <li>The LED will blink green when connected and communicating with the backend</li>
+            </ol>
+          </div>
+
+          {/* Step 4 */}
+          <div className="bg-slate-800 rounded-lg p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="w-6 h-6 rounded-full bg-orange-600 text-white text-xs font-bold flex items-center justify-center shrink-0">4</span>
+              <p className="text-slate-200 font-semibold">Install the Android Kiosk App (APK)</p>
+            </div>
+            <ol className="list-decimal list-inside space-y-1 text-xs text-slate-400 ml-8">
+              <li>Download the APK from the Downloads section above</li>
+              <li>On your Android tablet, go to <strong className="text-slate-300">Settings → Security</strong> and enable <strong className="text-slate-300">Install Unknown Apps</strong></li>
+              <li>Open the downloaded APK file and install it</li>
+              <li>Launch <strong className="text-slate-300">PisoTab</strong> — the idle screen will appear</li>
+              <li>Long-press the <strong className="text-slate-300">bottom-right corner</strong> of the screen for 2 seconds → enter Admin PIN <code className="bg-slate-700 px-1 rounded">1234</code></li>
+              <li>Go to <strong className="text-slate-300">Connection Settings</strong> → enter the Backend URL: <code className="bg-slate-700 px-1 rounded">{BASE_URL}</code></li>
+              <li>Go to <strong className="text-slate-300">Device Settings</strong> → paste your Device ID from the dashboard</li>
+              <li>Tap <strong className="text-slate-300">Connect</strong> — the status should change to <span className="text-green-400">Connected</span></li>
+            </ol>
+          </div>
+
+          {/* Step 5 */}
+          <div className="bg-slate-800 rounded-lg p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="w-6 h-6 rounded-full bg-orange-600 text-white text-xs font-bold flex items-center justify-center shrink-0">5</span>
+              <p className="text-slate-200 font-semibold">Final Configuration & Kiosk Mode</p>
+            </div>
+            <ol className="list-decimal list-inside space-y-1 text-xs text-slate-400 ml-8">
+              <li>In the Admin panel, go to <strong className="text-slate-300">Pricing</strong> — set your per-minute or per-session rates</li>
+              <li>Go to <strong className="text-slate-300">Allowed Apps</strong> — enable only the apps customers should access</li>
+              <li>Go to <strong className="text-slate-300">Appearance</strong> — set wallpaper, animation, and accent color</li>
+              <li>Test a session: insert coins into the ESP32 and verify the timer starts on the tablet</li>
+              <li>Once everything works, go to <strong className="text-slate-300">Kiosk Mode</strong> and enable it — this locks the tablet to the app</li>
+              <li>Change the Admin PIN from the default <code className="bg-slate-700 px-1 rounded">1234</code> to a secure PIN</li>
+            </ol>
+          </div>
+
         </div>
       </div>
     </div>
   );
+}
+
+function downloadSetupPDF() {
+  const win = window.open('', '_blank');
+  if (!win) return;
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.jjtpisotab.com';
+  win.document.write(`<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>PisoTab Setup Guide</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: Arial, sans-serif; font-size: 11pt; color: #1e293b; padding: 32px; max-width: 800px; margin: 0 auto; }
+  h1 { font-size: 20pt; color: #ea580c; margin-bottom: 4px; }
+  .subtitle { font-size: 10pt; color: #64748b; margin-bottom: 24px; }
+  .step { margin-bottom: 18px; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; page-break-inside: avoid; }
+  .step-header { background: #fff7ed; padding: 10px 14px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #fed7aa; }
+  .step-num { width: 24px; height: 24px; border-radius: 50%; background: #ea580c; color: white; font-weight: bold; font-size: 11pt; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .step-title { font-weight: bold; font-size: 12pt; color: #1e293b; }
+  .step-body { padding: 12px 14px 12px 48px; }
+  ol { padding-left: 18px; }
+  li { margin-bottom: 5px; line-height: 1.5; }
+  code { background: #f1f5f9; padding: 1px 5px; border-radius: 3px; font-family: monospace; font-size: 9.5pt; color: #c2410c; }
+  strong { color: #1e293b; }
+  .footer { margin-top: 28px; padding-top: 14px; border-top: 1px solid #e2e8f0; font-size: 9pt; color: #94a3b8; text-align: center; }
+  @media print { body { padding: 16px; } }
+</style>
+</head>
+<body>
+<h1>PisoTab Setup Guide</h1>
+<p class="subtitle">Complete step-by-step installation and configuration guide</p>
+
+<div class="step">
+  <div class="step-header"><div class="step-num">1</div><div class="step-title">Register &amp; Get Approved</div></div>
+  <div class="step-body">
+    <ol>
+      <li>Go to the dashboard and register your admin account.</li>
+      <li>Wait for superadmin approval — you'll be able to log in once approved.</li>
+      <li>After approval, log in and go to <strong>Devices</strong> to add your tablet.</li>
+      <li>Copy the generated <strong>Device ID</strong> — you'll need it in the Android app.</li>
+    </ol>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header"><div class="step-num">2</div><div class="step-title">Flash the ESP32 Firmware (.bin)</div></div>
+  <div class="step-body">
+    <ol>
+      <li>Download the <strong>ESP32 Firmware (.bin)</strong> and <strong>Flash Download Tool</strong> from the Guides &amp; Downloads page.</li>
+      <li>Install and open the <strong>ESP32 Flash Download Tool</strong>.</li>
+      <li>When prompted, select chip type: <code>ESP32</code>, work mode: <code>Develop</code>, load mode: <code>USB</code>.</li>
+      <li>In the SPIDownload tab, click <strong>...</strong> and select your <code>.bin</code> firmware file.</li>
+      <li>Set the flash address to <code>0x0</code> and check the checkbox next to the file row.</li>
+      <li>Connect the ESP32 board to your PC via USB cable.</li>
+      <li>Select the correct <strong>COM port</strong> from the dropdown (check Device Manager if unsure).</li>
+      <li>Set SPI speed: <code>40MHz</code>, SPI mode: <code>DIO</code>.</li>
+      <li>Click <strong>START</strong> — the progress bar fills to 100% when done.</li>
+      <li>When the tool shows <strong>FINISH</strong>, unplug and replug the ESP32.</li>
+    </ol>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header"><div class="step-num">3</div><div class="step-title">Configure the ESP32 (WiFi + Backend)</div></div>
+  <div class="step-body">
+    <ol>
+      <li>After powering on, the ESP32 creates a hotspot: <code>PisoTab-Coin</code>.</li>
+      <li>Connect your phone or PC to that WiFi (no password).</li>
+      <li>Open a browser and go to <code>192.168.4.1</code>.</li>
+      <li>Enter your local WiFi <strong>SSID</strong> and <strong>Password</strong>.</li>
+      <li>Enter the Backend URL: <code>${apiUrl}</code>.</li>
+      <li>Click <strong>Save</strong> — the ESP32 reboots and connects to your WiFi.</li>
+      <li>The LED will blink green when connected and communicating with the backend.</li>
+    </ol>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header"><div class="step-num">4</div><div class="step-title">Install the Android Kiosk App (APK)</div></div>
+  <div class="step-body">
+    <ol>
+      <li>Download the APK from the Guides &amp; Downloads page.</li>
+      <li>On your Android tablet, go to <strong>Settings → Security</strong> and enable <strong>Install Unknown Apps</strong>.</li>
+      <li>Open the downloaded APK file and install it.</li>
+      <li>Launch <strong>PisoTab</strong> — the idle screen will appear.</li>
+      <li>Long-press the <strong>bottom-right corner</strong> for 2 seconds → enter Admin PIN <code>1234</code>.</li>
+      <li>Go to <strong>Connection Settings</strong> → enter Backend URL: <code>${apiUrl}</code>.</li>
+      <li>Go to <strong>Device Settings</strong> → paste your Device ID from the dashboard.</li>
+      <li>Tap <strong>Connect</strong> — status should change to <strong>Connected</strong>.</li>
+    </ol>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-header"><div class="step-num">5</div><div class="step-title">Final Configuration &amp; Kiosk Mode</div></div>
+  <div class="step-body">
+    <ol>
+      <li>In the Admin panel, go to <strong>Pricing</strong> and set your per-minute or per-session rates.</li>
+      <li>Go to <strong>Allowed Apps</strong> — enable only the apps customers should access.</li>
+      <li>Go to <strong>Appearance</strong> — set wallpaper, animation, and accent color.</li>
+      <li>Test a session: insert coins into the ESP32 and verify the timer starts on the tablet.</li>
+      <li>Once everything works, go to <strong>Kiosk Mode</strong> and enable it.</li>
+      <li>Change the Admin PIN from the default <code>1234</code> to a secure PIN.</li>
+    </ol>
+  </div>
+</div>
+
+<div class="footer">PisoTab &mdash; ${apiUrl} &mdash; Generated ${new Date().toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
+</body>
+</html>`);
+  win.document.close();
+  win.focus();
+  setTimeout(() => win.print(), 400);
 }

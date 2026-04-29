@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { api, RevenueRow, Session } from '@/lib/api';
 import { formatPeso } from '@/lib/utils';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
@@ -7,10 +8,11 @@ import { format, fromUnixTime } from 'date-fns';
 import AccountFilter from '@/components/AccountFilter';
 
 export default function LogsPage() {
+  const searchParams             = useSearchParams();
   const [revenue, setRevenue]   = useState<RevenueRow[]>([]);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading]   = useState(true);
-  const [account, setAccount]   = useState('');
+  const [account, setAccount]   = useState(() => searchParams.get('account') ?? '');
 
   useEffect(() => {
     setLoading(true);

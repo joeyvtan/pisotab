@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { api, Location, PricingTier } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import { useDevices } from '@/hooks/useDevices';
@@ -8,8 +9,9 @@ import AccountFilter from '@/components/AccountFilter';
 
 export default function DevicesPage() {
   const { user }                      = useAuth();
+  const searchParams                  = useSearchParams();
   const canManage                     = user?.role === 'admin' || user?.role === 'superadmin';
-  const [account, setAccount]         = useState('');
+  const [account, setAccount]         = useState(() => searchParams.get('account') ?? '');
   const { devices, loading, refresh } = useDevices(account || undefined);
   const [tiers, setTiers]             = useState<PricingTier[]>([]);
   const [locations, setLocations]     = useState<Location[]>([]);

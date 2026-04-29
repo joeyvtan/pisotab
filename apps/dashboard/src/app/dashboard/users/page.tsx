@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api, StaffUser } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
+import { format, fromUnixTime } from 'date-fns';
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
@@ -174,7 +175,14 @@ export default function UsersPage() {
                     <div className="text-white font-medium">{u.username}</div>
                     {u.full_name && <div className="text-slate-400 text-xs">{u.full_name}</div>}
                     {u.business_name && <div className="text-slate-500 text-xs">{u.business_name}</div>}
-                    {u.email && <div className="text-slate-500 text-xs">{u.email}</div>}
+                    <div className="text-xs text-slate-400 mt-0.5">
+                      {u.email || <span className="text-slate-600 italic">No email</span>}
+                    </div>
+                    <div className="text-xs text-slate-500 mt-0.5">
+                      Registered {u.created_at && u.created_at > 0
+                        ? format(fromUnixTime(Number(u.created_at)), 'MMM d, yyyy · h:mm a')
+                        : <span className="text-slate-600 italic">Unknown</span>}
+                    </div>
                   </div>
                   <button
                     disabled={busy === u.id}
@@ -211,6 +219,14 @@ export default function UsersPage() {
                     : 'text-slate-400'}`}>
                     {u.role}
                     {u.full_name && ` — ${u.full_name}`}
+                  </div>
+                  <div className="text-xs text-slate-400 mt-0.5">
+                    {u.email || <span className="text-slate-600 italic">No email</span>}
+                  </div>
+                  <div className="text-xs text-slate-500 mt-0.5">
+                    Joined {u.created_at && u.created_at > 0
+                      ? format(fromUnixTime(Number(u.created_at)), 'MMM d, yyyy')
+                      : <span className="text-slate-600 italic">Unknown</span>}
                   </div>
                 </div>
               </div>
