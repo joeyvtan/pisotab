@@ -12,6 +12,13 @@
         android:scaleType="centerCrop"
         android:visibility="gone" />
 
+    <!-- Animated background layer -->
+    <FrameLayout
+        android:id="@+id/fl_animation_lock"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="visible" />
+
     <!-- Semi-transparent overlay so text stays readable over any wallpaper -->
     <LinearLayout
         android:layout_width="match_parent"

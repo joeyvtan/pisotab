@@ -24,6 +24,9 @@ public final class ActivityLockScreenBinding implements ViewBinding {
   public final View btnAdminLock;
 
   @NonNull
+  public final FrameLayout flAnimationLock;
+
+  @NonNull
   public final ImageView ivWallpaperLock;
 
   @NonNull
@@ -33,10 +36,11 @@ public final class ActivityLockScreenBinding implements ViewBinding {
   public final TextView tvDeepFreezeLabel;
 
   private ActivityLockScreenBinding(@NonNull FrameLayout rootView, @NonNull View btnAdminLock,
-      @NonNull ImageView ivWallpaperLock, @NonNull TextView tvDeepFreezeCountdown,
-      @NonNull TextView tvDeepFreezeLabel) {
+      @NonNull FrameLayout flAnimationLock, @NonNull ImageView ivWallpaperLock,
+      @NonNull TextView tvDeepFreezeCountdown, @NonNull TextView tvDeepFreezeLabel) {
     this.rootView = rootView;
     this.btnAdminLock = btnAdminLock;
+    this.flAnimationLock = flAnimationLock;
     this.ivWallpaperLock = ivWallpaperLock;
     this.tvDeepFreezeCountdown = tvDeepFreezeCountdown;
     this.tvDeepFreezeLabel = tvDeepFreezeLabel;
@@ -75,6 +79,12 @@ public final class ActivityLockScreenBinding implements ViewBinding {
         break missingId;
       }
 
+      id = R.id.fl_animation_lock;
+      FrameLayout flAnimationLock = ViewBindings.findChildViewById(rootView, id);
+      if (flAnimationLock == null) {
+        break missingId;
+      }
+
       id = R.id.iv_wallpaper_lock;
       ImageView ivWallpaperLock = ViewBindings.findChildViewById(rootView, id);
       if (ivWallpaperLock == null) {
@@ -93,8 +103,8 @@ public final class ActivityLockScreenBinding implements ViewBinding {
         break missingId;
       }
 
-      return new ActivityLockScreenBinding((FrameLayout) rootView, btnAdminLock, ivWallpaperLock,
-          tvDeepFreezeCountdown, tvDeepFreezeLabel);
+      return new ActivityLockScreenBinding((FrameLayout) rootView, btnAdminLock, flAnimationLock,
+          ivWallpaperLock, tvDeepFreezeCountdown, tvDeepFreezeLabel);
     }
     String missingId = rootView.getResources().getResourceName(id);
     throw new NullPointerException("Missing required view with ID: ".concat(missingId));

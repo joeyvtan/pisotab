@@ -133,6 +133,13 @@ async function main() {
   try { await db.exec("UPDATE devices SET owner_user_id = 'usr_admin' WHERE owner_user_id IS NULL"); } catch (_) {}
   try { await db.exec("UPDATE locations SET owner_user_id = 'usr_admin' WHERE owner_user_id IS NULL AND id != 'loc_main'"); } catch (_) {}
 
+  // P5 — 2FA TOTP columns
+  try { await db.exec(`ALTER TABLE users ADD COLUMN totp_secret TEXT`); } catch (_) {}
+  try { await db.exec(`ALTER TABLE users ADD COLUMN totp_enabled INTEGER NOT NULL DEFAULT 0`); } catch (_) {}
+
+  // P6 — Changelog column on downloadable_files
+  try { await db.exec(`ALTER TABLE downloadable_files ADD COLUMN changelog TEXT`); } catch (_) {}
+
   // Phase 11
   try {
     await db.exec(`CREATE TABLE IF NOT EXISTS device_configs (
@@ -196,6 +203,7 @@ async function main() {
   app.use('/api/audit-log',        require('./routes/auditLog'));
   app.use('/api/app-settings',     require('./routes/appSettings'));
   app.use('/api/devices',          require('./routes/deviceConfigs'));
+  app.use('/api/support',          require('./routes/support'));
 
   app.get('/health', (_req, res) => res.json({ ok: true, uptime: process.uptime() }));
 

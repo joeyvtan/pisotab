@@ -39,7 +39,7 @@ router.get('/', async (req, res) => {
   try {
     const db = getDb();
     const files = await db.all(
-      `SELECT id, type, version, filename, size, uploaded_at
+      `SELECT id, type, version, filename, size, changelog, uploaded_at
        FROM downloadable_files
        ORDER BY uploaded_at DESC`,
       []
@@ -84,16 +84,16 @@ router.post('/upload-apk', requireAuth, requireSuperAdmin, (req, res) => {
     if (err) return res.status(400).json({ error: err.message });
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
 
-    const { version } = req.body;
+    const { version, changelog } = req.body;
     if (!version) return res.status(400).json({ error: 'version field required' });
 
     try {
       const db = getDb();
       const id = 'dl_' + uuidv4().replace(/-/g, '').slice(0, 8);
       await db.run(
-        `INSERT INTO downloadable_files (id, type, version, filename, size, uploaded_by, uploaded_at)
-         VALUES (?, 'apk', ?, ?, ?, ?, unixepoch())`,
-        [id, version, req.file.originalname, req.file.size, req.user.id]
+        `INSERT INTO downloadable_files (id, type, version, filename, size, changelog, uploaded_by, uploaded_at)
+         VALUES (?, 'apk', ?, ?, ?, ?, ?, unixepoch())`,
+        [id, version, req.file.originalname, req.file.size, changelog || null, req.user.id]
       );
 
       res.status(201).json(await db.get('SELECT * FROM downloadable_files WHERE id = ?', [id]));

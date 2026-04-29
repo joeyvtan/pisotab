@@ -37,6 +37,9 @@ class AllowedAppsAdapter(private var items: List<AppItem>) :
         holder.ivIcon.setImageDrawable(app.icon)
         holder.tvName.text    = app.appName
         holder.tvPackage.text = app.packageName
+        // Clear listener before setting checked state to prevent recycled-view callbacks
+        // from flipping the wrong item's isAllowed flag during scroll.
+        holder.cbAllowed.setOnCheckedChangeListener(null)
         holder.cbAllowed.isChecked = app.isAllowed
         holder.cbAllowed.setOnCheckedChangeListener { _, checked -> app.isAllowed = checked }
         holder.itemView.setOnClickListener { holder.cbAllowed.toggle() }

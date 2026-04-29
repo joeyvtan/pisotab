@@ -42,12 +42,14 @@ export default function UsersPage() {
   const { user } = useAuth();
   const router    = useRouter();
 
-  const [users, setUsers]     = useState<StaffUser[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showAdd, setShowAdd] = useState(false);
-  const [form, setForm]       = useState({ username: '', password: '', role: 'staff' as 'superadmin' | 'admin' | 'staff' });
-  const [busy, setBusy]       = useState<string | null>(null);
-  const [error, setError]     = useState('');
+  const [users, setUsers]         = useState<StaffUser[]>([]);
+  const [loading, setLoading]     = useState(true);
+  const [showAdd, setShowAdd]     = useState(false);
+  const [form, setForm]           = useState({ username: '', password: '', role: 'staff' as 'superadmin' | 'admin' | 'staff' });
+  const [busy, setBusy]           = useState<string | null>(null);
+  const [error, setError]         = useState('');
+  const [selected, setSelected]   = useState<Set<string>>(new Set());
+  const [batchBusy, setBatchBusy] = useState(false);
 
   const isAdmin      = user?.role === 'admin' || user?.role === 'superadmin';
   const isSuperAdmin = user?.role === 'superadmin';
@@ -84,6 +86,28 @@ export default function UsersPage() {
     try { await api.approveUser(id); load(); }
     catch (e: unknown) { alert(e instanceof Error ? e.message : 'Failed'); }
     finally { setBusy(null); }
+  }
+
+  async function batchApprove() {
+    if (selected.size === 0) return;
+    if (!confirm(`Approve ${selected.size} selected user${selected.size > 1 ? 's' : ''}?`)) return;
+    setBatchBusy(true);
+    try {
+      const res = await api.batchApproveUsers(Array.from(selected));
+      setSelected(new Set());
+      alert(`${res.approved} user${res.approved !== 1 ? 's' : ''} approved.`);
+      load();
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : 'Batch approve failed');
+    } finally { setBatchBusy(false); }
+  }
+
+  function toggleSelect(id: string) {
+    setSelected(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
   }
 
   async function suspendUser(id: string, username: string) {
@@ -164,30 +188,47 @@ export default function UsersPage() {
       {/* Pending approvals — superadmin only */}
       {isSuperAdmin && pending.length > 0 && (
         <div className="card space-y-3">
-          <h2 className="text-amber-400 font-medium">
-            Pending Approval <span className="text-sm text-slate-400">({pending.length})</span>
-          </h2>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <h2 className="text-amber-400 font-medium">
+              Pending Approval <span className="text-sm text-slate-400">({pending.length})</span>
+            </h2>
+            {selected.size > 0 && (
+              <button
+                disabled={batchBusy}
+                onClick={batchApprove}
+                className="text-sm px-3 py-1.5 rounded bg-green-700 hover:bg-green-600 text-white transition-colors">
+                {batchBusy ? 'Approving...' : `Approve Selected (${selected.size})`}
+              </button>
+            )}
+          </div>
           <div className="divide-y divide-slate-700">
             {pending.map(u => (
               <div key={u.id} className="py-3 first:pt-0 last:pb-0">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-white font-medium">{u.username}</div>
-                    {u.full_name && <div className="text-slate-400 text-xs">{u.full_name}</div>}
-                    {u.business_name && <div className="text-slate-500 text-xs">{u.business_name}</div>}
-                    <div className="text-xs text-slate-400 mt-0.5">
-                      {u.email || <span className="text-slate-600 italic">No email</span>}
-                    </div>
-                    <div className="text-xs text-slate-500 mt-0.5">
-                      Registered {u.created_at && u.created_at > 0
-                        ? format(fromUnixTime(Number(u.created_at)), 'MMM d, yyyy · h:mm a')
-                        : <span className="text-slate-600 italic">Unknown</span>}
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      checked={selected.has(u.id)}
+                      onChange={() => toggleSelect(u.id)}
+                      className="mt-1 accent-orange-500 cursor-pointer w-4 h-4 flex-shrink-0" />
+                    <div>
+                      <div className="text-white font-medium">{u.username}</div>
+                      {u.full_name && <div className="text-slate-400 text-xs">{u.full_name}</div>}
+                      {u.business_name && <div className="text-slate-500 text-xs">{u.business_name}</div>}
+                      <div className="text-xs text-slate-400 mt-0.5">
+                        {u.email || <span className="text-slate-600 italic">No email</span>}
+                      </div>
+                      <div className="text-xs text-slate-500 mt-0.5">
+                        Registered {u.created_at && u.created_at > 0
+                          ? format(fromUnixTime(Number(u.created_at)), 'MMM d, yyyy · h:mm a')
+                          : <span className="text-slate-600 italic">Unknown</span>}
+                      </div>
                     </div>
                   </div>
                   <button
                     disabled={busy === u.id}
                     onClick={() => approveUser(u.id)}
-                    className="text-sm px-3 py-1.5 rounded bg-green-700 hover:bg-green-600 text-white transition-colors">
+                    className="text-sm px-3 py-1.5 rounded bg-green-700 hover:bg-green-600 text-white transition-colors shrink-0">
                     {busy === u.id ? '...' : 'Approve'}
                   </button>
                 </div>

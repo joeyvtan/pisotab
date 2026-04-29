@@ -10,7 +10,11 @@ const { getDb } = require('../db');
 const { emitBadges } = require('../services/badges');
 const { sendPasswordReset, SMTP_CONFIGURED } = require('../services/mailer');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret';
+const speakeasy = require('speakeasy');
+const QRCode    = require('qrcode');
+
+const JWT_SECRET  = process.env.JWT_SECRET || 'dev_secret';
+const TOTP_ISSUER = process.env.TOTP_ISSUER || 'JJT PisoTab';
 
 function validatePassword(password) {
   if (!password || password.length < 8) return 'Password must be at least 8 characters';
@@ -40,6 +44,12 @@ router.post('/login', async (req, res) => {
     }
     if (user.status === 'suspended') {
       return res.status(403).json({ error: 'Account suspended. Please contact support.' });
+    }
+
+    // If 2FA is enabled, issue a short-lived temp token instead of full access
+    if (user.totp_enabled) {
+      const tempToken = jwt.sign({ id: user.id, totp_pending: true }, JWT_SECRET, { expiresIn: '5m' });
+      return res.json({ requires_totp: true, temp_token: tempToken });
     }
 
     const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
@@ -158,7 +168,7 @@ router.get('/me', requireAuth, async (req, res) => {
   try {
     const db = getDb();
     const user = await db.get(
-      'SELECT id, username, role, email, full_name, business_name, status, created_at, telegram_bot_token, telegram_chat_id FROM users WHERE id = ?',
+      'SELECT id, username, role, email, full_name, business_name, status, created_at, telegram_bot_token, telegram_chat_id, totp_enabled FROM users WHERE id = ?',
       [req.user.id]
     );
     if (!user) return res.status(404).json({ error: 'User not found' });
@@ -209,6 +219,100 @@ router.post('/change-password', requireAuth, async (req, res) => {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
   }
+});
+
+// POST /api/auth/totp/verify — complete login with TOTP code (uses temp_token)
+router.post('/totp/verify', async (req, res) => {
+  const { temp_token, code } = req.body;
+  if (!temp_token || !code) return res.status(400).json({ error: 'temp_token and code required' });
+  try {
+    let payload;
+    try { payload = jwt.verify(temp_token, JWT_SECRET); } catch {
+      return res.status(401).json({ error: 'Invalid or expired session. Please log in again.' });
+    }
+    if (!payload.totp_pending) return res.status(400).json({ error: 'Invalid token type' });
+
+    const db = getDb();
+    const user = await db.get('SELECT * FROM users WHERE id = ?', [payload.id]);
+    if (!user || !user.totp_secret) return res.status(401).json({ error: 'Invalid credentials' });
+
+    const valid = speakeasy.totp.verify({
+      secret: user.totp_secret, encoding: 'base32',
+      token: String(code).replace(/\s/g, ''), window: 1,
+    });
+    if (!valid) return res.status(401).json({ error: 'Invalid verification code' });
+
+    const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
+    res.json({
+      token,
+      user: {
+        id: user.id, username: user.username, role: user.role,
+        email: user.email || null, full_name: user.full_name || null,
+        business_name: user.business_name || null, status: user.status,
+      },
+    });
+  } catch (err) { console.error(err); res.status(500).json({ error: 'Server error' }); }
+});
+
+// GET /api/auth/totp/setup — generate a TOTP secret and QR code for the logged-in user
+router.get('/totp/setup', requireAuth, async (req, res) => {
+  try {
+    const db = getDb();
+    const user = await db.get('SELECT username, totp_enabled FROM users WHERE id = ?', [req.user.id]);
+    if (user?.totp_enabled) return res.status(400).json({ error: '2FA is already enabled' });
+
+    const secret = speakeasy.generateSecret({
+      name: `${TOTP_ISSUER} (${user?.username || req.user.id})`,
+      issuer: TOTP_ISSUER, length: 20,
+    });
+
+    // Store the pending secret (not yet enabled — user must verify first)
+    await db.run('UPDATE users SET totp_secret = ? WHERE id = ?', [secret.base32, req.user.id]);
+
+    const qr = await QRCode.toDataURL(secret.otpauth_url);
+    res.json({ secret: secret.base32, qr_code: qr });
+  } catch (err) { console.error(err); res.status(500).json({ error: 'Server error' }); }
+});
+
+// POST /api/auth/totp/enable — verify code then activate 2FA
+router.post('/totp/enable', requireAuth, async (req, res) => {
+  const { code } = req.body;
+  if (!code) return res.status(400).json({ error: 'code required' });
+  try {
+    const db = getDb();
+    const user = await db.get('SELECT totp_secret, totp_enabled FROM users WHERE id = ?', [req.user.id]);
+    if (!user?.totp_secret) return res.status(400).json({ error: 'Run setup first' });
+    if (user.totp_enabled) return res.status(400).json({ error: '2FA already enabled' });
+
+    const valid = speakeasy.totp.verify({
+      secret: user.totp_secret, encoding: 'base32',
+      token: String(code).replace(/\s/g, ''), window: 1,
+    });
+    if (!valid) return res.status(400).json({ error: 'Invalid code — check your authenticator app' });
+
+    await db.run('UPDATE users SET totp_enabled = 1 WHERE id = ?', [req.user.id]);
+    res.json({ ok: true, message: '2FA enabled successfully' });
+  } catch (err) { console.error(err); res.status(500).json({ error: 'Server error' }); }
+});
+
+// POST /api/auth/totp/disable — disable 2FA (requires current TOTP code)
+router.post('/totp/disable', requireAuth, async (req, res) => {
+  const { code } = req.body;
+  if (!code) return res.status(400).json({ error: 'code required' });
+  try {
+    const db = getDb();
+    const user = await db.get('SELECT totp_secret, totp_enabled FROM users WHERE id = ?', [req.user.id]);
+    if (!user?.totp_enabled) return res.status(400).json({ error: '2FA is not enabled' });
+
+    const valid = speakeasy.totp.verify({
+      secret: user.totp_secret, encoding: 'base32',
+      token: String(code).replace(/\s/g, ''), window: 1,
+    });
+    if (!valid) return res.status(400).json({ error: 'Invalid code' });
+
+    await db.run('UPDATE users SET totp_enabled = 0, totp_secret = NULL WHERE id = ?', [req.user.id]);
+    res.json({ ok: true, message: '2FA disabled' });
+  } catch (err) { console.error(err); res.status(500).json({ error: 'Server error' }); }
 });
 
 // ── Middleware ────────────────────────────────────────────────────────────────

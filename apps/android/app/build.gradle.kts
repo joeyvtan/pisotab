@@ -81,6 +81,9 @@ dependencies {
     implementation("androidx.recyclerview:recyclerview:1.3.2")
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
 
+    // FlexboxLayout — centers launcher app grid including incomplete last rows
+    implementation("com.google.android.flexbox:flexbox:3.0.0")
+
     // Firebase Cloud Messaging
     implementation(platform("com.google.firebase:firebase-bom:33.1.0"))
     implementation("com.google.firebase:firebase-messaging-ktx")

@@ -24,7 +24,9 @@ export default function PurchaseRequestsPage() {
   const [noteMap, setNoteMap]   = useState<Record<string, string>>({});
 
   const isSuperAdmin = user?.role === 'superadmin';
-  const [pdfEnabled, setPdfEnabled] = useState(true);
+  const [pdfEnabled, setPdfEnabled]   = useState(true);
+  const [selected, setSelected]       = useState<Set<string>>(new Set());
+  const [batchBusy, setBatchBusy]     = useState(false);
 
   async function load() {
     setLoading(true);
@@ -61,6 +63,28 @@ export default function PurchaseRequestsPage() {
     finally { setBusy(null); }
   }
 
+  function toggleSelect(id: string) {
+    setSelected(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
+
+  async function batchApprove() {
+    if (selected.size === 0) return;
+    if (!confirm(`Approve ${selected.size} selected request${selected.size > 1 ? 's' : ''}?`)) return;
+    setBatchBusy(true);
+    try {
+      const res = await api.batchApprovePurchaseRequests(Array.from(selected));
+      setSelected(new Set());
+      alert(`${res.approved} request${res.approved !== 1 ? 's' : ''} approved. ${res.licenses_generated.length} keys generated.`);
+      load();
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : 'Batch approve failed');
+    } finally { setBatchBusy(false); }
+  }
+
   async function downloadReceipt(id: string) {
     try { await api.downloadReceipt(id); }
     catch (e: unknown) { alert(e instanceof Error ? e.message : 'Failed to download receipt'); }
@@ -72,7 +96,17 @@ export default function PurchaseRequestsPage() {
 
   return (
     <div className="space-y-6 max-w-4xl">
-      <h1 className="text-2xl font-bold text-white">Purchase Requests</h1>
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <h1 className="text-2xl font-bold text-white">Purchase Requests</h1>
+        {isSuperAdmin && selected.size > 0 && (
+          <button
+            disabled={batchBusy}
+            onClick={batchApprove}
+            className="text-sm px-4 py-2 rounded bg-green-700 hover:bg-green-600 text-white transition-colors">
+            {batchBusy ? 'Approving...' : `Approve Selected (${selected.size})`}
+          </button>
+        )}
+      </div>
 
       {loading ? (
         <div className="text-slate-400">Loading...</div>
@@ -83,21 +117,30 @@ export default function PurchaseRequestsPage() {
           {requests.map(r => (
             <div key={r.id} className="card space-y-3">
               <div className="flex items-start justify-between gap-4">
-                <div>
-                  {isSuperAdmin && (
-                    <div className="text-white font-medium">
-                      {r.requester_full_name || r.requester_username}
-                      {r.requester_full_name && (
-                        <span className="text-slate-400 text-sm ml-2">@{r.requester_username}</span>
-                      )}
-                    </div>
+                <div className="flex items-start gap-3">
+                  {isSuperAdmin && r.status === 'pending' && (
+                    <input
+                      type="checkbox"
+                      checked={selected.has(r.id)}
+                      onChange={() => toggleSelect(r.id)}
+                      className="mt-1 accent-orange-500 cursor-pointer w-4 h-4 flex-shrink-0" />
                   )}
-                  <div className="flex items-center gap-3 mt-1">
-                    <StatusBadge status={r.status} />
-                    <span className="text-slate-400 text-sm">
-                      {r.quantity} × {r.plan} — ₱{r.amount_paid.toFixed(2)}
-                    </span>
-                    <span className="text-slate-500 text-xs">{formatDate(r.created_at)}</span>
+                  <div>
+                    {isSuperAdmin && (
+                      <div className="text-white font-medium">
+                        {r.requester_full_name || r.requester_username}
+                        {r.requester_full_name && (
+                          <span className="text-slate-400 text-sm ml-2">@{r.requester_username}</span>
+                        )}
+                      </div>
+                    )}
+                    <div className="flex items-center gap-3 mt-1">
+                      <StatusBadge status={r.status} />
+                      <span className="text-slate-400 text-sm">
+                        {r.quantity} × {r.plan} — ₱{r.amount_paid.toFixed(2)}
+                      </span>
+                      <span className="text-slate-500 text-xs">{formatDate(r.created_at)}</span>
+                    </div>
                   </div>
                 </div>
               </div>

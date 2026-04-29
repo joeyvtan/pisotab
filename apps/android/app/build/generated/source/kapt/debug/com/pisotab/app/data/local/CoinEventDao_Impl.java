@@ -75,7 +75,7 @@ public final class CoinEventDao_Impl implements CoinEventDao {
   }
 
   @Override
-  public Object insert(final CoinEventEntity event, final Continuation<? super Unit> arg1) {
+  public Object insert(final CoinEventEntity event, final Continuation<? super Unit> $completion) {
     return CoroutinesRoom.execute(__db, true, new Callable<Unit>() {
       @Override
       @NonNull
@@ -89,11 +89,11 @@ public final class CoinEventDao_Impl implements CoinEventDao {
           __db.endTransaction();
         }
       }
-    }, arg1);
+    }, $completion);
   }
 
   @Override
-  public Object markSynced(final String id, final Continuation<? super Unit> arg1) {
+  public Object markSynced(final String id, final Continuation<? super Unit> $completion) {
     return CoroutinesRoom.execute(__db, true, new Callable<Unit>() {
       @Override
       @NonNull
@@ -118,11 +118,11 @@ public final class CoinEventDao_Impl implements CoinEventDao {
           __preparedStmtOfMarkSynced.release(_stmt);
         }
       }
-    }, arg1);
+    }, $completion);
   }
 
   @Override
-  public Object getUnsynced(final Continuation<? super List<CoinEventEntity>> arg0) {
+  public Object getUnsynced(final Continuation<? super List<CoinEventEntity>> $completion) {
     final String _sql = "SELECT * FROM coin_events WHERE synced = 0";
     final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 0);
     final CancellationSignal _cancellationSignal = DBUtil.createCancellationSignal();
@@ -175,7 +175,7 @@ public final class CoinEventDao_Impl implements CoinEventDao {
           _statement.release();
         }
       }
-    }, arg0);
+    }, $completion);
   }
 
   @NonNull

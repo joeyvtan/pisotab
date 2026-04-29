@@ -10,24 +10,16 @@
     </style><style name="Theme.PisoTab.Fullscreen" parent="Theme.PisoTab">
         <item name="android:windowFullscreen">true</item>
         <item name="android:statusBarColor">#000000</item>
-    </style><style name="Theme.PisoTab.Green" parent="Theme.MaterialComponents.DayNight.NoActionBar.Bridge">
+    </style><style name="Theme.PisoTab.Green" parent="Theme.PisoTab">
         <item name="colorPrimary">#22C55E</item>
         <item name="colorPrimaryDark">#16A34A</item>
         <item name="colorAccent">#22C55E</item>
-        <item name="android:windowBackground">@color/screen_bg</item>
-        <item name="android:statusBarColor">@color/toolbar_bg</item>
-        <item name="android:navigationBarColor">@color/screen_bg</item>
-        <item name="android:windowLightStatusBar">true</item>
     </style><style name="NavItemText">
         <item name="android:textSize">14sp</item>
-    </style><style name="Theme.PisoTab.Blue" parent="Theme.MaterialComponents.DayNight.NoActionBar.Bridge">
+    </style><style name="Theme.PisoTab.Blue" parent="Theme.PisoTab">
         <item name="colorPrimary">#3B82F6</item>
         <item name="colorPrimaryDark">#2563EB</item>
         <item name="colorAccent">#3B82F6</item>
-        <item name="android:windowBackground">@color/screen_bg</item>
-        <item name="android:statusBarColor">@color/toolbar_bg</item>
-        <item name="android:navigationBarColor">@color/screen_bg</item>
-        <item name="android:windowLightStatusBar">true</item>
     </style><style name="ToolbarDarkOverlay" parent="ThemeOverlay.MaterialComponents.Dark.ActionBar">
         <item name="colorControlNormal">#FFFFFF</item>
         <item name="android:textColorPrimary">#FFFFFF</item>
@@ -39,20 +31,12 @@
         <item name="android:statusBarColor">@color/toolbar_bg</item>
         <item name="android:navigationBarColor">@color/screen_bg</item>
         <item name="android:windowLightStatusBar">false</item>
-    </style><style name="Theme.PisoTab.Blue" parent="Theme.MaterialComponents.DayNight.NoActionBar.Bridge">
+    </style><style name="Theme.PisoTab.Blue" parent="Theme.PisoTab">
         <item name="colorPrimary">#3B82F6</item>
         <item name="colorPrimaryDark">#2563EB</item>
         <item name="colorAccent">#3B82F6</item>
-        <item name="android:windowBackground">@color/screen_bg</item>
-        <item name="android:statusBarColor">@color/toolbar_bg</item>
-        <item name="android:navigationBarColor">@color/screen_bg</item>
-        <item name="android:windowLightStatusBar">false</item>
-    </style><style name="Theme.PisoTab.Green" parent="Theme.MaterialComponents.DayNight.NoActionBar.Bridge">
+    </style><style name="Theme.PisoTab.Green" parent="Theme.PisoTab">
         <item name="colorPrimary">#22C55E</item>
         <item name="colorPrimaryDark">#16A34A</item>
         <item name="colorAccent">#22C55E</item>
-        <item name="android:windowBackground">@color/screen_bg</item>
-        <item name="android:statusBarColor">@color/toolbar_bg</item>
-        <item name="android:navigationBarColor">@color/screen_bg</item>
-        <item name="android:windowLightStatusBar">false</item>
-    </style></file></source></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="debug$Generated" generated="true" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="C:\Users\adria\Desktop\My Build apps\Piso tab project\apps\android\app\src\debug\res"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="debug" generated-set="debug$Generated" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="C:\Users\adria\Desktop\My Build apps\Piso tab project\apps\android\app\src\debug\res"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="generated$Generated" generated="true" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="C:\Users\adria\Desktop\My Build apps\Piso tab project\apps\android\app\build\generated\res\resValues\debug"/><source path="C:\Users\adria\Desktop\My Build apps\Piso tab project\apps\android\app\build\generated\res\processDebugGoogleServices"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="generated" generated-set="generated$Generated" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="C:\Users\adria\Desktop\My Build apps\Piso tab project\apps\android\app\build\generated\res\resValues\debug"/><source path="C:\Users\adria\Desktop\My Build apps\Piso tab project\apps\android\app\build\generated\res\processDebugGoogleServices"><file path="C:\Users\adria\Desktop\My Build apps\Piso tab project\apps\android\app\build\generated\res\processDebugGoogleServices\values\values.xml" qualifiers=""><string name="gcm_defaultSenderId" translatable="false">255958695592</string><string name="google_api_key" translatable="false">AIzaSyCGp9wakmU_D0cbMJC_EPKpm9eLIrBw7pA</string><string name="google_app_id" translatable="false">1:255958695592:android:be7dd5679ba0d08f380c9d</string><string name="google_crash_reporting_api_key" translatable="false">AIzaSyCGp9wakmU_D0cbMJC_EPKpm9eLIrBw7pA</string><string name="google_storage_bucket" translatable="false">jjt-pisotab.firebasestorage.app</string><string name="project_id" translatable="false">jjt-pisotab</string></file></source></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="res-processDebugGoogleServices$Generated" generated="true" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"/><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="res-processDebugGoogleServices" generated-set="res-processDebugGoogleServices$Generated" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"/><mergedItems/></merger>
+    </style></file><file name="wallpaper_circuit" path="C:\Users\adria\Desktop\My Build apps\Piso tab project\apps\android\app\src\main\res\drawable\wallpaper_circuit.xml" qualifiers="" type="drawable"/><file name="wallpaper_galaxy" path="C:\Users\adria\Desktop\My Build apps\Piso tab project\apps\android\app\src\main\res\drawable\wallpaper_galaxy.xml" qualifiers="" type="drawable"/><file name="wallpaper_neon" path="C:\Users\adria\Desktop\My Build apps\Piso tab project\apps\android\app\src\main\res\drawable\wallpaper_neon.xml" qualifiers="" type="drawable"/></source></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="debug$Generated" generated="true" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="C:\Users\adria\Desktop\My Build apps\Piso tab project\apps\android\app\src\debug\res"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="debug" generated-set="debug$Generated" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="C:\Users\adria\Desktop\My Build apps\Piso tab project\apps\android\app\src\debug\res"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="generated$Generated" generated="true" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="C:\Users\adria\Desktop\My Build apps\Piso tab project\apps\android\app\build\generated\res\resValues\debug"/><source path="C:\Users\adria\Desktop\My Build apps\Piso tab project\apps\android\app\build\generated\res\processDebugGoogleServices"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="generated" generated-set="generated$Generated" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="C:\Users\adria\Desktop\My Build apps\Piso tab project\apps\android\app\build\generated\res\resValues\debug"/><source path="C:\Users\adria\Desktop\My Build apps\Piso tab project\apps\android\app\build\generated\res\processDebugGoogleServices"><file path="C:\Users\adria\Desktop\My Build apps\Piso tab project\apps\android\app\build\generated\res\processDebugGoogleServices\values\values.xml" qualifiers=""><string name="gcm_defaultSenderId" translatable="false">255958695592</string><string name="google_api_key" translatable="false">AIzaSyCGp9wakmU_D0cbMJC_EPKpm9eLIrBw7pA</string><string name="google_app_id" translatable="false">1:255958695592:android:be7dd5679ba0d08f380c9d</string><string name="google_crash_reporting_api_key" translatable="false">AIzaSyCGp9wakmU_D0cbMJC_EPKpm9eLIrBw7pA</string><string name="google_storage_bucket" translatable="false">jjt-pisotab.firebasestorage.app</string><string name="project_id" translatable="false">jjt-pisotab</string></file></source></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="res-processDebugGoogleServices$Generated" generated="true" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"/><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="res-processDebugGoogleServices" generated-set="res-processDebugGoogleServices$Generated" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"/><mergedItems/></merger>

@@ -76,7 +76,7 @@ public final class PendingSyncDao_Impl implements PendingSyncDao {
   }
 
   @Override
-  public Object insert(final PendingSyncEntity item, final Continuation<? super Unit> arg1) {
+  public Object insert(final PendingSyncEntity item, final Continuation<? super Unit> $completion) {
     return CoroutinesRoom.execute(__db, true, new Callable<Unit>() {
       @Override
       @NonNull
@@ -90,11 +90,11 @@ public final class PendingSyncDao_Impl implements PendingSyncDao {
           __db.endTransaction();
         }
       }
-    }, arg1);
+    }, $completion);
   }
 
   @Override
-  public Object delete(final int id, final Continuation<? super Unit> arg1) {
+  public Object delete(final int id, final Continuation<? super Unit> $completion) {
     return CoroutinesRoom.execute(__db, true, new Callable<Unit>() {
       @Override
       @NonNull
@@ -115,11 +115,11 @@ public final class PendingSyncDao_Impl implements PendingSyncDao {
           __preparedStmtOfDelete.release(_stmt);
         }
       }
-    }, arg1);
+    }, $completion);
   }
 
   @Override
-  public Object getAll(final Continuation<? super List<PendingSyncEntity>> arg0) {
+  public Object getAll(final Continuation<? super List<PendingSyncEntity>> $completion) {
     final String _sql = "SELECT * FROM pending_sync ORDER BY createdAt ASC";
     final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 0);
     final CancellationSignal _cancellationSignal = DBUtil.createCancellationSignal();
@@ -168,7 +168,7 @@ public final class PendingSyncDao_Impl implements PendingSyncDao {
           _statement.release();
         }
       }
-    }, arg0);
+    }, $completion);
   }
 
   @NonNull

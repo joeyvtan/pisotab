@@ -14,6 +14,13 @@
         android:scaleType="centerCrop"
         android:visibility="gone" />
 
+    <!-- Animated background layer — shown only during idle screen -->
+    <FrameLayout
+        android:id="@+id/fl_animation_idle"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone" />
+
     <!-- IDLE screen — shown when no session is active -->
     <LinearLayout
         android:id="@+id/screen_idle"

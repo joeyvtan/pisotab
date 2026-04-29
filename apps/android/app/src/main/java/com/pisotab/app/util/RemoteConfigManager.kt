@@ -14,6 +14,9 @@ object RemoteConfigManager {
 
     private const val TAG = "RemoteConfigManager"
 
+    /** Notified on the main thread after prefs are updated from a remote config push. */
+    var onConfigChanged: (() -> Unit)? = null
+
     fun applyConfig(config: JSONObject, prefs: PrefsManager) {
         try {
             if (config.has("connection_mode")) {
@@ -52,7 +55,12 @@ object RemoteConfigManager {
             if (config.has("alarm_delay_secs")) {
                 prefs.alarmDelaySeconds = config.getInt("alarm_delay_secs")
             }
+            if (config.has("admin_pin") && !config.isNull("admin_pin")) {
+                val pin = config.getString("admin_pin")
+                if (pin.isNotEmpty()) prefs.adminPin = pin
+            }
             Log.d(TAG, "Remote config applied successfully")
+            onConfigChanged?.invoke()
         } catch (e: Exception) {
             Log.e(TAG, "Failed to apply remote config: ${e.message}")
         }

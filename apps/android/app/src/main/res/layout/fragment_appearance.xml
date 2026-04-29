@@ -56,6 +56,72 @@
                 android:text="Green" android:textColor="@color/text_primary" android:buttonTint="#22C55E"/>
         </RadioGroup>
 
+        <!-- Idle / Lock Screen Animation -->
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="IDLE SCREEN ANIMATION" android:textColor="@color/text_secondary" android:textSize="11sp"
+            android:letterSpacing="0.08" android:layout_marginBottom="8dp"/>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:background="@color/card_bg"
+            android:padding="14dp" android:layout_marginBottom="6dp">
+            <RadioGroup android:id="@+id/rg_animation_preset"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical">
+                <RadioButton android:id="@+id/rb_anim_none"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="None" android:textColor="@color/text_primary" android:textSize="14sp"
+                    android:paddingTop="4dp" android:paddingBottom="4dp"/>
+                <RadioButton android:id="@+id/rb_anim_coins"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="🪙 Coin Rain  —  falling coins" android:textColor="@color/text_primary" android:textSize="14sp"
+                    android:paddingTop="4dp" android:paddingBottom="4dp"/>
+                <RadioButton android:id="@+id/rb_anim_pulse"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="⭕ Pulse Rings  —  expanding rings" android:textColor="@color/text_primary" android:textSize="14sp"
+                    android:paddingTop="4dp" android:paddingBottom="4dp"/>
+                <RadioButton android:id="@+id/rb_anim_stars"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="✨ Star Field  —  twinkling stars" android:textColor="@color/text_primary" android:textSize="14sp"
+                    android:paddingTop="4dp" android:paddingBottom="4dp"/>
+            </RadioGroup>
+        </LinearLayout>
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Animations play on the Insert Coin and Session Expired screens."
+            android:textColor="@color/text_hint" android:textSize="11sp"
+            android:layout_marginBottom="20dp"/>
+
+        <!-- Built-in Wallpaper Presets -->
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="BACKGROUND PRESET" android:textColor="@color/text_secondary" android:textSize="11sp"
+            android:letterSpacing="0.08" android:layout_marginBottom="8dp"/>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:background="@color/card_bg"
+            android:padding="14dp" android:layout_marginBottom="6dp">
+            <RadioGroup android:id="@+id/rg_wallpaper_preset"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical">
+                <RadioButton android:id="@+id/rb_wp_custom"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Custom (use uploaded image below)" android:textColor="@color/text_primary" android:textSize="14sp"
+                    android:paddingTop="4dp" android:paddingBottom="4dp"/>
+                <RadioButton android:id="@+id/rb_wp_galaxy"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="🌌 Galaxy  —  deep space starfield" android:textColor="@color/text_primary" android:textSize="14sp"
+                    android:paddingTop="4dp" android:paddingBottom="4dp"/>
+                <RadioButton android:id="@+id/rb_wp_circuit"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="🔌 Circuit Board  —  copper PCB traces" android:textColor="@color/text_primary" android:textSize="14sp"
+                    android:paddingTop="4dp" android:paddingBottom="4dp"/>
+                <RadioButton android:id="@+id/rb_wp_neon"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="💠 Neon Grid  —  cyan grid on dark" android:textColor="@color/text_primary" android:textSize="14sp"
+                    android:paddingTop="4dp" android:paddingBottom="4dp"/>
+            </RadioGroup>
+        </LinearLayout>
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Selecting a preset overrides the uploaded wallpaper image."
+            android:textColor="@color/text_hint" android:textSize="11sp"
+            android:layout_marginBottom="20dp"/>
+
         <!-- Portrait Wallpaper -->
         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
             android:text="Portrait Wallpaper" android:textColor="@color/text_secondary" android:textSize="12sp"

@@ -26,7 +26,9 @@ const NAV: { href: string; icon: string; label: string; visibleTo: string; badge
   { href: '/dashboard/licenses',          icon: '🔑', label: 'Licenses',          visibleTo: 'admin'      },
   { href: '/dashboard/gcash-settings',    icon: '💳', label: 'GCash Settings',    visibleTo: 'superadmin' },
   { href: '/dashboard/firmware',          icon: '🔧', label: 'Firmware OTA',      visibleTo: 'admin'      },
+  { href: '/dashboard/changelog',          icon: '📝', label: 'Changelog',         visibleTo: 'all'        },
   { href: '/dashboard/guides',            icon: '📖', label: 'User Guides',        visibleTo: 'all'        },
+  { href: '/dashboard/support',           icon: '💬', label: 'Support',            visibleTo: 'all'        },
   { href: '/dashboard/settings',          icon: '⚙️', label: 'Settings',          visibleTo: 'all'        },
 ];
 

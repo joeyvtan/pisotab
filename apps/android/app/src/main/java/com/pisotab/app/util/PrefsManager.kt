@@ -28,7 +28,7 @@ class PrefsManager(context: Context) {
     // ── Connection ────────────────────────────────────────────────────────────
 
     var serverUrl: String
-        get() = prefs.getString("server_url", "http://192.168.1.100:4000") ?: "http://192.168.1.100:4000"
+        get() = prefs.getString("server_url", "https://api.jjtpisotab.com") ?: "https://api.jjtpisotab.com"
         set(v) = prefs.edit { putString("server_url", v) }
 
     var deviceId: String
@@ -146,6 +146,16 @@ class PrefsManager(context: Context) {
     var lockScreenAudioUri: String
         get() = prefs.getString("lock_screen_audio_uri", "") ?: ""
         set(v) = prefs.edit { putString("lock_screen_audio_uri", v) }
+
+    /** Animated background preset for idle + lock screens: 0=None, 1=CoinRain, 2=Pulse, 3=Stars */
+    var animationPreset: Int
+        get() = prefs.getInt("animation_preset", 0)
+        set(v) = prefs.edit { putInt("animation_preset", v) }
+
+    /** Built-in wallpaper preset: 0=Custom (use URI), 1=Galaxy, 2=Circuit, 3=Neon Grid */
+    var wallpaperPreset: Int
+        get() = prefs.getInt("wallpaper_preset", 0)
+        set(v) = prefs.edit { putInt("wallpaper_preset", v) }
 
     // ── Allowed Apps whitelist ────────────────────────────────────────────────
 

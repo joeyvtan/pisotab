@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.pisotab.app-mergeDebugResources-62:/values-zh-rTW/values-zh-rTW.xml",
+            "outputFile": "com.pisotab.app-mergeDebugResources-63:/values-zh-rTW/values-zh-rTW.xml",
             "map": [
                 {
                     "source": "C:\\Users\\adria\\.gradle\\caches\\8.9\\transforms\\e4487426934c5af1d4a4b9594e100c3c\\transformed\\play-services-base-18.0.1\\res\\values-zh-rTW\\values.xml",

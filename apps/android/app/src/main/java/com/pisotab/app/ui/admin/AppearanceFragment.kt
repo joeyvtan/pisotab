@@ -25,6 +25,8 @@ class AppearanceFragment : Fragment() {
     private lateinit var rbOrange: RadioButton
     private lateinit var rbBlue: RadioButton
     private lateinit var rbGreen: RadioButton
+    private lateinit var rgAnimationPreset: RadioGroup
+    private lateinit var rgWallpaperPreset: RadioGroup
     private lateinit var btnPickPortrait: Button
     private lateinit var btnClearPortrait: Button
     private lateinit var ivPortraitPreview: ImageView
@@ -73,6 +75,8 @@ class AppearanceFragment : Fragment() {
         rbOrange         = view.findViewById(R.id.rb_theme_orange)
         rbBlue           = view.findViewById(R.id.rb_theme_blue)
         rbGreen          = view.findViewById(R.id.rb_theme_green)
+        rgAnimationPreset = view.findViewById(R.id.rg_animation_preset)
+        rgWallpaperPreset = view.findViewById(R.id.rg_wallpaper_preset)
         btnPickPortrait  = view.findViewById(R.id.btn_pick_portrait)
         btnClearPortrait = view.findViewById(R.id.btn_clear_portrait)
         ivPortraitPreview  = view.findViewById(R.id.iv_portrait_preview)
@@ -124,6 +128,22 @@ class AppearanceFragment : Fragment() {
             ThemeManager.THEME_GREEN -> rbGreen.isChecked = true
             else                     -> rbOrange.isChecked = true
         }
+        // Animation preset
+        val animRadioId = when (prefs.animationPreset) {
+            1    -> R.id.rb_anim_coins
+            2    -> R.id.rb_anim_pulse
+            3    -> R.id.rb_anim_stars
+            else -> R.id.rb_anim_none
+        }
+        rgAnimationPreset.check(animRadioId)
+        // Wallpaper preset
+        val wpRadioId = when (prefs.wallpaperPreset) {
+            1    -> R.id.rb_wp_galaxy
+            2    -> R.id.rb_wp_circuit
+            3    -> R.id.rb_wp_neon
+            else -> R.id.rb_wp_custom
+        }
+        rgWallpaperPreset.check(wpRadioId)
         if (prefs.portraitWallpaperUri.isNotEmpty()) {
             showPortraitPreview(Uri.parse(prefs.portraitWallpaperUri))
         }
@@ -142,16 +162,30 @@ class AppearanceFragment : Fragment() {
             R.id.rb_theme_green -> ThemeManager.THEME_GREEN
             else                -> ThemeManager.THEME_ORANGE
         }
-        Toast.makeText(requireContext(), "Appearance saved. Restart app to apply theme.", Toast.LENGTH_LONG).show()
+        prefs.animationPreset = when (rgAnimationPreset.checkedRadioButtonId) {
+            R.id.rb_anim_coins -> 1
+            R.id.rb_anim_pulse -> 2
+            R.id.rb_anim_stars -> 3
+            else               -> 0
+        }
+        prefs.wallpaperPreset = when (rgWallpaperPreset.checkedRadioButtonId) {
+            R.id.rb_wp_galaxy   -> 1
+            R.id.rb_wp_circuit  -> 2
+            R.id.rb_wp_neon     -> 3
+            else                -> 0
+        }
+        Toast.makeText(requireContext(), "Appearance saved. Restart app to apply.", Toast.LENGTH_LONG).show()
     }
 
     private fun reset() {
-        prefs.businessName         = "JJT PisoTab"
-        prefs.isDarkMode           = true
-        prefs.themeId              = ThemeManager.THEME_ORANGE
-        prefs.portraitWallpaperUri = ""
+        prefs.businessName          = "JJT PisoTab"
+        prefs.isDarkMode            = true
+        prefs.themeId               = ThemeManager.THEME_ORANGE
+        prefs.animationPreset       = 0
+        prefs.wallpaperPreset       = 0
+        prefs.portraitWallpaperUri  = ""
         prefs.landscapeWallpaperUri = ""
-        prefs.lockScreenAudioUri   = ""
+        prefs.lockScreenAudioUri    = ""
         loadCurrentValues()
         Toast.makeText(requireContext(), "Reset to defaults.", Toast.LENGTH_SHORT).show()
     }

@@ -6,18 +6,24 @@ import android.os.Build
 import android.os.Bundle
 import android.view.KeyEvent
 import android.view.View
+import android.view.WindowManager
 import android.widget.EditText
+import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import com.pisotab.app.ui.anim.AnimationPreset
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
-import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.flexbox.AlignItems
+import com.google.android.flexbox.FlexWrap
+import com.google.android.flexbox.FlexboxLayoutManager
+import com.google.android.flexbox.JustifyContent
 import com.pisotab.app.R
 import com.pisotab.app.service.SyncService
 import com.pisotab.app.service.TimerService
@@ -33,6 +39,7 @@ class MainActivity : AppCompatActivity() {
     private val vm: MainViewModel by viewModels()
 
     private lateinit var ivWallpaper: ImageView
+    private lateinit var flAnimationIdle: FrameLayout
     private lateinit var screenIdle: View
     private lateinit var screenActive: View
     private lateinit var screenLicenseExpired: View
@@ -48,10 +55,13 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         ThemeManager.applyTheme(this)
         super.onCreate(savedInstanceState)
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         setContentView(R.layout.activity_main)
 
         ivWallpaper          = findViewById(R.id.iv_wallpaper)
+        flAnimationIdle      = findViewById(R.id.fl_animation_idle)
         screenIdle           = findViewById(R.id.screen_idle)
+        applyAnimationPreset()
         screenActive         = findViewById(R.id.screen_active)
         screenLicenseExpired = findViewById(R.id.screen_license_expired)
         tvTimer              = findViewById(R.id.tv_timer)
@@ -75,7 +85,11 @@ class MainActivity : AppCompatActivity() {
             val launch = packageManager.getLaunchIntentForPackage(item.packageName)
             if (launch != null) startActivity(launch)
         }
-        rvLauncher.layoutManager = GridLayoutManager(this, 4)
+        rvLauncher.layoutManager = FlexboxLayoutManager(this).apply {
+            flexWrap       = FlexWrap.WRAP
+            justifyContent = JustifyContent.CENTER
+            alignItems     = AlignItems.FLEX_START
+        }
         rvLauncher.adapter = launcherAdapter
 
         // Hidden corner long-press → admin PIN (works on both idle and active screens)
@@ -217,6 +231,15 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun applyAnimationPreset() {
+        flAnimationIdle.removeAllViews()
+        val animView = AnimationPreset.createView(this, vm.prefs.animationPreset)
+        if (animView != null) {
+            flAnimationIdle.addView(animView,
+                FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
+        }
+    }
+
     private fun startOrStopAlarm(sessionActive: Boolean) {
         try {
             val sessionOnly = vm.prefs.alarmOnlyDuringSession
@@ -234,8 +257,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showIdle() {
-        screenIdle.visibility   = View.VISIBLE
-        screenActive.visibility = View.GONE
+        screenIdle.visibility       = View.VISIBLE
+        screenActive.visibility     = View.GONE
+        flAnimationIdle.visibility  = if (vm.prefs.animationPreset != AnimationPreset.NONE) View.VISIBLE else View.GONE
         applyLicenseOverlay()
         TimerService.isRunning = false
         // Only stop TimerService if the session was intentionally ended by the ViewModel
@@ -250,8 +274,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showActive(secs: Int) {
-        screenIdle.visibility   = View.GONE
-        screenActive.visibility = View.VISIBLE
+        screenIdle.visibility      = View.GONE
+        flAnimationIdle.visibility = View.GONE
+        screenActive.visibility    = View.VISIBLE
         val isUsb = vm.prefs.connectionMode == "usb"
         val timerBelongsToCurrentSession =
             TimerService.isRunning &&
@@ -275,8 +300,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showPaused(secs: Int) {
-        screenIdle.visibility   = View.GONE
-        screenActive.visibility = View.VISIBLE
+        screenIdle.visibility      = View.GONE
+        flAnimationIdle.visibility = View.GONE
+        screenActive.visibility    = View.VISIBLE
         val displaySecs = if (TimerService.currentSecs > 0) TimerService.currentSecs else secs
         tvTimer.text  = formatTime(displaySecs)
         tvStatus.text = "PAUSED"

@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { useAuth } from '@/context/AuthContext';
 import { api } from '@/lib/api';
 
@@ -38,10 +39,20 @@ export default function SettingsPage() {
   const [tgLoading, setTgLoading] = useState(false);
   const [tgMsg, setTgMsg]         = useState('');
 
+  // 2FA TOTP state
+  const [totpEnabled, setTotpEnabled]   = useState(false);
+  const [totpQr, setTotpQr]             = useState('');
+  const [totpSecret, setTotpSecret]     = useState('');
+  const [totpCode, setTotpCode]         = useState('');
+  const [totpStep, setTotpStep]         = useState<'idle' | 'setup' | 'disable'>('idle');
+  const [totpLoading, setTotpLoading]   = useState(false);
+  const [totpMsg, setTotpMsg]           = useState('');
+
   useEffect(() => {
     api.getMe().then(me => {
       if (me.telegram_bot_token) setTgToken(me.telegram_bot_token as string);
       if (me.telegram_chat_id)   setTgChatId(me.telegram_chat_id as string);
+      setTotpEnabled(!!(me as { totp_enabled?: number }).totp_enabled);
     }).catch(() => {});
   }, []);
 
@@ -187,6 +198,120 @@ export default function SettingsPage() {
             )}
           </div>
         </div>
+      </div>
+
+      {/* Two-Factor Authentication */}
+      <div className="card space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="font-bold text-white">Two-Factor Authentication</h2>
+            <p className="text-xs text-slate-400 mt-0.5">
+              {totpEnabled ? 'Enabled — your account is protected by an authenticator app.' : 'Add an extra layer of security to your account.'}
+            </p>
+          </div>
+          <span className={`text-xs px-2 py-1 rounded ${totpEnabled ? 'bg-green-900 text-green-300' : 'bg-slate-700 text-slate-400'}`}>
+            {totpEnabled ? 'Enabled' : 'Disabled'}
+          </span>
+        </div>
+
+        {totpMsg && (
+          <p className={`text-sm ${totpMsg.startsWith('Error') ? 'text-red-400' : 'text-green-400'}`}>{totpMsg}</p>
+        )}
+
+        {!totpEnabled && totpStep === 'idle' && (
+          <button className="btn-primary text-sm" onClick={async () => {
+            setTotpLoading(true); setTotpMsg('');
+            try {
+              const res = await api.totpSetup();
+              setTotpQr(res.qr_code);
+              setTotpSecret(res.secret);
+              setTotpStep('setup');
+            } catch (e: unknown) {
+              setTotpMsg('Error: ' + (e instanceof Error ? e.message : 'Failed'));
+            } finally { setTotpLoading(false); }
+          }} disabled={totpLoading}>
+            {totpLoading ? 'Loading...' : 'Enable 2FA'}
+          </button>
+        )}
+
+        {!totpEnabled && totpStep === 'setup' && (
+          <div className="space-y-3">
+            <p className="text-sm text-slate-300">
+              Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.), then enter the 6-digit code to confirm.
+            </p>
+            {totpQr && (
+              <div className="bg-white p-3 rounded-lg w-fit">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={totpQr} alt="2FA QR Code" width={180} height={180} />
+              </div>
+            )}
+            <div>
+              <p className="text-xs text-slate-400 mb-1">Or enter manually:</p>
+              <code className="text-xs font-mono text-orange-400 bg-slate-800 px-2 py-1 rounded select-all">{totpSecret}</code>
+            </div>
+            <div className="flex gap-2">
+              <input
+                className="input flex-1 text-center font-mono tracking-widest text-lg"
+                placeholder="000000" maxLength={6}
+                value={totpCode} onChange={e => setTotpCode(e.target.value.replace(/\D/g, ''))} />
+              <button className="btn-primary text-sm px-4" disabled={totpLoading || totpCode.length !== 6}
+                onClick={async () => {
+                  setTotpLoading(true); setTotpMsg('');
+                  try {
+                    const res = await api.totpEnable(totpCode);
+                    setTotpMsg(res.message);
+                    setTotpEnabled(true);
+                    setTotpStep('idle');
+                    setTotpCode('');
+                  } catch (e: unknown) {
+                    setTotpMsg('Error: ' + (e instanceof Error ? e.message : 'Invalid code'));
+                  } finally { setTotpLoading(false); }
+                }}>
+                {totpLoading ? '...' : 'Verify'}
+              </button>
+            </div>
+            <button className="text-xs text-slate-500 hover:text-slate-300" onClick={() => { setTotpStep('idle'); setTotpCode(''); setTotpMsg(''); }}>
+              Cancel
+            </button>
+          </div>
+        )}
+
+        {totpEnabled && totpStep === 'idle' && (
+          <button className="text-sm px-3 py-1.5 rounded bg-slate-700 hover:bg-red-900 text-slate-300 hover:text-red-300 transition-colors"
+            onClick={() => { setTotpStep('disable'); setTotpMsg(''); }}>
+            Disable 2FA
+          </button>
+        )}
+
+        {totpEnabled && totpStep === 'disable' && (
+          <div className="space-y-3">
+            <p className="text-sm text-slate-300">Enter your authenticator code to confirm disabling 2FA.</p>
+            <div className="flex gap-2">
+              <input
+                className="input flex-1 text-center font-mono tracking-widest text-lg"
+                placeholder="000000" maxLength={6}
+                value={totpCode} onChange={e => setTotpCode(e.target.value.replace(/\D/g, ''))} />
+              <button className="text-sm px-4 py-2 rounded bg-red-800 hover:bg-red-700 text-white transition-colors" disabled={totpLoading || totpCode.length !== 6}
+                onClick={async () => {
+                  setTotpLoading(true); setTotpMsg('');
+                  try {
+                    const res = await api.totpDisable(totpCode);
+                    setTotpMsg(res.message);
+                    setTotpEnabled(false);
+                    setTotpStep('idle');
+                    setTotpCode('');
+                  } catch (e: unknown) {
+                    setTotpMsg('Error: ' + (e instanceof Error ? e.message : 'Invalid code'));
+                  } finally { setTotpLoading(false); }
+                }}>
+                {totpLoading ? '...' : 'Confirm'}
+              </button>
+            </div>
+            <button className="text-xs text-slate-500 hover:text-slate-300" onClick={() => { setTotpStep('idle'); setTotpCode(''); setTotpMsg(''); }}>
+              Cancel
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

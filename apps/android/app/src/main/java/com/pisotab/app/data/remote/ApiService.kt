@@ -64,7 +64,27 @@ interface ApiService {
 
     @GET("api/licenses/available")
     suspend fun getAvailableLicenses(): Response<List<AvailableLicenseItem>>
+
+    @PATCH("api/devices/{id}/config")
+    suspend fun updateDeviceConfig(
+        @Path("id") deviceId: String,
+        @Body body: DeviceConfigRequest
+    ): Response<Unit>
 }
+
+data class DeviceConfigRequest(
+    val connection_mode: String,
+    val rate_per_min: Float,
+    val secs_per_coin: Int,
+    val kiosk_mode: Boolean,
+    val floating_timer: Boolean,
+    val deep_freeze: Boolean,
+    val deep_freeze_grace: Int,
+    val alarm_wifi: Boolean,
+    val alarm_charger: Boolean,
+    val alarm_session_only: Boolean,
+    val alarm_delay_secs: Int
+)
 
 // ── Request / Response DTOs ─────────────────────────────────────────────────
 
@@ -92,7 +112,8 @@ data class DeviceConfig(
     val alarm_wifi: Boolean?,
     val alarm_charger: Boolean?,
     val alarm_session_only: Boolean?,
-    val alarm_delay_secs: Int?
+    val alarm_delay_secs: Int?,
+    val admin_pin: String?
 )
 data class StartSessionRequest(
     val device_id: String,

@@ -29,6 +29,9 @@ public final class ActivityMainBinding implements ViewBinding {
   public final View btnAdmin;
 
   @NonNull
+  public final FrameLayout flAnimationIdle;
+
+  @NonNull
   public final ImageView ivWallpaper;
 
   @NonNull
@@ -71,16 +74,18 @@ public final class ActivityMainBinding implements ViewBinding {
   public final TextView tvTimer;
 
   private ActivityMainBinding(@NonNull FrameLayout rootView, @NonNull LinearLayout alarmBanner,
-      @NonNull View btnAdmin, @NonNull ImageView ivWallpaper, @NonNull RecyclerView rvLauncher,
-      @NonNull LinearLayout screenActive, @NonNull LinearLayout screenIdle,
-      @NonNull LinearLayout screenLicenseExpired, @NonNull TextView tvAlarmReason,
-      @NonNull TextView tvBusinessNameIdle, @NonNull TextView tvBusinessNameLauncher,
-      @NonNull TextView tvConnection, @NonNull TextView tvConnectionIdle,
-      @NonNull TextView tvDeviceNameIdle, @NonNull TextView tvDeviceNameLauncher,
-      @NonNull TextView tvStatus, @NonNull TextView tvTimer) {
+      @NonNull View btnAdmin, @NonNull FrameLayout flAnimationIdle, @NonNull ImageView ivWallpaper,
+      @NonNull RecyclerView rvLauncher, @NonNull LinearLayout screenActive,
+      @NonNull LinearLayout screenIdle, @NonNull LinearLayout screenLicenseExpired,
+      @NonNull TextView tvAlarmReason, @NonNull TextView tvBusinessNameIdle,
+      @NonNull TextView tvBusinessNameLauncher, @NonNull TextView tvConnection,
+      @NonNull TextView tvConnectionIdle, @NonNull TextView tvDeviceNameIdle,
+      @NonNull TextView tvDeviceNameLauncher, @NonNull TextView tvStatus,
+      @NonNull TextView tvTimer) {
     this.rootView = rootView;
     this.alarmBanner = alarmBanner;
     this.btnAdmin = btnAdmin;
+    this.flAnimationIdle = flAnimationIdle;
     this.ivWallpaper = ivWallpaper;
     this.rvLauncher = rvLauncher;
     this.screenActive = screenActive;
@@ -133,6 +138,12 @@ public final class ActivityMainBinding implements ViewBinding {
       id = R.id.btn_admin;
       View btnAdmin = ViewBindings.findChildViewById(rootView, id);
       if (btnAdmin == null) {
+        break missingId;
+      }
+
+      id = R.id.fl_animation_idle;
+      FrameLayout flAnimationIdle = ViewBindings.findChildViewById(rootView, id);
+      if (flAnimationIdle == null) {
         break missingId;
       }
 
@@ -220,8 +231,8 @@ public final class ActivityMainBinding implements ViewBinding {
         break missingId;
       }
 
-      return new ActivityMainBinding((FrameLayout) rootView, alarmBanner, btnAdmin, ivWallpaper,
-          rvLauncher, screenActive, screenIdle, screenLicenseExpired, tvAlarmReason,
+      return new ActivityMainBinding((FrameLayout) rootView, alarmBanner, btnAdmin, flAnimationIdle,
+          ivWallpaper, rvLauncher, screenActive, screenIdle, screenLicenseExpired, tvAlarmReason,
           tvBusinessNameIdle, tvBusinessNameLauncher, tvConnection, tvConnectionIdle,
           tvDeviceNameIdle, tvDeviceNameLauncher, tvStatus, tvTimer);
     }

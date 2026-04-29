@@ -98,6 +98,10 @@ export const api = {
   suspendUser: (id: string) => request(`/api/users/${id}/suspend`, { method: 'PATCH' }),
   changeUserRole: (id: string, role: string) =>
     request(`/api/users/${id}/role`, { method: 'PATCH', body: JSON.stringify({ role }) }),
+  batchApproveUsers: (ids: string[]) =>
+    request<{ ok: boolean; approved: number }>('/api/users/batch-approve', {
+      method: 'POST', body: JSON.stringify({ ids }),
+    }),
   changePassword: (current_password: string, new_password: string) =>
     request<{ message: string }>('/api/auth/change-password', {
       method: 'POST', body: JSON.stringify({ current_password, new_password }),
@@ -165,6 +169,10 @@ export const api = {
     request(`/api/purchase-requests/${id}/approve`, { method: 'PATCH', body: JSON.stringify({ note }) }),
   rejectPurchaseRequest: (id: string, note?: string) =>
     request(`/api/purchase-requests/${id}/reject`, { method: 'PATCH', body: JSON.stringify({ note }) }),
+  batchApprovePurchaseRequests: (ids: string[]) =>
+    request<{ ok: boolean; approved: number; licenses_generated: { id: string; key: string }[] }>('/api/purchase-requests/batch-approve', {
+      method: 'POST', body: JSON.stringify({ ids }),
+    }),
   downloadReceipt: async (id: string) => {
     const token = getToken();
     const res = await fetch(`${BASE}/api/purchase-requests/${id}/receipt`, {
@@ -206,6 +214,25 @@ export const api = {
     const qs = params ? '?' + new URLSearchParams(params).toString() : '';
     return request<AuditEntry[]>('/api/audit-log' + qs);
   },
+
+  // Support / contact form
+  submitSupportMessage: (data: { name: string; email: string; subject?: string; message: string }) =>
+    request<{ ok: boolean; message: string }>('/api/support/contact', {
+      method: 'POST', body: JSON.stringify(data),
+    }),
+
+  // 2FA TOTP
+  totpSetup: () => request<{ secret: string; qr_code: string }>('/api/auth/totp/setup'),
+  totpEnable: (code: string) => request<{ ok: boolean; message: string }>('/api/auth/totp/enable', {
+    method: 'POST', body: JSON.stringify({ code }),
+  }),
+  totpDisable: (code: string) => request<{ ok: boolean; message: string }>('/api/auth/totp/disable', {
+    method: 'POST', body: JSON.stringify({ code }),
+  }),
+  totpVerify: (temp_token: string, code: string) =>
+    request<{ token: string; user: User }>('/api/auth/totp/verify', {
+      method: 'POST', body: JSON.stringify({ temp_token, code }),
+    }),
 
   // License transfer
   transferLicense: (id: string, to_user_id: string) =>
@@ -295,7 +322,7 @@ export interface PurchaseRequest {
 }
 export interface DownloadFile {
   id: string; type: 'apk' | 'firmware'; version: string;
-  filename: string; size: number; uploaded_at: number; download_url: string;
+  filename: string; size: number; changelog?: string | null; uploaded_at: number; download_url: string;
 }
 export interface DownloadsData {
   apk: DownloadFile | null; firmware: DownloadFile | null; all: DownloadFile[];

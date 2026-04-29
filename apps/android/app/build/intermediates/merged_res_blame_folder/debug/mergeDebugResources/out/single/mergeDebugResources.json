@@ -1,126 +1,134 @@
 [
     {
-        "merged": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-debug-64:\\layout_activity_admin.xml.flat",
-        "source": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-main-66:\\layout\\activity_admin.xml"
+        "merged": "com.pisotab.app-debug-65:/drawable_ic_jjt_logo.png.flat",
+        "source": "com.pisotab.app-main-67:/drawable/ic_jjt_logo.png"
     },
     {
-        "merged": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-debug-64:\\layout_fragment_sessions.xml.flat",
-        "source": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-main-66:\\layout\\fragment_sessions.xml"
+        "merged": "com.pisotab.app-debug-65:/layout_activity_admin.xml.flat",
+        "source": "com.pisotab.app-main-67:/layout/activity_admin.xml"
     },
     {
-        "merged": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-debug-64:\\xml_device_admin_policies.xml.flat",
-        "source": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-main-66:\\xml\\device_admin_policies.xml"
+        "merged": "com.pisotab.app-debug-65:/xml_device_admin_policies.xml.flat",
+        "source": "com.pisotab.app-main-67:/xml/device_admin_policies.xml"
     },
     {
-        "merged": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-debug-64:\\layout_activity_lock_screen.xml.flat",
-        "source": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-main-66:\\layout\\activity_lock_screen.xml"
+        "merged": "com.pisotab.app-debug-65:/drawable_ic_sessions.xml.flat",
+        "source": "com.pisotab.app-main-67:/drawable/ic_sessions.xml"
     },
     {
-        "merged": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-debug-64:\\drawable_ic_launcher_foreground.xml.flat",
-        "source": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-main-66:\\drawable\\ic_launcher_foreground.xml"
+        "merged": "com.pisotab.app-debug-65:/layout_item_session_row.xml.flat",
+        "source": "com.pisotab.app-main-67:/layout/item_session_row.xml"
     },
     {
-        "merged": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-debug-64:\\layout_item_session_row.xml.flat",
-        "source": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-main-66:\\layout\\item_session_row.xml"
+        "merged": "com.pisotab.app-debug-65:/layout_item_launcher_app.xml.flat",
+        "source": "com.pisotab.app-main-67:/layout/item_launcher_app.xml"
     },
     {
-        "merged": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-debug-64:\\layout_nav_header_admin.xml.flat",
-        "source": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-main-66:\\layout\\nav_header_admin.xml"
+        "merged": "com.pisotab.app-debug-65:/layout_fragment_sessions.xml.flat",
+        "source": "com.pisotab.app-main-67:/layout/fragment_sessions.xml"
     },
     {
-        "merged": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-debug-64:\\navigation_nav_admin.xml.flat",
-        "source": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-main-66:\\navigation\\nav_admin.xml"
+        "merged": "com.pisotab.app-debug-65:/navigation_nav_admin.xml.flat",
+        "source": "com.pisotab.app-main-67:/navigation/nav_admin.xml"
     },
     {
-        "merged": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-debug-64:\\layout_activity_setup.xml.flat",
-        "source": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-main-66:\\layout\\activity_setup.xml"
+        "merged": "com.pisotab.app-debug-65:/layout_fragment_appearance.xml.flat",
+        "source": "com.pisotab.app-main-67:/layout/fragment_appearance.xml"
     },
     {
-        "merged": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-debug-64:\\layout_activity_main.xml.flat",
-        "source": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-main-66:\\layout\\activity_main.xml"
+        "merged": "com.pisotab.app-debug-65:/layout_fragment_earnings.xml.flat",
+        "source": "com.pisotab.app-main-67:/layout/fragment_earnings.xml"
     },
     {
-        "merged": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-debug-64:\\layout_fragment_about.xml.flat",
-        "source": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-main-66:\\layout\\fragment_about.xml"
+        "merged": "com.pisotab.app-debug-65:/layout_item_app_row.xml.flat",
+        "source": "com.pisotab.app-main-67:/layout/item_app_row.xml"
     },
     {
-        "merged": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-debug-64:\\drawable_ic_about.xml.flat",
-        "source": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-main-66:\\drawable\\ic_about.xml"
+        "merged": "com.pisotab.app-debug-65:/layout_fragment_allowed_apps.xml.flat",
+        "source": "com.pisotab.app-main-67:/layout/fragment_allowed_apps.xml"
     },
     {
-        "merged": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-debug-64:\\drawable_ic_earnings.xml.flat",
-        "source": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-main-66:\\drawable\\ic_earnings.xml"
+        "merged": "com.pisotab.app-debug-65:/drawable_ic_dashboard.xml.flat",
+        "source": "com.pisotab.app-main-67:/drawable/ic_dashboard.xml"
     },
     {
-        "merged": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-debug-64:\\layout_fragment_earnings.xml.flat",
-        "source": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-main-66:\\layout\\fragment_earnings.xml"
+        "merged": "com.pisotab.app-debug-65:/layout_activity_main.xml.flat",
+        "source": "com.pisotab.app-main-67:/layout/activity_main.xml"
     },
     {
-        "merged": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-debug-64:\\layout_fragment_dashboard.xml.flat",
-        "source": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-main-66:\\layout\\fragment_dashboard.xml"
+        "merged": "com.pisotab.app-debug-65:/drawable_wallpaper_neon.xml.flat",
+        "source": "com.pisotab.app-main-67:/drawable/wallpaper_neon.xml"
     },
     {
-        "merged": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-debug-64:\\mipmap-anydpi-v26_ic_launcher.xml.flat",
-        "source": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-main-66:\\mipmap-anydpi-v26\\ic_launcher.xml"
+        "merged": "com.pisotab.app-debug-65:/menu_menu_drawer.xml.flat",
+        "source": "com.pisotab.app-main-67:/menu/menu_drawer.xml"
     },
     {
-        "merged": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-debug-64:\\drawable_ic_appearance.xml.flat",
-        "source": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-main-66:\\drawable\\ic_appearance.xml"
+        "merged": "com.pisotab.app-debug-65:/drawable_ic_earnings.xml.flat",
+        "source": "com.pisotab.app-main-67:/drawable/ic_earnings.xml"
     },
     {
-        "merged": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-debug-64:\\drawable_ic_wifi.xml.flat",
-        "source": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-main-66:\\drawable\\ic_wifi.xml"
+        "merged": "com.pisotab.app-debug-65:/mipmap-anydpi-v26_ic_launcher_round.xml.flat",
+        "source": "com.pisotab.app-main-67:/mipmap-anydpi-v26/ic_launcher_round.xml"
     },
     {
-        "merged": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-debug-64:\\layout_item_launcher_app.xml.flat",
-        "source": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-main-66:\\layout\\item_launcher_app.xml"
+        "merged": "com.pisotab.app-debug-65:/drawable_ic_about.xml.flat",
+        "source": "com.pisotab.app-main-67:/drawable/ic_about.xml"
     },
     {
-        "merged": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-debug-64:\\drawable_ic_dashboard.xml.flat",
-        "source": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-main-66:\\drawable\\ic_dashboard.xml"
+        "merged": "com.pisotab.app-debug-65:/layout_fragment_dashboard.xml.flat",
+        "source": "com.pisotab.app-main-67:/layout/fragment_dashboard.xml"
     },
     {
-        "merged": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-debug-64:\\layout_fragment_appearance.xml.flat",
-        "source": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-main-66:\\layout\\fragment_appearance.xml"
+        "merged": "com.pisotab.app-debug-65:/drawable_ic_wifi.xml.flat",
+        "source": "com.pisotab.app-main-67:/drawable/ic_wifi.xml"
     },
     {
-        "merged": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-debug-64:\\drawable_ic_sessions.xml.flat",
-        "source": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-main-66:\\drawable\\ic_sessions.xml"
+        "merged": "com.pisotab.app-debug-65:/drawable_wallpaper_galaxy.xml.flat",
+        "source": "com.pisotab.app-main-67:/drawable/wallpaper_galaxy.xml"
     },
     {
-        "merged": "com.pisotab.app-debug-64:/layout_activity_main.xml.flat",
-        "source": "com.pisotab.app-main-66:/layout/activity_main.xml"
+        "merged": "com.pisotab.app-debug-65:/drawable_wallpaper_circuit.xml.flat",
+        "source": "com.pisotab.app-main-67:/drawable/wallpaper_circuit.xml"
     },
     {
-        "merged": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-debug-64:\\layout_item_app_row.xml.flat",
-        "source": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-main-66:\\layout\\item_app_row.xml"
+        "merged": "com.pisotab.app-debug-65:/layout_activity_setup.xml.flat",
+        "source": "com.pisotab.app-main-67:/layout/activity_setup.xml"
     },
     {
-        "merged": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-debug-64:\\drawable_ic_jjt_logo.png.flat",
-        "source": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-main-66:\\drawable\\ic_jjt_logo.png"
+        "merged": "com.pisotab.app-debug-65:/drawable_ic_settings.xml.flat",
+        "source": "com.pisotab.app-main-67:/drawable/ic_settings.xml"
     },
     {
-        "merged": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-debug-64:\\layout_fragment_allowed_apps.xml.flat",
-        "source": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-main-66:\\layout\\fragment_allowed_apps.xml"
+        "merged": "com.pisotab.app-debug-65:/layout_nav_header_admin.xml.flat",
+        "source": "com.pisotab.app-main-67:/layout/nav_header_admin.xml"
     },
     {
-        "merged": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-debug-64:\\drawable_ic_settings.xml.flat",
-        "source": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-main-66:\\drawable\\ic_settings.xml"
+        "merged": "com.pisotab.app-debug-65:/layout_activity_lock_screen.xml.flat",
+        "source": "com.pisotab.app-main-67:/layout/activity_lock_screen.xml"
     },
     {
-        "merged": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-debug-64:\\drawable_ic_launcher_background.xml.flat",
-        "source": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-main-66:\\drawable\\ic_launcher_background.xml"
+        "merged": "com.pisotab.app-debug-65:/drawable_ic_appearance.xml.flat",
+        "source": "com.pisotab.app-main-67:/drawable/ic_appearance.xml"
     },
     {
-        "merged": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-debug-64:\\menu_menu_drawer.xml.flat",
-        "source": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-main-66:\\menu\\menu_drawer.xml"
+        "merged": "com.pisotab.app-debug-65:/drawable_ic_launcher_foreground.xml.flat",
+        "source": "com.pisotab.app-main-67:/drawable/ic_launcher_foreground.xml"
     },
     {
-        "merged": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-debug-64:\\mipmap-anydpi-v26_ic_launcher_round.xml.flat",
-        "source": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-main-66:\\mipmap-anydpi-v26\\ic_launcher_round.xml"
+        "merged": "com.pisotab.app-debug-65:/layout_fragment_about.xml.flat",
+        "source": "com.pisotab.app-main-67:/layout/fragment_about.xml"
     },
     {
-        "merged": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-debug-64:\\layout_fragment_settings.xml.flat",
-        "source": "C:\\Users\\adria\\.gradle\\daemon\\8.9\\com.pisotab.app-main-66:\\layout\\fragment_settings.xml"
+        "merged": "com.pisotab.app-debug-65:/mipmap-anydpi-v26_ic_launcher.xml.flat",
+        "source": "com.pisotab.app-main-67:/mipmap-anydpi-v26/ic_launcher.xml"
+    },
+    {
+        "merged": "com.pisotab.app-debug-65:/layout_fragment_settings.xml.flat",
+        "source": "com.pisotab.app-main-67:/layout/fragment_settings.xml"
+    },
+    {
+        "merged": "com.pisotab.app-debug-65:/drawable_ic_launcher_background.xml.flat",
+        "source": "com.pisotab.app-main-67:/drawable/ic_launcher_background.xml"
     }
 ]

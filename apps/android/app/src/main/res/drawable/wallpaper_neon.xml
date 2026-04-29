@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="360dp"
+    android:height="640dp"
+    android:viewportWidth="360"
+    android:viewportHeight="640">
+
+    <!-- Near-black background -->
+    <path android:fillColor="#030810" android:pathData="M0,0 H360 V640 H0 Z"/>
+
+    <!-- HORIZONTAL GRID LINES — outer glow (wide, barely visible) -->
+    <path android:strokeColor="#00B8D4" android:strokeWidth="10" android:fillAlpha="0"
+        android:strokeAlpha="0.03"
+        android:pathData="M0,80 H360 M0,160 H360 M0,240 H360 M0,320 H360
+                          M0,400 H360 M0,480 H360 M0,560 H360"/>
+
+    <!-- HORIZONTAL GRID LINES — mid glow -->
+    <path android:strokeColor="#00C8E8" android:strokeWidth="3" android:fillAlpha="0"
+        android:strokeAlpha="0.08"
+        android:pathData="M0,80 H360 M0,160 H360 M0,240 H360 M0,320 H360
+                          M0,400 H360 M0,480 H360 M0,560 H360"/>
+
+    <!-- HORIZONTAL GRID LINES — sharp core (dim) -->
+    <path android:strokeColor="#00D8F0" android:strokeWidth="0.8" android:fillAlpha="0"
+        android:strokeAlpha="0.22"
+        android:pathData="M0,80 H360 M0,160 H360 M0,240 H360 M0,320 H360
+                          M0,400 H360 M0,480 H360 M0,560 H360"/>
+
+    <!-- VERTICAL GRID LINES — outer glow -->
+    <path android:strokeColor="#00B8D4" android:strokeWidth="10" android:fillAlpha="0"
+        android:strokeAlpha="0.03"
+        android:pathData="M60,0 V640 M120,0 V640 M180,0 V640 M240,0 V640 M300,0 V640"/>
+
+    <!-- VERTICAL GRID LINES — mid glow -->
+    <path android:strokeColor="#00C8E8" android:strokeWidth="3" android:fillAlpha="0"
+        android:strokeAlpha="0.08"
+        android:pathData="M60,0 V640 M120,0 V640 M180,0 V640 M240,0 V640 M300,0 V640"/>
+
+    <!-- VERTICAL GRID LINES — sharp core (dim) -->
+    <path android:strokeColor="#00D8F0" android:strokeWidth="0.8" android:fillAlpha="0"
+        android:strokeAlpha="0.22"
+        android:pathData="M60,0 V640 M120,0 V640 M180,0 V640 M240,0 V640 M300,0 V640"/>
+
+    <!-- Intersection dots — subtle cyan nodes -->
+    <path android:fillColor="#00D8F0" android:fillAlpha="0.3"
+        android:pathData="M60,80 m-1.5,0 a1.5,1.5 0 1,0 3,0 a1.5,1.5 0 1,0-3,0
+                          M120,80 m-1.5,0 a1.5,1.5 0 1,0 3,0 a1.5,1.5 0 1,0-3,0
+                          M180,80 m-1.5,0 a1.5,1.5 0 1,0 3,0 a1.5,1.5 0 1,0-3,0
+                          M240,80 m-1.5,0 a1.5,1.5 0 1,0 3,0 a1.5,1.5 0 1,0-3,0
+                          M300,80 m-1.5,0 a1.5,1.5 0 1,0 3,0 a1.5,1.5 0 1,0-3,0
+                          M60,160 m-1.5,0 a1.5,1.5 0 1,0 3,0 a1.5,1.5 0 1,0-3,0
+                          M120,160 m-1.5,0 a1.5,1.5 0 1,0 3,0 a1.5,1.5 0 1,0-3,0
+                          M180,160 m-1.5,0 a1.5,1.5 0 1,0 3,0 a1.5,1.5 0 1,0-3,0
+                          M240,160 m-1.5,0 a1.5,1.5 0 1,0 3,0 a1.5,1.5 0 1,0-3,0
+                          M300,160 m-1.5,0 a1.5,1.5 0 1,0 3,0 a1.5,1.5 0 1,0-3,0
+                          M60,240 m-1.5,0 a1.5,1.5 0 1,0 3,0 a1.5,1.5 0 1,0-3,0
+                          M120,240 m-1.5,0 a1.5,1.5 0 1,0 3,0 a1.5,1.5 0 1,0-3,0
+                          M180,240 m-1.5,0 a1.5,1.5 0 1,0 3,0 a1.5,1.5 0 1,0-3,0
+                          M240,240 m-1.5,0 a1.5,1.5 0 1,0 3,0 a1.5,1.5 0 1,0-3,0
+                          M300,240 m-1.5,0 a1.5,1.5 0 1,0 3,0 a1.5,1.5 0 1,0-3,0
+                          M60,320 m-1.5,0 a1.5,1.5 0 1,0 3,0 a1.5,1.5 0 1,0-3,0
+                          M120,320 m-1.5,0 a1.5,1.5 0 1,0 3,0 a1.5,1.5 0 1,0-3,0
+                          M180,320 m-1.5,0 a1.5,1.5 0 1,0 3,0 a1.5,1.5 0 1,0-3,0
+                          M240,320 m-1.5,0 a1.5,1.5 0 1,0 3,0 a1.5,1.5 0 1,0-3,0
+                          M300,320 m-1.5,0 a1.5,1.5 0 1,0 3,0 a1.5,1.5 0 1,0-3,0
+                          M60,400 m-1.5,0 a1.5,1.5 0 1,0 3,0 a1.5,1.5 0 1,0-3,0
+                          M120,400 m-1.5,0 a1.5,1.5 0 1,0 3,0 a1.5,1.5 0 1,0-3,0
+                          M180,400 m-1.5,0 a1.5,1.5 0 1,0 3,0 a1.5,1.5 0 1,0-3,0
+                          M240,400 m-1.5,0 a1.5,1.5 0 1,0 3,0 a1.5,1.5 0 1,0-3,0
+                          M300,400 m-1.5,0 a1.5,1.5 0 1,0 3,0 a1.5,1.5 0 1,0-3,0
+                          M60,480 m-1.5,0 a1.5,1.5 0 1,0 3,0 a1.5,1.5 0 1,0-3,0
+                          M120,480 m-1.5,0 a1.5,1.5 0 1,0 3,0 a1.5,1.5 0 1,0-3,0
+                          M180,480 m-1.5,0 a1.5,1.5 0 1,0 3,0 a1.5,1.5 0 1,0-3,0
+                          M240,480 m-1.5,0 a1.5,1.5 0 1,0 3,0 a1.5,1.5 0 1,0-3,0
+                          M300,480 m-1.5,0 a1.5,1.5 0 1,0 3,0 a1.5,1.5 0 1,0-3,0
+                          M60,560 m-1.5,0 a1.5,1.5 0 1,0 3,0 a1.5,1.5 0 1,0-3,0
+                          M120,560 m-1.5,0 a1.5,1.5 0 1,0 3,0 a1.5,1.5 0 1,0-3,0
+                          M180,560 m-1.5,0 a1.5,1.5 0 1,0 3,0 a1.5,1.5 0 1,0-3,0
+                          M240,560 m-1.5,0 a1.5,1.5 0 1,0 3,0 a1.5,1.5 0 1,0-3,0
+                          M300,560 m-1.5,0 a1.5,1.5 0 1,0 3,0 a1.5,1.5 0 1,0-3,0"/>
+
+    <!-- Central target ring — very subtle -->
+    <path android:strokeColor="#00C8E8" android:strokeWidth="1" android:fillAlpha="0"
+        android:strokeAlpha="0.18"
+        android:pathData="M180,320 m-50,0 a50,50 0 1,0 100,0 a50,50 0 1,0-100,0"/>
+    <path android:strokeColor="#00C8E8" android:strokeWidth="1" android:fillAlpha="0"
+        android:strokeAlpha="0.1"
+        android:pathData="M180,320 m-70,0 a70,70 0 1,0 140,0 a70,70 0 1,0-140,0"/>
+
+    <!-- Corner accent brackets — very subtle -->
+    <path android:strokeColor="#00C8E8" android:strokeWidth="1.5" android:fillAlpha="0"
+        android:strokeAlpha="0.25"
+        android:pathData="M8,8 H28 M8,8 V28
+                          M352,8 H332 M352,8 V28
+                          M8,632 H28 M8,632 V612
+                          M352,632 H332 M352,632 V612"/>
+
+</vector>

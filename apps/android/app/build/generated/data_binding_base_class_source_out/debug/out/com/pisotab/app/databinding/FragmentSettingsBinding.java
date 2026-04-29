@@ -33,6 +33,9 @@ public final class FragmentSettingsBinding implements ViewBinding {
   public final Button btnChangePin;
 
   @NonNull
+  public final Button btnRemoveDeviceOwner;
+
+  @NonNull
   public final Button btnRestartApp;
 
   @NonNull
@@ -96,7 +99,8 @@ public final class FragmentSettingsBinding implements ViewBinding {
   public final Switch swKiosk;
 
   private FragmentSettingsBinding(@NonNull ScrollView rootView, @NonNull Button btnAlarmSound,
-      @NonNull Button btnAllowedApps, @NonNull Button btnChangePin, @NonNull Button btnRestartApp,
+      @NonNull Button btnAllowedApps, @NonNull Button btnChangePin,
+      @NonNull Button btnRemoveDeviceOwner, @NonNull Button btnRestartApp,
       @NonNull Button btnRestartDevice, @NonNull Button btnSave, @NonNull EditText etAlarmDelay,
       @NonNull EditText etBackendPassword, @NonNull EditText etBackendUsername,
       @NonNull EditText etDeepFreezeGrace, @NonNull EditText etDeviceId,
@@ -110,6 +114,7 @@ public final class FragmentSettingsBinding implements ViewBinding {
     this.btnAlarmSound = btnAlarmSound;
     this.btnAllowedApps = btnAllowedApps;
     this.btnChangePin = btnChangePin;
+    this.btnRemoveDeviceOwner = btnRemoveDeviceOwner;
     this.btnRestartApp = btnRestartApp;
     this.btnRestartDevice = btnRestartDevice;
     this.btnSave = btnSave;
@@ -175,6 +180,12 @@ public final class FragmentSettingsBinding implements ViewBinding {
       id = R.id.btn_change_pin;
       Button btnChangePin = ViewBindings.findChildViewById(rootView, id);
       if (btnChangePin == null) {
+        break missingId;
+      }
+
+      id = R.id.btn_remove_device_owner;
+      Button btnRemoveDeviceOwner = ViewBindings.findChildViewById(rootView, id);
+      if (btnRemoveDeviceOwner == null) {
         break missingId;
       }
 
@@ -305,10 +316,11 @@ public final class FragmentSettingsBinding implements ViewBinding {
       }
 
       return new FragmentSettingsBinding((ScrollView) rootView, btnAlarmSound, btnAllowedApps,
-          btnChangePin, btnRestartApp, btnRestartDevice, btnSave, etAlarmDelay, etBackendPassword,
-          etBackendUsername, etDeepFreezeGrace, etDeviceId, etDeviceName, etRatePerMin,
-          etSecsPerCoin, etServerUrl, rbModeEsp32, rbModeUsb, rgConnectionMode, swAlarmCharger,
-          swAlarmSessionOnly, swAlarmWifi, swDeepFreeze, swFloatingTimer, swKiosk);
+          btnChangePin, btnRemoveDeviceOwner, btnRestartApp, btnRestartDevice, btnSave,
+          etAlarmDelay, etBackendPassword, etBackendUsername, etDeepFreezeGrace, etDeviceId,
+          etDeviceName, etRatePerMin, etSecsPerCoin, etServerUrl, rbModeEsp32, rbModeUsb,
+          rgConnectionMode, swAlarmCharger, swAlarmSessionOnly, swAlarmWifi, swDeepFreeze,
+          swFloatingTimer, swKiosk);
     }
     String missingId = rootView.getResources().getResourceName(id);
     throw new NullPointerException("Missing required view with ID: ".concat(missingId));

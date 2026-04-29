@@ -156,4 +156,36 @@ async function sendLicenseExpiring(user, license, daysLeft) {
   await send(user.email, subject, html);
 }
 
-module.exports = { sendAccountApproved, sendPurchaseApproved, sendPurchaseRejected, sendPasswordReset, sendLicenseExpiring, SMTP_CONFIGURED };
+// Sent when a user submits the support/contact form
+async function sendSupportMessage({ name, email, subject, message }) {
+  const SUPPORT_TO = process.env.SUPPORT_EMAIL || process.env.SMTP_USER;
+  if (!SUPPORT_TO) return;
+
+  const html = wrap(`
+    <h2 style="color:#1e293b;margin-top:0">New Support Request 📬</h2>
+    <table style="border-collapse:collapse;width:100%;font-size:14px">
+      <tr><td style="color:#64748b;padding:4px 8px 4px 0;white-space:nowrap">From</td>
+          <td style="color:#1e293b;font-weight:bold">${name} &lt;${email}&gt;</td></tr>
+      <tr><td style="color:#64748b;padding:4px 8px 4px 0">Subject</td>
+          <td style="color:#1e293b">${subject}</td></tr>
+    </table>
+    <div style="margin-top:16px;background:#fff;border:1px solid #e2e8f0;border-radius:6px;padding:16px">
+      <p style="margin:0;white-space:pre-wrap;color:#1e293b;font-size:14px">${message}</p>
+    </div>
+    <p style="color:#94a3b8;font-size:13px;margin-top:16px">
+      Reply directly to this email to respond to the sender.
+    </p>
+  `);
+
+  if (!transporter || !SUPPORT_TO) return;
+  try {
+    await transporter.sendMail({
+      from: FROM, to: SUPPORT_TO, replyTo: email,
+      subject: `[PisoTab Support] ${subject}`, html,
+    });
+  } catch (err) {
+    console.error('[mailer] Failed to send support message:', err.message);
+  }
+}
+
+module.exports = { sendAccountApproved, sendPurchaseApproved, sendPurchaseRejected, sendPasswordReset, sendLicenseExpiring, sendSupportMessage, SMTP_CONFIGURED };

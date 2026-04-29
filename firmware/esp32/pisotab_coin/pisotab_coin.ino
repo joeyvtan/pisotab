@@ -24,14 +24,18 @@
 #include <HTTPUpdate.h>   // ESP32 OTA over HTTP
 
 // ── Pin config ──────────────────────────────────────────────────────────────
-#define COIN_PIN        4    // Coin acceptor signal (active HIGH pulse)
+// WIRING REQUIRED: coin acceptor outputs 5V — must use voltage divider on signal:
+//   Coin signal → 10kΩ → GPIO4 → 20kΩ → GND  (brings 5V down to 3.3V)
+//   For 12V signal output: use 33kΩ + 15kΩ instead.
+//   Connecting 5V directly to GPIO4 causes erratic behavior (overvoltage clamping).
+#define COIN_PIN        4    // Coin acceptor signal (active HIGH pulse, via voltage divider)
 #define LED_PIN         2    // Built-in LED
-#define PULSE_TIMEOUT   200  // ms — gap between pulse trains
+#define PULSE_DEBOUNCE  30   // ms — ignore pulses faster than this (signal settling time)
+#define PULSE_TIMEOUT   400  // ms — silence after last pulse = end of coin event
 
 // ── Server config ────────────────────────────────────────────────────────────
-// Broker IP is infrastructure — always authoritative from firmware.
-// NVS persists across flashes so stored values would silently override changes.
-#define MQTT_BROKER_HOST "192.168.100.61"
+// Public EMQX broker — accessible from anywhere, no port-forwarding needed.
+#define MQTT_BROKER_HOST "broker.emqx.io"
 #define MQTT_BROKER_PORT 1883
 
 // ── Coin value map ───────────────────────────────────────────────────────────
@@ -67,7 +71,7 @@ int queueSize = 0;
 // ── Interrupt handler ────────────────────────────────────────────────────────
 void IRAM_ATTR onCoinPulse() {
   unsigned long now = millis();
-  if (now - lastPulseTime < 20) return;  // debounce
+  if (now - lastPulseTime < PULSE_DEBOUNCE) return;
   lastPulseTime = now;
   pulseCount++;
 }
@@ -91,10 +95,18 @@ void setup() {
 
 // ── Main loop ────────────────────────────────────────────────────────────────
 void loop() {
-  if (pulseCount > 0 && (millis() - lastPulseTime) > PULSE_TIMEOUT) {
-    int pulses = pulseCount;
+  // Read both volatile ISR variables atomically to avoid race condition
+  // where an interrupt fires between the two reads and corrupts pulse count.
+  noInterrupts();
+  int   capturedPulses    = pulseCount;
+  unsigned long capturedLastPulse = lastPulseTime;
+  interrupts();
+
+  if (capturedPulses > 0 && (millis() - capturedLastPulse) > PULSE_TIMEOUT) {
+    noInterrupts();
     pulseCount = 0;
-    processCoinEvent(pulses);
+    interrupts();
+    processCoinEvent(capturedPulses);
   }
 
   if (WiFi.isConnected()) {
@@ -108,6 +120,10 @@ void loop() {
 
 // ── Coin processing ──────────────────────────────────────────────────────────
 void processCoinEvent(int pulses) {
+  if (deviceId.isEmpty()) {
+    Serial.println("[Coin] No Device ID configured — event dropped. Connect to PisoTab-Coin WiFi to set it.");
+    return;
+  }
   Serial.printf("[Coin] %d pulse(s) detected\n", pulses);
 
   float pesos = 0; int seconds = 0;
@@ -163,12 +179,43 @@ void flushOfflineQueue() {
 // ── WiFi ─────────────────────────────────────────────────────────────────────
 void setupWiFi() {
   WiFiManager wm;
-  wm.setConfigPortalTimeout(90);
-  if (!wm.autoConnect("PisoTab-Coin")) {
-    Serial.println("[WiFi] Failed to connect — check WiFiManager portal");
-    return;
+
+  // Device ID is entered here once during initial setup.
+  // It must match the Device ID shown on the tablet's card in the dashboard.
+  WiFiManagerParameter paramDeviceId(
+    "device_id",
+    "Device ID (copy from Dashboard)",
+    deviceId.c_str(),
+    40
+  );
+  wm.addParameter(&paramDeviceId);
+  wm.setConfigPortalTimeout(180);
+
+  if (deviceId.isEmpty()) {
+    // No device ID stored — force portal open so user must configure it.
+    Serial.println("[WiFi] No Device ID — opening config portal (PisoTab-Coin)");
+    wm.startConfigPortal("PisoTab-Coin");
+  } else {
+    wm.autoConnect("PisoTab-Coin");
   }
-  Serial.printf("[WiFi] Connected: %s\n", WiFi.localIP().toString().c_str());
+
+  // Persist device_id if it was entered or changed in the portal.
+  String newId = String(paramDeviceId.getValue());
+  newId.trim();
+  if (!newId.isEmpty() && newId != deviceId) {
+    deviceId = newId;
+    prefs.begin("pisotab", false);
+    prefs.putString("device_id", deviceId);
+    prefs.end();
+    Serial.printf("[Config] Device ID saved: %s\n", deviceId.c_str());
+  }
+
+  if (WiFi.isConnected()) {
+    Serial.printf("[WiFi] Connected: %s (Device: %s)\n",
+      WiFi.localIP().toString().c_str(), deviceId.c_str());
+  } else {
+    Serial.println("[WiFi] Not connected");
+  }
 }
 
 // ── MQTT ─────────────────────────────────────────────────────────────────────
@@ -180,7 +227,7 @@ void setupMQTT() {
 }
 
 void reconnectMQTT() {
-  if (mqttBroker.isEmpty()) return;
+  if (mqttBroker.isEmpty() || deviceId.isEmpty()) return;
   String clientId = "pisotab-coin-" + deviceId;
   Serial.printf("[MQTT] Connecting to %s:%d ...\n", mqttBroker.c_str(), mqttPort);
   if (mqtt.connect(clientId.c_str())) {
@@ -238,10 +285,10 @@ void loadConfig() {
   // Only device_id comes from NVS — it identifies this specific unit.
   // Broker IP/port are compile-time constants to prevent stale NVS values
   // from silently overriding server config changes after a reflash.
-  prefs.begin("pisotab", false);
-  deviceId = prefs.getString("device_id", "esp32_001");
+  prefs.begin("pisotab", true);
+  deviceId = prefs.getString("device_id", "");  // blank = not yet configured
   prefs.end();
-  Serial.printf("[Config] Device ID: %s\n", deviceId.c_str());
+  Serial.printf("[Config] Device ID: %s\n", deviceId.isEmpty() ? "(not set)" : deviceId.c_str());
   Serial.printf("[Config] MQTT: %s:%d\n",   mqttBroker.c_str(), mqttPort);
 }
 

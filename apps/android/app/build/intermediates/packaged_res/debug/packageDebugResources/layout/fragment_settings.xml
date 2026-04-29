@@ -310,7 +310,14 @@
             <Button android:id="@+id/btn_restart_device"
                 android:layout_width="match_parent" android:layout_height="44dp"
                 android:text="Restart Device"
-                android:backgroundTint="#7F1D1D" android:textColor="#FFFFFF"/>
+                android:backgroundTint="#7F1D1D" android:textColor="#FFFFFF"
+                android:layout_marginBottom="8dp"/>
+
+            <Button android:id="@+id/btn_remove_device_owner"
+                android:layout_width="match_parent" android:layout_height="44dp"
+                android:text="Remove Device Owner (Enable Uninstall / Factory Reset)"
+                android:backgroundTint="#374151" android:textColor="#EF4444"
+                android:textSize="12sp"/>
 
         </LinearLayout>
 

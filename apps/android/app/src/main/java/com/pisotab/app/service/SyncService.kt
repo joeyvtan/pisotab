@@ -191,6 +191,7 @@ class SyncService : Service() {
                                 pendingConfig.alarm_charger?.let { put("alarm_charger", it) }
                                 pendingConfig.alarm_session_only?.let { put("alarm_session_only", it) }
                                 pendingConfig.alarm_delay_secs?.let { put("alarm_delay_secs", it) }
+                                pendingConfig.admin_pin?.let { if (it.isNotEmpty()) put("admin_pin", it) }
                             }
                             RemoteConfigManager.applyConfig(json, app.prefs)
                             SocketManager.emitConfigAck(deviceId)

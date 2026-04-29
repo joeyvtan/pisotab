@@ -74,6 +74,7 @@ MERGED from [androidx.activity:activity-ktx:1.9.1] C:\Users\adria\.gradle\caches
 MERGED from [androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.4] C:\Users\adria\.gradle\caches\8.9\transforms\9ae7710594a53886911ab34fafbbf206\transformed\lifecycle-viewmodel-ktx-2.8.4\AndroidManifest.xml:2:1-7:12
 MERGED from [androidx.room:room-runtime:2.6.1] C:\Users\adria\.gradle\caches\8.9\transforms\f1e271e911d4902e7116f7ad0f12d21d\transformed\room-runtime-2.6.1\AndroidManifest.xml:17:1-31:12
 MERGED from [androidx.room:room-ktx:2.6.1] C:\Users\adria\.gradle\caches\8.9\transforms\40895735f7da15b19ec92063739eb7ab\transformed\room-ktx-2.6.1\AndroidManifest.xml:17:1-22:12
+MERGED from [com.google.android.flexbox:flexbox:3.0.0] C:\Users\adria\.gradle\caches\8.9\transforms\7b4bc2d39b2a5a2fef9d885a98491d47\transformed\flexbox-3.0.0\AndroidManifest.xml:17:1-24:12
 MERGED from [androidx.sqlite:sqlite-framework:2.4.0] C:\Users\adria\.gradle\caches\8.9\transforms\104fa6a45485d5983b24be80c11d0a81\transformed\sqlite-framework-2.4.0\AndroidManifest.xml:17:1-22:12
 MERGED from [androidx.sqlite:sqlite:2.4.0] C:\Users\adria\.gradle\caches\8.9\transforms\f1689e2db583c975dc6c49df6394c96f\transformed\sqlite-2.4.0\AndroidManifest.xml:17:1-22:12
 MERGED from [androidx.annotation:annotation-experimental:1.4.0] C:\Users\adria\.gradle\caches\8.9\transforms\5f485a90f986fba62f346be98a450b33\transformed\annotation-experimental-1.4.0\AndroidManifest.xml:2:1-7:12
@@ -545,6 +546,8 @@ MERGED from [androidx.room:room-runtime:2.6.1] C:\Users\adria\.gradle\caches\8.9
 MERGED from [androidx.room:room-runtime:2.6.1] C:\Users\adria\.gradle\caches\8.9\transforms\f1e271e911d4902e7116f7ad0f12d21d\transformed\room-runtime-2.6.1\AndroidManifest.xml:21:5-44
 MERGED from [androidx.room:room-ktx:2.6.1] C:\Users\adria\.gradle\caches\8.9\transforms\40895735f7da15b19ec92063739eb7ab\transformed\room-ktx-2.6.1\AndroidManifest.xml:20:5-44
 MERGED from [androidx.room:room-ktx:2.6.1] C:\Users\adria\.gradle\caches\8.9\transforms\40895735f7da15b19ec92063739eb7ab\transformed\room-ktx-2.6.1\AndroidManifest.xml:20:5-44
+MERGED from [com.google.android.flexbox:flexbox:3.0.0] C:\Users\adria\.gradle\caches\8.9\transforms\7b4bc2d39b2a5a2fef9d885a98491d47\transformed\flexbox-3.0.0\AndroidManifest.xml:20:5-22:41
+MERGED from [com.google.android.flexbox:flexbox:3.0.0] C:\Users\adria\.gradle\caches\8.9\transforms\7b4bc2d39b2a5a2fef9d885a98491d47\transformed\flexbox-3.0.0\AndroidManifest.xml:20:5-22:41
 MERGED from [androidx.sqlite:sqlite-framework:2.4.0] C:\Users\adria\.gradle\caches\8.9\transforms\104fa6a45485d5983b24be80c11d0a81\transformed\sqlite-framework-2.4.0\AndroidManifest.xml:20:5-44
 MERGED from [androidx.sqlite:sqlite-framework:2.4.0] C:\Users\adria\.gradle\caches\8.9\transforms\104fa6a45485d5983b24be80c11d0a81\transformed\sqlite-framework-2.4.0\AndroidManifest.xml:20:5-44
 MERGED from [androidx.sqlite:sqlite:2.4.0] C:\Users\adria\.gradle\caches\8.9\transforms\f1689e2db583c975dc6c49df6394c96f\transformed\sqlite-2.4.0\AndroidManifest.xml:20:5-44

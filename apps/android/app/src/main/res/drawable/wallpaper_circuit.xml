@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="360dp"
+    android:height="640dp"
+    android:viewportWidth="360"
+    android:viewportHeight="640">
+
+    <!-- Dark PCB background -->
+    <path android:fillColor="#08131F" android:pathData="M0,0 H360 V640 H0 Z"/>
+
+    <!-- Subtle grid texture — very dim -->
+    <path android:strokeColor="#0D2030" android:strokeWidth="0.4" android:fillAlpha="0"
+        android:strokeAlpha="0.6"
+        android:pathData="M0,80 H360 M0,160 H360 M0,240 H360 M0,320 H360 M0,400 H360 M0,480 H360 M0,560 H360
+                          M60,0 V640 M120,0 V640 M180,0 V640 M240,0 V640 M300,0 V640"/>
+
+    <!-- Main horizontal traces — muted copper, 35% opacity -->
+    <path android:strokeColor="#A05408" android:strokeWidth="2.5" android:fillAlpha="0"
+        android:strokeAlpha="0.35"
+        android:pathData="M0,120 H80 M140,120 H220 M280,120 H360
+                          M0,280 H60 M120,280 H200 M260,280 H360
+                          M0,440 H100 M160,440 H240 M300,440 H360
+                          M0,560 H50 M110,560 H200 M260,560 H360"/>
+
+    <!-- Main vertical traces — muted copper, 35% opacity -->
+    <path android:strokeColor="#A05408" android:strokeWidth="2.5" android:fillAlpha="0"
+        android:strokeAlpha="0.35"
+        android:pathData="M80,0 V120 M80,120 V200 M80,200 V280
+                          M220,80 V120 M220,120 V200 M220,200 V280
+                          M160,280 V360 M160,360 V440
+                          M300,280 V360 M300,360 V440 M300,440 V560
+                          M110,440 V560 M50,440 V560"/>
+
+    <!-- Connector L-bends — slightly brighter, still dim -->
+    <path android:strokeColor="#B86010" android:strokeWidth="2.5" android:fillAlpha="0"
+        android:strokeAlpha="0.35"
+        android:pathData="M80,120 H140 M220,120 H280
+                          M60,280 H120 M200,280 H260
+                          M100,440 H160 M240,440 H300
+                          M50,560 H110 M200,560 H260"/>
+
+    <!-- Junction pads — dim copper dots -->
+    <path android:fillColor="#9E5010" android:fillAlpha="0.45"
+        android:pathData="M80,120 m-4.5,0 a4.5,4.5 0 1,0 9,0 a4.5,4.5 0 1,0-9,0
+                          M140,120 m-4.5,0 a4.5,4.5 0 1,0 9,0 a4.5,4.5 0 1,0-9,0
+                          M220,120 m-4.5,0 a4.5,4.5 0 1,0 9,0 a4.5,4.5 0 1,0-9,0
+                          M280,120 m-4.5,0 a4.5,4.5 0 1,0 9,0 a4.5,4.5 0 1,0-9,0
+                          M60,280 m-4.5,0 a4.5,4.5 0 1,0 9,0 a4.5,4.5 0 1,0-9,0
+                          M120,280 m-4.5,0 a4.5,4.5 0 1,0 9,0 a4.5,4.5 0 1,0-9,0
+                          M200,280 m-4.5,0 a4.5,4.5 0 1,0 9,0 a4.5,4.5 0 1,0-9,0
+                          M260,280 m-4.5,0 a4.5,4.5 0 1,0 9,0 a4.5,4.5 0 1,0-9,0
+                          M160,360 m-4.5,0 a4.5,4.5 0 1,0 9,0 a4.5,4.5 0 1,0-9,0
+                          M300,360 m-4.5,0 a4.5,4.5 0 1,0 9,0 a4.5,4.5 0 1,0-9,0
+                          M100,440 m-4.5,0 a4.5,4.5 0 1,0 9,0 a4.5,4.5 0 1,0-9,0
+                          M160,440 m-4.5,0 a4.5,4.5 0 1,0 9,0 a4.5,4.5 0 1,0-9,0
+                          M240,440 m-4.5,0 a4.5,4.5 0 1,0 9,0 a4.5,4.5 0 1,0-9,0
+                          M300,440 m-4.5,0 a4.5,4.5 0 1,0 9,0 a4.5,4.5 0 1,0-9,0
+                          M50,560 m-4.5,0 a4.5,4.5 0 1,0 9,0 a4.5,4.5 0 1,0-9,0
+                          M110,560 m-4.5,0 a4.5,4.5 0 1,0 9,0 a4.5,4.5 0 1,0-9,0
+                          M200,560 m-4.5,0 a4.5,4.5 0 1,0 9,0 a4.5,4.5 0 1,0-9,0
+                          M260,560 m-4.5,0 a4.5,4.5 0 1,0 9,0 a4.5,4.5 0 1,0-9,0"/>
+
+    <!-- IC Chip 1 — top area, dim outline -->
+    <path android:fillColor="#0E2235" android:fillAlpha="0.7"
+        android:strokeColor="#A05408" android:strokeWidth="1.2" android:strokeAlpha="0.35"
+        android:pathData="M155,50 H210 V100 H155 Z"/>
+    <path android:strokeColor="#A05408" android:strokeWidth="1.5" android:fillAlpha="0"
+        android:strokeAlpha="0.3"
+        android:pathData="M163,50 V35 M175,50 V35 M187,50 V35 M199,50 V35
+                          M163,100 V115 M175,100 V115 M187,100 V115 M199,100 V115"/>
+    <path android:fillColor="#1A90CC" android:fillAlpha="0.35"
+        android:pathData="M162,58 m-3,0 a3,3 0 1,0 6,0 a3,3 0 1,0-6,0"/>
+
+    <!-- IC Chip 2 — middle -->
+    <path android:fillColor="#0E2235" android:fillAlpha="0.7"
+        android:strokeColor="#A05408" android:strokeWidth="1.2" android:strokeAlpha="0.35"
+        android:pathData="M90,310 H145 V375 H90 Z"/>
+    <path android:strokeColor="#A05408" android:strokeWidth="1.5" android:fillAlpha="0"
+        android:strokeAlpha="0.3"
+        android:pathData="M98,310 V295 M110,310 V295 M122,310 V295 M134,310 V295
+                          M98,375 V390 M110,375 V390 M122,375 V390 M134,375 V390"/>
+    <path android:fillColor="#1A90CC" android:fillAlpha="0.35"
+        android:pathData="M97,318 m-3,0 a3,3 0 1,0 6,0 a3,3 0 1,0-6,0"/>
+
+    <!-- IC Chip 3 — lower -->
+    <path android:fillColor="#0E2235" android:fillAlpha="0.7"
+        android:strokeColor="#A05408" android:strokeWidth="1.2" android:strokeAlpha="0.35"
+        android:pathData="M215,470 H270 V530 H215 Z"/>
+    <path android:strokeColor="#A05408" android:strokeWidth="1.5" android:fillAlpha="0"
+        android:strokeAlpha="0.3"
+        android:pathData="M223,470 V455 M235,470 V455 M247,470 V455 M259,470 V455
+                          M223,530 V545 M235,530 V545 M247,530 V545 M259,530 V545"/>
+    <path android:fillColor="#1A90CC" android:fillAlpha="0.35"
+        android:pathData="M222,478 m-3,0 a3,3 0 1,0 6,0 a3,3 0 1,0-6,0"/>
+
+    <!-- Small SMD components — dim -->
+    <path android:fillColor="#162535" android:fillAlpha="0.6"
+        android:strokeColor="#A05408" android:strokeWidth="0.8" android:strokeAlpha="0.25"
+        android:pathData="M30,150 H55 V162 H30 Z
+                          M310,200 H335 V212 H310 Z
+                          M30,480 H55 V492 H30 Z
+                          M310,380 H335 V392 H310 Z"/>
+
+    <!-- Via holes — very dim blue dots -->
+    <path android:fillColor="#1A90CC" android:fillAlpha="0.25"
+        android:pathData="M80,200 m-3,0 a3,3 0 1,0 6,0 a3,3 0 1,0-6,0
+                          M220,200 m-3,0 a3,3 0 1,0 6,0 a3,3 0 1,0-6,0
+                          M160,280 m-3,0 a3,3 0 1,0 6,0 a3,3 0 1,0-6,0
+                          M300,280 m-3,0 a3,3 0 1,0 6,0 a3,3 0 1,0-6,0
+                          M110,440 m-3,0 a3,3 0 1,0 6,0 a3,3 0 1,0-6,0"/>
+
+</vector>

@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.pisotab.app-mergeDebugResources-62:/values-lv/values-lv.xml",
+            "outputFile": "com.pisotab.app-mergeDebugResources-63:/values-lv/values-lv.xml",
             "map": [
                 {
                     "source": "C:\\Users\\adria\\.gradle\\caches\\8.9\\transforms\\9f0820c493668e59c38d6672eca32dc3\\transformed\\core-1.13.1\\res\\values-lv\\values-lv.xml",

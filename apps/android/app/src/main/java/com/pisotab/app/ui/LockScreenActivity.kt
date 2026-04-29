@@ -11,8 +11,10 @@ import android.view.KeyEvent
 import android.view.View
 import android.view.WindowManager
 import android.widget.EditText
+import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.TextView
+import com.pisotab.app.ui.anim.AnimationPreset
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.pisotab.app.PisoTabApp
@@ -45,6 +47,14 @@ class LockScreenActivity : AppCompatActivity() {
         WallpaperManager.applyToImageView(ivWallpaper, this, false)
 
         val prefs = (application as PisoTabApp).prefs
+        val flAnimLock = findViewById<FrameLayout>(R.id.fl_animation_lock)
+        val animView = AnimationPreset.createView(this, prefs.animationPreset)
+        if (animView != null) {
+            flAnimLock.addView(animView,
+                FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
+        } else {
+            flAnimLock.visibility = View.GONE
+        }
         if (prefs.deepFreezeEnabled) {
             // Replace default 30s dismiss with a visible countdown that wipes app data at 0
             startDeepFreezeCountdown(prefs.deepFreezeGracePeriodSecs)

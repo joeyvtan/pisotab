@@ -175,6 +175,60 @@ router.patch('/:id/reject', requireAuth, requireSuperAdmin, async (req, res) => 
   } catch (err) { console.error(err); res.status(500).json({ error: 'Server error' }); }
 });
 
+// POST /api/purchase-requests/batch-approve — superadmin batch approves multiple pending requests
+router.post('/batch-approve', requireAuth, requireSuperAdmin, async (req, res) => {
+  const { ids } = req.body;
+  if (!Array.isArray(ids) || ids.length === 0) {
+    return res.status(400).json({ error: 'ids array required' });
+  }
+  try {
+    const db = getDb();
+    const now = Math.floor(Date.now() / 1000);
+    let approved = 0;
+    const allKeys = [];
+
+    for (const id of ids) {
+      const request = await db.get('SELECT * FROM license_purchase_requests WHERE id = ?', [id]);
+      if (!request || request.status !== 'pending') continue;
+
+      const pricing = await db.get(
+        `SELECT duration_days FROM license_pricing
+         WHERE plan = ? AND (user_id = ? OR user_id IS NULL)
+         ORDER BY user_id IS NULL ASC LIMIT 1`,
+        [request.plan, request.user_id]
+      );
+      const expiresAt = pricing?.duration_days ? now + pricing.duration_days * 86400 : null;
+
+      const generatedKeys = [];
+      for (let i = 0; i < request.quantity; i++) {
+        const key = generateKey();
+        const licId = 'lic_' + require('crypto').randomBytes(4).toString('hex');
+        await db.run(
+          `INSERT INTO licenses (id, key, plan, owner_user_id, expires_at) VALUES (?, ?, ?, ?, ?)`,
+          [licId, key, request.plan, request.user_id, expiresAt]
+        );
+        generatedKeys.push({ id: licId, key });
+      }
+
+      await db.run(
+        `UPDATE license_purchase_requests
+         SET status = 'approved', reviewed_by = ?, reviewed_at = ?, generated_keys = ?
+         WHERE id = ?`,
+        [req.user.id, now, JSON.stringify(generatedKeys.map(k => k.key)), id]
+      );
+
+      const requester = await db.get('SELECT username, email, full_name FROM users WHERE id = ?', [request.user_id]);
+      sendPurchaseApproved(requester, request, generatedKeys.map(k => k.key)).catch(() => {});
+
+      allKeys.push(...generatedKeys);
+      approved++;
+    }
+
+    emitBadges(req.io);
+    res.json({ ok: true, approved, licenses_generated: allKeys });
+  } catch (err) { console.error(err); res.status(500).json({ error: 'Server error' }); }
+});
+
 // GET /api/purchase-requests/:id/receipt — download PDF receipt (superadmin or owning admin)
 router.get('/:id/receipt', requireAuth, requireAdmin, async (req, res) => {
   try {

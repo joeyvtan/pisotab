@@ -114,6 +114,31 @@ router.patch('/:id/role', requireAuth, requireSuperAdmin, async (req, res) => {
   } catch (err) { console.error(err); res.status(500).json({ error: 'Server error' }); }
 });
 
+// POST /api/users/batch-approve — superadmin approves multiple pending users at once
+router.post('/batch-approve', requireAuth, requireSuperAdmin, async (req, res) => {
+  const { ids } = req.body;
+  if (!Array.isArray(ids) || ids.length === 0) {
+    return res.status(400).json({ error: 'ids array required' });
+  }
+  try {
+    const db = getDb();
+    const now = Math.floor(Date.now() / 1000);
+    let approved = 0;
+    for (const id of ids) {
+      const u = await db.get('SELECT id, status, username, email, full_name FROM users WHERE id = ?', [id]);
+      if (!u || u.status !== 'pending') continue;
+      await db.run(
+        `UPDATE users SET status = 'approved', approved_by = ?, approved_at = ? WHERE id = ?`,
+        [req.user.id, now, id]
+      );
+      sendAccountApproved(u).catch(() => {});
+      approved++;
+    }
+    emitBadges(req.io);
+    res.json({ ok: true, approved });
+  } catch (err) { console.error(err); res.status(500).json({ error: 'Server error' }); }
+});
+
 // DELETE /api/users/:id — delete a user (cannot delete self)
 router.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
   if (req.params.id === req.user.id) {

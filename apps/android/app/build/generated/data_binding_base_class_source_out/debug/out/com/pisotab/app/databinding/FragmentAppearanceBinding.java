@@ -59,6 +59,18 @@ public final class FragmentAppearanceBinding implements ViewBinding {
   public final ImageView ivPortraitPreview;
 
   @NonNull
+  public final RadioButton rbAnimCoins;
+
+  @NonNull
+  public final RadioButton rbAnimNone;
+
+  @NonNull
+  public final RadioButton rbAnimPulse;
+
+  @NonNull
+  public final RadioButton rbAnimStars;
+
+  @NonNull
   public final RadioButton rbThemeBlue;
 
   @NonNull
@@ -68,7 +80,25 @@ public final class FragmentAppearanceBinding implements ViewBinding {
   public final RadioButton rbThemeOrange;
 
   @NonNull
+  public final RadioButton rbWpCircuit;
+
+  @NonNull
+  public final RadioButton rbWpCustom;
+
+  @NonNull
+  public final RadioButton rbWpGalaxy;
+
+  @NonNull
+  public final RadioButton rbWpNeon;
+
+  @NonNull
+  public final RadioGroup rgAnimationPreset;
+
+  @NonNull
   public final RadioGroup rgTheme;
+
+  @NonNull
+  public final RadioGroup rgWallpaperPreset;
 
   @NonNull
   public final SwitchCompat swDarkMode;
@@ -82,8 +112,13 @@ public final class FragmentAppearanceBinding implements ViewBinding {
       @NonNull Button btnPickPortrait, @NonNull Button btnResetAppearance,
       @NonNull Button btnSaveAppearance, @NonNull EditText etBusinessName,
       @NonNull ImageView ivLandscapePreview, @NonNull ImageView ivPortraitPreview,
+      @NonNull RadioButton rbAnimCoins, @NonNull RadioButton rbAnimNone,
+      @NonNull RadioButton rbAnimPulse, @NonNull RadioButton rbAnimStars,
       @NonNull RadioButton rbThemeBlue, @NonNull RadioButton rbThemeGreen,
-      @NonNull RadioButton rbThemeOrange, @NonNull RadioGroup rgTheme,
+      @NonNull RadioButton rbThemeOrange, @NonNull RadioButton rbWpCircuit,
+      @NonNull RadioButton rbWpCustom, @NonNull RadioButton rbWpGalaxy,
+      @NonNull RadioButton rbWpNeon, @NonNull RadioGroup rgAnimationPreset,
+      @NonNull RadioGroup rgTheme, @NonNull RadioGroup rgWallpaperPreset,
       @NonNull SwitchCompat swDarkMode, @NonNull TextView tvAudioName) {
     this.rootView = rootView;
     this.btnClearAudio = btnClearAudio;
@@ -97,10 +132,20 @@ public final class FragmentAppearanceBinding implements ViewBinding {
     this.etBusinessName = etBusinessName;
     this.ivLandscapePreview = ivLandscapePreview;
     this.ivPortraitPreview = ivPortraitPreview;
+    this.rbAnimCoins = rbAnimCoins;
+    this.rbAnimNone = rbAnimNone;
+    this.rbAnimPulse = rbAnimPulse;
+    this.rbAnimStars = rbAnimStars;
     this.rbThemeBlue = rbThemeBlue;
     this.rbThemeGreen = rbThemeGreen;
     this.rbThemeOrange = rbThemeOrange;
+    this.rbWpCircuit = rbWpCircuit;
+    this.rbWpCustom = rbWpCustom;
+    this.rbWpGalaxy = rbWpGalaxy;
+    this.rbWpNeon = rbWpNeon;
+    this.rgAnimationPreset = rgAnimationPreset;
     this.rgTheme = rgTheme;
+    this.rgWallpaperPreset = rgWallpaperPreset;
     this.swDarkMode = swDarkMode;
     this.tvAudioName = tvAudioName;
   }
@@ -198,6 +243,30 @@ public final class FragmentAppearanceBinding implements ViewBinding {
         break missingId;
       }
 
+      id = R.id.rb_anim_coins;
+      RadioButton rbAnimCoins = ViewBindings.findChildViewById(rootView, id);
+      if (rbAnimCoins == null) {
+        break missingId;
+      }
+
+      id = R.id.rb_anim_none;
+      RadioButton rbAnimNone = ViewBindings.findChildViewById(rootView, id);
+      if (rbAnimNone == null) {
+        break missingId;
+      }
+
+      id = R.id.rb_anim_pulse;
+      RadioButton rbAnimPulse = ViewBindings.findChildViewById(rootView, id);
+      if (rbAnimPulse == null) {
+        break missingId;
+      }
+
+      id = R.id.rb_anim_stars;
+      RadioButton rbAnimStars = ViewBindings.findChildViewById(rootView, id);
+      if (rbAnimStars == null) {
+        break missingId;
+      }
+
       id = R.id.rb_theme_blue;
       RadioButton rbThemeBlue = ViewBindings.findChildViewById(rootView, id);
       if (rbThemeBlue == null) {
@@ -216,9 +285,45 @@ public final class FragmentAppearanceBinding implements ViewBinding {
         break missingId;
       }
 
+      id = R.id.rb_wp_circuit;
+      RadioButton rbWpCircuit = ViewBindings.findChildViewById(rootView, id);
+      if (rbWpCircuit == null) {
+        break missingId;
+      }
+
+      id = R.id.rb_wp_custom;
+      RadioButton rbWpCustom = ViewBindings.findChildViewById(rootView, id);
+      if (rbWpCustom == null) {
+        break missingId;
+      }
+
+      id = R.id.rb_wp_galaxy;
+      RadioButton rbWpGalaxy = ViewBindings.findChildViewById(rootView, id);
+      if (rbWpGalaxy == null) {
+        break missingId;
+      }
+
+      id = R.id.rb_wp_neon;
+      RadioButton rbWpNeon = ViewBindings.findChildViewById(rootView, id);
+      if (rbWpNeon == null) {
+        break missingId;
+      }
+
+      id = R.id.rg_animation_preset;
+      RadioGroup rgAnimationPreset = ViewBindings.findChildViewById(rootView, id);
+      if (rgAnimationPreset == null) {
+        break missingId;
+      }
+
       id = R.id.rg_theme;
       RadioGroup rgTheme = ViewBindings.findChildViewById(rootView, id);
       if (rgTheme == null) {
+        break missingId;
+      }
+
+      id = R.id.rg_wallpaper_preset;
+      RadioGroup rgWallpaperPreset = ViewBindings.findChildViewById(rootView, id);
+      if (rgWallpaperPreset == null) {
         break missingId;
       }
 
@@ -236,8 +341,10 @@ public final class FragmentAppearanceBinding implements ViewBinding {
 
       return new FragmentAppearanceBinding((ScrollView) rootView, btnClearAudio, btnClearLandscape,
           btnClearPortrait, btnPickAudio, btnPickLandscape, btnPickPortrait, btnResetAppearance,
-          btnSaveAppearance, etBusinessName, ivLandscapePreview, ivPortraitPreview, rbThemeBlue,
-          rbThemeGreen, rbThemeOrange, rgTheme, swDarkMode, tvAudioName);
+          btnSaveAppearance, etBusinessName, ivLandscapePreview, ivPortraitPreview, rbAnimCoins,
+          rbAnimNone, rbAnimPulse, rbAnimStars, rbThemeBlue, rbThemeGreen, rbThemeOrange,
+          rbWpCircuit, rbWpCustom, rbWpGalaxy, rbWpNeon, rgAnimationPreset, rgTheme,
+          rgWallpaperPreset, swDarkMode, tvAudioName);
     }
     String missingId = rootView.getResources().getResourceName(id);
     throw new NullPointerException("Missing required view with ID: ".concat(missingId));
