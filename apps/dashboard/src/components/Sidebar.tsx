@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import { useBadges } from '@/hooks/useBadges';
 
 // badge key maps nav href to a badge count field from useBadges()
-type BadgeKey = 'pending_users' | 'pending_requests';
+type BadgeKey = 'pending_users' | 'pending_requests' | 'unread_notifications';
 
 // visibleTo: 'all' | 'admin' | 'superadmin'
 // 'admin' means both admin and superadmin can see it
@@ -26,6 +26,7 @@ const NAV: { href: string; icon: string; label: string; visibleTo: string; badge
   { href: '/dashboard/licenses',          icon: '🔑', label: 'Licenses',          visibleTo: 'admin'      },
   { href: '/dashboard/gcash-settings',    icon: '💳', label: 'GCash Settings',    visibleTo: 'superadmin' },
   { href: '/dashboard/firmware',          icon: '🔧', label: 'Firmware OTA',      visibleTo: 'admin'      },
+  { href: '/dashboard/notifications',      icon: '🔔', label: 'Notifications',     visibleTo: 'all',       badge: 'unread_notifications' },
   { href: '/dashboard/changelog',          icon: '📝', label: 'Changelog',         visibleTo: 'all'        },
   { href: '/dashboard/guides',            icon: '📖', label: 'User Guides',        visibleTo: 'all'        },
   { href: '/dashboard/support',           icon: '💬', label: 'Support',            visibleTo: 'all'        },
@@ -97,17 +98,21 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
       </nav>
 
       <div className="p-3 border-t border-slate-700">
-        <div className="flex items-center gap-3 px-3 py-2 mb-1">
-          <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-white font-bold text-sm">
+        <Link href="/dashboard/profile"
+          className={cn('flex items-center gap-3 px-3 py-2 mb-1 rounded-lg transition-colors',
+            pathname === '/dashboard/profile'
+              ? 'bg-orange-500 text-white'
+              : 'hover:bg-slate-800')}>
+          <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-white font-bold text-sm shrink-0">
             {user?.username?.[0]?.toUpperCase()}
           </div>
-          <div>
-            <div className="text-sm text-white font-medium">{user?.username}</div>
+          <div className="flex-1 min-w-0">
+            <div className="text-sm text-white font-medium truncate">{user?.username}</div>
             <div className={`text-xs capitalize font-medium ${roleBadge[user?.role ?? ''] ?? 'text-slate-400'}`}>
               {user?.role}
             </div>
           </div>
-        </div>
+        </Link>
         <button onClick={handleLogout}
           className="w-full text-left px-3 py-2 text-sm text-slate-400 hover:text-red-400 hover:bg-slate-800 rounded-lg transition-colors">
           Sign out

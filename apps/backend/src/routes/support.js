@@ -10,6 +10,7 @@ const nodemailer = require('nodemailer');
 const { sendSupportMessage } = require('../services/mailer');
 const { notify } = require('../services/notifier');
 const { requireAuth, requireSuperAdmin } = require('./auth');
+const { addNotification } = require('../services/notificationLogger');
 
 // POST /api/support/contact
 router.post('/contact', async (req, res) => {
@@ -25,6 +26,8 @@ router.post('/contact', async (req, res) => {
   sendSupportMessage({ name, email, subject: subject || 'Support Request', message }).catch(err => {
     console.error('[support] Email failed:', err.message);
   });
+
+  addNotification({ user_id: null, type: 'support_request', title: `Support: ${subject || 'Support Request'}`, body: `From: ${name} <${email}>\n${message}` });
 
   // Also notify via Telegram (works even without SMTP configured)
   const tgMsg = `📬 New Support Request\n\nFrom: ${name} <${email}>\nSubject: ${subject || 'Support Request'}\n\n${message}`;

@@ -133,6 +133,19 @@ async function main() {
   try { await db.exec("UPDATE devices SET owner_user_id = 'usr_admin' WHERE owner_user_id IS NULL"); } catch (_) {}
   try { await db.exec("UPDATE locations SET owner_user_id = 'usr_admin' WHERE owner_user_id IS NULL AND id != 'loc_main'"); } catch (_) {}
 
+  // Notification inbox
+  try {
+    await db.exec(`CREATE TABLE IF NOT EXISTS notifications (
+      id         TEXT PRIMARY KEY,
+      user_id    TEXT,
+      type       TEXT NOT NULL,
+      title      TEXT NOT NULL,
+      body       TEXT NOT NULL,
+      read       INTEGER NOT NULL DEFAULT 0,
+      created_at INTEGER NOT NULL DEFAULT (unixepoch())
+    )`);
+  } catch (_) {}
+
   // P5 — 2FA TOTP columns
   try { await db.exec(`ALTER TABLE users ADD COLUMN totp_secret TEXT`); } catch (_) {}
   try { await db.exec(`ALTER TABLE users ADD COLUMN totp_enabled INTEGER NOT NULL DEFAULT 0`); } catch (_) {}
@@ -204,6 +217,7 @@ async function main() {
   app.use('/api/app-settings',     require('./routes/appSettings'));
   app.use('/api/devices',          require('./routes/deviceConfigs'));
   app.use('/api/support',          require('./routes/support'));
+  app.use('/api/notifications',    require('./routes/notifications'));
 
   app.get('/health', (_req, res) => res.json({ ok: true, uptime: process.uptime() }));
 

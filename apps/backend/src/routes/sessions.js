@@ -173,6 +173,40 @@ router.get('/revenue/summary', requireAuth, async (req, res) => {
   }
 });
 
+// GET /api/sessions/export — download all ended sessions as CSV
+router.get('/export', requireAuth, async (req, res) => {
+  try {
+    const db   = getDb();
+    const role = req.user.role;
+    const { account } = req.query;
+
+    let query = `
+      SELECT s.id, d.name AS device, p.name AS pricing_tier,
+             datetime(s.started_at, 'unixepoch') AS started_at,
+             datetime(s.ended_at,   'unixepoch') AS ended_at,
+             s.duration_mins, s.amount_paid, s.payment_method, s.status
+      FROM sessions s
+      LEFT JOIN devices d      ON s.device_id      = d.id
+      LEFT JOIN pricing_tiers p ON s.pricing_tier_id = p.id
+      WHERE 1=1
+    `;
+    const params = [];
+    if (role === 'admin')                        { query += ' AND d.owner_user_id = ?'; params.push(req.user.id); }
+    else if (role === 'superadmin' && account)   { query += ' AND d.owner_user_id = ?'; params.push(account); }
+    query += ' ORDER BY s.started_at DESC';
+
+    const rows = await db.all(query, params);
+
+    const headers = ['id', 'device', 'pricing_tier', 'started_at', 'ended_at', 'duration_mins', 'amount_paid', 'payment_method', 'status'];
+    const escape  = v => (v == null ? '' : String(v).includes(',') ? `"${String(v).replace(/"/g, '""')}"` : String(v));
+    const csv     = [headers.join(','), ...rows.map(r => headers.map(h => escape(r[h])).join(','))].join('\n');
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="sessions-${new Date().toISOString().slice(0,10)}.csv"`);
+    res.send(csv);
+  } catch (err) { console.error(err); res.status(500).json({ error: 'Server error' }); }
+});
+
 // GET /api/sessions/:id
 router.get('/:id', async (req, res) => {
   try {

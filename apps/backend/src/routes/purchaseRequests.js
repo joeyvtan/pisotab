@@ -10,6 +10,7 @@ const { getDb } = require('../db');
 const { requireAuth, requireAdmin, requireSuperAdmin } = require('./auth');
 const { emitBadges } = require('../services/badges');
 const { sendPurchaseApproved, sendPurchaseRejected } = require('../services/mailer');
+const { addNotification } = require('../services/notificationLogger');
 const { generateReceipt } = require('../services/pdf');
 
 function generateKey() {
@@ -142,6 +143,7 @@ router.patch('/:id/approve', requireAuth, requireSuperAdmin, async (req, res) =>
     // Send approval email with the generated keys (fire-and-forget)
     const requester = await db.get('SELECT username, email, full_name FROM users WHERE id = ?', [request.user_id]);
     sendPurchaseApproved(requester, request, generatedKeys.map(k => k.key)).catch(() => {});
+    addNotification({ user_id: request.user_id, type: 'purchase_approved', title: 'Purchase Request Approved', body: `Your purchase of ${request.quantity} license key${request.quantity > 1 ? 's' : ''} has been approved.` });
 
     emitBadges(req.io);
     res.json({ ok: true, status: 'approved', licenses_generated: generatedKeys });
@@ -169,6 +171,7 @@ router.patch('/:id/reject', requireAuth, requireSuperAdmin, async (req, res) => 
     // Send rejection email (fire-and-forget)
     const requester = await db.get('SELECT username, email, full_name FROM users WHERE id = ?', [request.user_id]);
     sendPurchaseRejected(requester, request, note || null).catch(() => {});
+    addNotification({ user_id: request.user_id, type: 'purchase_rejected', title: 'Purchase Request Rejected', body: note ? `Your purchase request was rejected. Reason: ${note}` : 'Your purchase request was rejected. Contact support for details.' });
 
     emitBadges(req.io);
     res.json({ ok: true, status: 'rejected' });

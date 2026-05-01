@@ -11,8 +11,9 @@ export default function LogsPage() {
   const searchParams             = useSearchParams();
   const [revenue, setRevenue]   = useState<RevenueRow[]>([]);
   const [sessions, setSessions] = useState<Session[]>([]);
-  const [loading, setLoading]   = useState(true);
-  const [account, setAccount]   = useState(() => searchParams.get('account') ?? '');
+  const [loading, setLoading]     = useState(true);
+  const [account, setAccount]     = useState(() => searchParams.get('account') ?? '');
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -40,7 +41,20 @@ export default function LogsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h1 className="text-2xl font-bold text-white">Logs & Revenue</h1>
-        <AccountFilter value={account} onChange={setAccount} />
+        <div className="flex items-center gap-3 flex-wrap">
+          <AccountFilter value={account} onChange={setAccount} />
+          <button
+            disabled={exporting}
+            onClick={async () => {
+              setExporting(true);
+              try { await api.exportSessionsCsv(account || undefined); }
+              catch (e: unknown) { alert(e instanceof Error ? e.message : 'Export failed'); }
+              finally { setExporting(false); }
+            }}
+            className="text-sm px-3 py-1.5 rounded bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white transition-colors flex items-center gap-2">
+            {exporting ? 'Exporting...' : '⬇ Export CSV'}
+          </button>
+        </div>
       </div>
 
       {/* Summary stats */}

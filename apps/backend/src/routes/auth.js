@@ -179,6 +179,24 @@ router.get('/me', requireAuth, async (req, res) => {
   }
 });
 
+// PATCH /api/auth/me/profile — update own email, full_name, business_name
+router.patch('/me/profile', requireAuth, async (req, res) => {
+  const { email, full_name, business_name } = req.body;
+  try {
+    const db = getDb();
+    if (email) {
+      const taken = await db.get('SELECT id FROM users WHERE email = ? AND id != ?', [email, req.user.id]);
+      if (taken) return res.status(409).json({ error: 'Email already in use by another account' });
+    }
+    await db.run(
+      `UPDATE users SET email = COALESCE(?, email), full_name = COALESCE(?, full_name), business_name = COALESCE(?, business_name) WHERE id = ?`,
+      [email ?? null, full_name ?? null, business_name ?? null, req.user.id]
+    );
+    const updated = await db.get('SELECT id, username, role, email, full_name, business_name, status FROM users WHERE id = ?', [req.user.id]);
+    res.json({ ok: true, user: updated });
+  } catch (err) { console.error(err); res.status(500).json({ error: 'Server error' }); }
+});
+
 // PATCH /api/auth/me/telegram
 router.patch('/me/telegram', requireAuth, async (req, res) => {
   const { telegram_bot_token, telegram_chat_id } = req.body;

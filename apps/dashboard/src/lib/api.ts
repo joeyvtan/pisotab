@@ -72,6 +72,21 @@ export const api = {
     request(`/api/sessions/${id}/add-time`, {
       method: 'POST', body: JSON.stringify({ added_mins, amount_paid }),
     }),
+  exportSessionsCsv: async (account?: string) => {
+    const token = getToken();
+    const qs    = account ? `?account=${encodeURIComponent(account)}` : '';
+    const res   = await fetch(`${BASE}/api/sessions/export${qs}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!res.ok) { const e = await res.json().catch(() => ({ error: res.statusText })); throw new Error(e.error || 'Export failed'); }
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `sessions-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  },
   getRevenue: (account?: string) => {
     const qs = account ? `?account=${encodeURIComponent(account)}` : '';
     return request<RevenueRow[]>('/api/sessions/revenue/summary' + qs);
@@ -215,6 +230,17 @@ export const api = {
     return request<AuditEntry[]>('/api/audit-log' + qs);
   },
 
+  // Notifications
+  getNotifications: () => request<Notification[]>('/api/notifications'),
+  getUnreadCount: () => request<{ count: number }>('/api/notifications/unread-count'),
+  markRead: (id: string) => request(`/api/notifications/${id}/read`, { method: 'PATCH' }),
+  markAllRead: () => request('/api/notifications/read-all', { method: 'PATCH' }),
+  deleteNotification: (id: string) => request(`/api/notifications/${id}`, { method: 'DELETE' }),
+
+  // Profile
+  updateProfile: (data: { email?: string; full_name?: string; business_name?: string }) =>
+    request<{ ok: boolean }>('/api/auth/me/profile', { method: 'PATCH', body: JSON.stringify(data) }),
+
   // Support / contact form
   submitSupportMessage: (data: { name: string; email: string; subject?: string; message: string }) =>
     request<{ ok: boolean; message: string }>('/api/support/contact', {
@@ -336,6 +362,10 @@ export interface AnalyticsData {
   hourly:    { hour: number; sessions: number; revenue: number }[];
   byDevice:  { device_name: string; sessions: number; revenue: number; avg_mins: number }[];
   byPayment: { payment_method: string; sessions: number; revenue: number }[];
+}
+export interface Notification {
+  id: string; user_id: string | null; type: string;
+  title: string; body: string; read: number; created_at: number;
 }
 export interface CoinRate { coin: number; minutes: number; }
 export interface DeviceConfig {

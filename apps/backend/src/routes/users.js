@@ -11,6 +11,7 @@ const { getDb } = require('../db');
 const { requireAuth, requireAdmin, requireSuperAdmin, validatePassword } = require('./auth');
 const { emitBadges } = require('../services/badges');
 const { sendAccountApproved } = require('../services/mailer');
+const { addNotification } = require('../services/notificationLogger');
 
 // GET /api/users — list all users
 // Superadmin sees everyone; admin sees only staff under them
@@ -74,6 +75,7 @@ router.patch('/:id/approve', requireAuth, requireSuperAdmin, async (req, res) =>
     // Send approval email (fire-and-forget — never blocks the response)
     const approved = await db.get('SELECT username, email, full_name FROM users WHERE id = ?', [req.params.id]);
     sendAccountApproved(approved).catch(() => {});
+    addNotification({ user_id: req.params.id, type: 'account_approved', title: 'Account Approved', body: 'Your account has been approved. You can now log in and manage your devices.' });
 
     emitBadges(req.io);
     res.json({ ok: true, status: 'approved' });
