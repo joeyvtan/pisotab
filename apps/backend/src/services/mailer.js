@@ -39,7 +39,7 @@ async function send(to, subject, html, { replyTo } = {}) {
   if (!to) return;
   try {
     if (resendClient) {
-      await resendClient.emails.send({ from: FROM, to: [to], subject, html, ...(replyTo ? { reply_to: replyTo } : {}) });
+      await resendClient.emails.send({ from: FROM, to: [to], subject, html, ...(replyTo ? { replyTo } : {}) });
     } else if (transporter) {
       await transporter.sendMail({ from: FROM, to, subject, html, ...(replyTo ? { replyTo } : {}) });
     }
