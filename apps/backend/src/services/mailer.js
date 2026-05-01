@@ -172,7 +172,7 @@ async function sendLicenseExpiring(user, license, daysLeft) {
 
 // Sent when a user submits the support/contact form
 async function sendSupportMessage({ name, email, subject, message }) {
-  const SUPPORT_TO = process.env.SUPPORT_EMAIL || process.env.SMTP_USER;
+  const SUPPORT_TO = process.env.SUPPORT_EMAIL || process.env.RESEND_TO || process.env.SMTP_USER;
   if (!SUPPORT_TO) return;
 
   const html = wrap(`
@@ -191,15 +191,8 @@ async function sendSupportMessage({ name, email, subject, message }) {
     </p>
   `);
 
-  if (!transporter || !SUPPORT_TO) return;
-  try {
-    await transporter.sendMail({
-      from: FROM, to: SUPPORT_TO, replyTo: email,
-      subject: `[PisoTab Support] ${subject}`, html,
-    });
-  } catch (err) {
-    console.error('[mailer] Failed to send support message:', err.message);
-  }
+  // Use the shared send() helper so Resend/SMTP is picked automatically
+  await send(SUPPORT_TO, `[PisoTab Support] ${subject}`, html);
 }
 
 module.exports = { sendAccountApproved, sendPurchaseApproved, sendPurchaseRejected, sendPasswordReset, sendLicenseExpiring, sendSupportMessage, SMTP_CONFIGURED };
