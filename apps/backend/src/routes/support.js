@@ -7,6 +7,7 @@
 const express = require('express');
 const router  = express.Router();
 const { sendSupportMessage } = require('../services/mailer');
+const { notify } = require('../services/notifier');
 
 // POST /api/support/contact
 router.post('/contact', async (req, res) => {
@@ -18,10 +19,15 @@ router.post('/contact', async (req, res) => {
     return res.status(400).json({ error: 'Invalid email address' });
   }
 
-  // Fire-and-forget — never block the HTTP response waiting for SMTP
+  // Fire-and-forget — never block the HTTP response
   sendSupportMessage({ name, email, subject: subject || 'Support Request', message }).catch(err => {
-    console.error('[support] Failed to send message:', err.message);
+    console.error('[support] Email failed:', err.message);
   });
+
+  // Also notify via Telegram (works even without SMTP configured)
+  const tgMsg = `📬 New Support Request\n\nFrom: ${name} <${email}>\nSubject: ${subject || 'Support Request'}\n\n${message}`;
+  notify(tgMsg).catch(() => {});
+
   res.json({ ok: true, message: 'Your message has been sent. We will get back to you shortly.' });
 });
 
