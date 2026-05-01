@@ -19,10 +19,24 @@ const transporter = SMTP_CONFIGURED
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
       },
+      connectionTimeout: 10000,  // fail fast — 10s max to connect
+      greetingTimeout:   8000,
+      socketTimeout:     15000,
     })
   : null;
 
-const FROM = process.env.SMTP_FROM || process.env.SMTP_USER || 'noreply@jjtpisotab.com';
+// Gmail only allows sending from the authenticated address — use SMTP_USER as the actual sender
+// SMTP_FROM can set the display name: "JJT PisoTab <your@gmail.com>"
+const FROM = (() => {
+  const configured = process.env.SMTP_FROM || '';
+  const user       = process.env.SMTP_USER || 'noreply@jjtpisotab.com';
+  // If SMTP_FROM contains a <...> address that differs from SMTP_USER, use display name + SMTP_USER
+  const angleMatch = configured.match(/^(.+?)\s*<([^>]+)>$/);
+  if (angleMatch && angleMatch[2] !== user) {
+    return `${angleMatch[1]} <${user}>`;  // e.g. "JJT PisoTab <joeytanierga@gmail.com>"
+  }
+  return configured || user;
+})();
 const APP_URL = process.env.APP_URL || 'http://localhost:3000';
 
 async function send(to, subject, html) {

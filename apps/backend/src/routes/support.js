@@ -18,13 +18,11 @@ router.post('/contact', async (req, res) => {
     return res.status(400).json({ error: 'Invalid email address' });
   }
 
-  try {
-    await sendSupportMessage({ name, email, subject: subject || 'Support Request', message });
-    res.json({ ok: true, message: 'Your message has been sent. We will get back to you shortly.' });
-  } catch (err) {
+  // Fire-and-forget — never block the HTTP response waiting for SMTP
+  sendSupportMessage({ name, email, subject: subject || 'Support Request', message }).catch(err => {
     console.error('[support] Failed to send message:', err.message);
-    res.status(500).json({ error: 'Failed to send message. Please try again later.' });
-  }
+  });
+  res.json({ ok: true, message: 'Your message has been sent. We will get back to you shortly.' });
 });
 
 module.exports = router;
