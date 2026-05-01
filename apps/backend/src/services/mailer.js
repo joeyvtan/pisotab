@@ -35,13 +35,13 @@ const transporter = SMTP_CONFIGURED
 const FROM    = process.env.RESEND_FROM || process.env.SMTP_FROM || `JJT PisoTab <${process.env.SMTP_USER || 'noreply@jjtpisotab.com'}>`;
 const APP_URL = process.env.APP_URL || 'http://localhost:3000';
 
-async function send(to, subject, html) {
+async function send(to, subject, html, { replyTo } = {}) {
   if (!to) return;
   try {
     if (resendClient) {
-      await resendClient.emails.send({ from: FROM, to: [to], subject, html });
+      await resendClient.emails.send({ from: FROM, to: [to], subject, html, ...(replyTo ? { reply_to: replyTo } : {}) });
     } else if (transporter) {
-      await transporter.sendMail({ from: FROM, to, subject, html });
+      await transporter.sendMail({ from: FROM, to, subject, html, ...(replyTo ? { replyTo } : {}) });
     }
   } catch (err) {
     console.error('[mailer] Failed to send email to', to, err.message);
@@ -191,8 +191,8 @@ async function sendSupportMessage({ name, email, subject, message }) {
     </p>
   `);
 
-  // Use the shared send() helper so Resend/SMTP is picked automatically
-  await send(SUPPORT_TO, `[PisoTab Support] ${subject}`, html);
+  // replyTo = the form sender's email so replies go back to them
+  await send(SUPPORT_TO, `[PisoTab Support] ${subject}`, html, { replyTo: email });
 }
 
 module.exports = { sendAccountApproved, sendPurchaseApproved, sendPurchaseRejected, sendPasswordReset, sendLicenseExpiring, sendSupportMessage, SMTP_CONFIGURED };
