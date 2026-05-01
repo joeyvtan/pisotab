@@ -35,36 +35,48 @@ router.post('/contact', async (req, res) => {
 
 // GET /api/support/test-email — superadmin only, sends a real test email and returns the result
 router.get('/test-email', requireAuth, requireSuperAdmin, async (req, res) => {
-  const host  = process.env.SMTP_HOST;
-  const port  = parseInt(process.env.SMTP_PORT || '587', 10);
-  const user  = process.env.SMTP_USER;
-  const pass  = process.env.SMTP_PASS;
-
-  if (!host || !user || !pass) {
-    return res.json({ ok: false, error: 'SMTP not configured — missing SMTP_HOST, SMTP_USER, or SMTP_PASS env vars' });
+  // Try Resend first (HTTPS — works on Render free tier)
+  if (process.env.RESEND_API_KEY) {
+    try {
+      const { Resend } = require('resend');
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      const from = process.env.RESEND_FROM || `JJT PisoTab <onboarding@resend.dev>`;
+      const to   = process.env.RESEND_TO   || process.env.SMTP_USER;
+      if (!to) return res.json({ ok: false, error: 'Set RESEND_TO or SMTP_USER env var so we know where to send the test' });
+      await resend.emails.send({
+        from, to: [to],
+        subject: '[PisoTab] Resend Test Email',
+        text: 'This is a test email from your PisoTab backend via Resend. Email is working correctly.',
+      });
+      return res.json({ ok: true, message: `Test email sent to ${to} via Resend`, sender: from });
+    } catch (err) {
+      return res.json({ ok: false, provider: 'resend', error: err.message });
+    }
   }
 
+  // Fall back to SMTP test
+  const host = process.env.SMTP_HOST;
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+  if (!host || !user || !pass) {
+    return res.json({ ok: false, error: 'No email provider configured. Set RESEND_API_KEY (recommended) or SMTP_HOST/SMTP_USER/SMTP_PASS.' });
+  }
   try {
     const transporter = nodemailer.createTransport({
-      host, port,
+      host, port: parseInt(process.env.SMTP_PORT || '587', 10),
       secure: process.env.SMTP_SECURE === 'true',
       auth: { user, pass },
-      connectionTimeout: 10000,
-      greetingTimeout:   8000,
-      socketTimeout:     15000,
+      connectionTimeout: 10000, greetingTimeout: 8000, socketTimeout: 15000,
     });
-
     await transporter.verify();
     await transporter.sendMail({
-      from: `JJT PisoTab <${user}>`,
-      to:   user,
+      from: `JJT PisoTab <${user}>`, to: user,
       subject: '[PisoTab] SMTP Test Email',
-      text: 'This is a test email from your PisoTab backend. SMTP is working correctly.',
+      text: 'SMTP is working correctly.',
     });
-
-    res.json({ ok: true, message: `Test email sent to ${user}` });
+    res.json({ ok: true, message: `Test email sent to ${user} via SMTP` });
   } catch (err) {
-    res.json({ ok: false, error: err.message, code: err.code });
+    res.json({ ok: false, provider: 'smtp', error: err.message, code: err.code });
   }
 });
 

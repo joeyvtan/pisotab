@@ -1,11 +1,21 @@
 /**
- * Email service using Nodemailer.
- * Requires SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS in .env.
- * If any of those are missing, all send functions silently no-op.
+ * Email service — uses Resend (HTTPS API, works on Render free tier) when
+ * RESEND_API_KEY is set, otherwise falls back to Nodemailer SMTP.
+ * Render blocks outbound SMTP (port 587), so Resend is the recommended path.
  */
 const nodemailer = require('nodemailer');
 
+// ── Resend (primary — HTTPS, works on all hosting) ───────────────────────────
+const RESEND_CONFIGURED = !!process.env.RESEND_API_KEY;
+let resendClient = null;
+if (RESEND_CONFIGURED) {
+  const { Resend } = require('resend');
+  resendClient = new Resend(process.env.RESEND_API_KEY);
+}
+
+// ── Nodemailer SMTP (fallback — blocked on Render free tier) ─────────────────
 const SMTP_CONFIGURED =
+  !RESEND_CONFIGURED &&
   process.env.SMTP_HOST &&
   process.env.SMTP_USER &&
   process.env.SMTP_PASS;
@@ -15,34 +25,24 @@ const transporter = SMTP_CONFIGURED
       host: process.env.SMTP_HOST,
       port: parseInt(process.env.SMTP_PORT || '587', 10),
       secure: process.env.SMTP_SECURE === 'true',
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-      connectionTimeout: 10000,  // fail fast — 10s max to connect
+      auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+      connectionTimeout: 10000,
       greetingTimeout:   8000,
       socketTimeout:     15000,
     })
   : null;
 
-// Gmail only allows sending from the authenticated address — use SMTP_USER as the actual sender
-// SMTP_FROM can set the display name: "JJT PisoTab <your@gmail.com>"
-const FROM = (() => {
-  const configured = process.env.SMTP_FROM || '';
-  const user       = process.env.SMTP_USER || 'noreply@jjtpisotab.com';
-  // If SMTP_FROM contains a <...> address that differs from SMTP_USER, use display name + SMTP_USER
-  const angleMatch = configured.match(/^(.+?)\s*<([^>]+)>$/);
-  if (angleMatch && angleMatch[2] !== user) {
-    return `${angleMatch[1]} <${user}>`;  // e.g. "JJT PisoTab <joeytanierga@gmail.com>"
-  }
-  return configured || user;
-})();
+const FROM    = process.env.RESEND_FROM || process.env.SMTP_FROM || `JJT PisoTab <${process.env.SMTP_USER || 'noreply@jjtpisotab.com'}>`;
 const APP_URL = process.env.APP_URL || 'http://localhost:3000';
 
 async function send(to, subject, html) {
-  if (!transporter || !to) return;
+  if (!to) return;
   try {
-    await transporter.sendMail({ from: FROM, to, subject, html });
+    if (resendClient) {
+      await resendClient.emails.send({ from: FROM, to: [to], subject, html });
+    } else if (transporter) {
+      await transporter.sendMail({ from: FROM, to, subject, html });
+    }
   } catch (err) {
     console.error('[mailer] Failed to send email to', to, err.message);
   }
