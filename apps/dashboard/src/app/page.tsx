@@ -83,6 +83,25 @@ function StepCard({ step, title, desc }: { step: number; title: string; desc: st
   );
 }
 
+function CopyCommand({ command }: { command: string }) {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    navigator.clipboard.writeText(command).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+  return (
+    <div className="flex items-start gap-2 bg-slate-900 border border-slate-600 rounded-lg p-3 group">
+      <code className="flex-1 text-red-300 font-mono text-xs break-all leading-relaxed">{command}</code>
+      <button onClick={copy}
+        className="shrink-0 px-2 py-1 rounded text-xs font-medium transition-colors bg-slate-700 hover:bg-slate-600 text-slate-300">
+        {copied ? '✓ Copied' : 'Copy'}
+      </button>
+    </div>
+  );
+}
+
 function ExternalDownloadCard({ label, icon, desc, href }: { label: string; icon: string; desc: string; href: string }) {
   return (
     <div className="bg-slate-800 border border-slate-700 rounded-xl p-6">
@@ -263,6 +282,7 @@ export default function LandingPage() {
 
           <div className="space-y-4 text-sm">
 
+            {/* Step 1 */}
             <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
               <div className="flex items-center gap-3 mb-3">
                 <span className="w-7 h-7 rounded-full bg-red-600 flex items-center justify-center text-white font-bold text-sm shrink-0">1</span>
@@ -276,11 +296,14 @@ export default function LandingPage() {
               </ol>
             </div>
 
+            {/* Step 2 */}
             <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
               <div className="flex items-center gap-3 mb-3">
                 <span className="w-7 h-7 rounded-full bg-red-600 flex items-center justify-center text-white font-bold text-sm shrink-0">2</span>
                 <h3 className="text-white font-semibold">Flash the ESP32 Firmware (.bin)</h3>
+                <span className="ml-auto text-xs px-2 py-0.5 rounded-full bg-yellow-900/60 text-yellow-300 font-medium shrink-0">ESP32 / Coin mode only</span>
               </div>
+              <p className="text-yellow-400/80 text-xs mb-3 ml-10">⚡ Skip this step if you are using <strong>USB mode</strong> (charge-based timer) — no ESP32 hardware required.</p>
               <ol className="list-decimal list-inside space-y-1.5 text-slate-400 ml-10">
                 <li>Download the <strong className="text-slate-300">ESP32 Firmware (.bin)</strong> and <strong className="text-slate-300">Flash Download Tool</strong> from the Downloads section above.</li>
                 <li>Install and open the <strong className="text-slate-300">ESP32 Flash Download Tool</strong>.</li>
@@ -293,11 +316,14 @@ export default function LandingPage() {
               </ol>
             </div>
 
+            {/* Step 3 */}
             <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
               <div className="flex items-center gap-3 mb-3">
                 <span className="w-7 h-7 rounded-full bg-red-600 flex items-center justify-center text-white font-bold text-sm shrink-0">3</span>
                 <h3 className="text-white font-semibold">Configure the ESP32 (WiFi + Backend)</h3>
+                <span className="ml-auto text-xs px-2 py-0.5 rounded-full bg-yellow-900/60 text-yellow-300 font-medium shrink-0">ESP32 / Coin mode only</span>
               </div>
+              <p className="text-yellow-400/80 text-xs mb-3 ml-10">⚡ Skip this step if you are using <strong>USB mode</strong> — go directly to Step 4.</p>
               <ol className="list-decimal list-inside space-y-1.5 text-slate-400 ml-10">
                 <li>After powering on, the ESP32 creates a hotspot: <code className="bg-slate-700 px-1.5 py-0.5 rounded text-red-300 font-mono">PisoTab-Coin</code> (no password).</li>
                 <li>Connect your phone or PC to that WiFi network.</li>
@@ -308,6 +334,7 @@ export default function LandingPage() {
               </ol>
             </div>
 
+            {/* Step 4 */}
             <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
               <div className="flex items-center gap-3 mb-3">
                 <span className="w-7 h-7 rounded-full bg-red-600 flex items-center justify-center text-white font-bold text-sm shrink-0">4</span>
@@ -324,15 +351,97 @@ export default function LandingPage() {
               </ol>
             </div>
 
+            {/* Step 5 — ADB Commands */}
             <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
               <div className="flex items-center gap-3 mb-3">
                 <span className="w-7 h-7 rounded-full bg-red-600 flex items-center justify-center text-white font-bold text-sm shrink-0">5</span>
+                <h3 className="text-white font-semibold">ADB Setup — Device Owner &amp; Permissions</h3>
+              </div>
+              <p className="text-slate-400 mb-4 ml-10">
+                These commands grant the app the system-level permissions required for Kiosk Mode, floating timer, and secure settings.
+                Connect the tablet to your PC via USB and run the commands below in <strong className="text-slate-300">Command Prompt (CMD)</strong>.
+              </p>
+
+              {/* Prerequisites */}
+              <div className="ml-10 mb-4">
+                <p className="text-slate-300 font-medium mb-2">Prerequisites — enable USB Debugging on the tablet:</p>
+                <ol className="list-decimal list-inside space-y-1 text-slate-400">
+                  <li>Go to <strong className="text-slate-300">Settings → About phone</strong> and tap <strong className="text-slate-300">Build number</strong> 7 times.</li>
+                  <li>Go to <strong className="text-slate-300">Settings → Developer options</strong> and enable <strong className="text-slate-300">USB Debugging</strong>.</li>
+                  <li>Connect the tablet to your PC via USB — accept the "Allow USB debugging" prompt on the tablet.</li>
+                </ol>
+              </div>
+
+              {/* ADB path note */}
+              <div className="ml-10 mb-4 p-3 bg-blue-950/40 border border-blue-800/50 rounded-lg">
+                <p className="text-blue-300 text-xs leading-relaxed">
+                  <strong>Full-path commands below work from any CMD window</strong> — no need to navigate to platform-tools first.
+                  The path <code className="bg-slate-800 px-1 rounded font-mono">%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe</code> is the default Android Studio install location.
+                  If you installed ADB elsewhere, replace that path with the folder where <code className="bg-slate-800 px-1 rounded font-mono">adb.exe</code> is located.
+                </p>
+              </div>
+
+              <div className="ml-10 space-y-5">
+
+                {/* Set Device Owner */}
+                <div>
+                  <p className="text-slate-300 font-medium mb-1">
+                    1. Set Device Owner <span className="text-red-400 font-normal">(required for Kiosk Mode)</span>
+                  </p>
+                  <p className="text-slate-500 text-xs mb-2">Run this once on a fresh install. The app must be the only accounts-capable app and no Google accounts should be added to the tablet before running.</p>
+                  <CopyCommand command={`"%LOCALAPPDATA%\\Android\\Sdk\\platform-tools\\adb.exe" shell dpm set-device-owner com.pisotab.app/.receiver.DeviceAdminReceiver`} />
+                  <p className="text-slate-500 text-xs mt-1">Expected output: <span className="text-green-400">Success: Device owner set to package com.pisotab.app</span></p>
+                </div>
+
+                {/* System Alert Window */}
+                <div>
+                  <p className="text-slate-300 font-medium mb-1">
+                    2. Grant System Alert Window <span className="text-slate-400 font-normal">(required for Floating Timer overlay)</span>
+                  </p>
+                  <p className="text-slate-500 text-xs mb-2">Allows the countdown timer to appear on top of other apps.</p>
+                  <CopyCommand command={`"%LOCALAPPDATA%\\Android\\Sdk\\platform-tools\\adb.exe" shell appops set com.pisotab.app SYSTEM_ALERT_WINDOW allow`} />
+                </div>
+
+                {/* Write Secure Settings */}
+                <div>
+                  <p className="text-slate-300 font-medium mb-1">
+                    3. Grant Write Secure Settings <span className="text-slate-400 font-normal">(required for lock screen &amp; kiosk controls)</span>
+                  </p>
+                  <p className="text-slate-500 text-xs mb-2">Allows the app to control screen lock behavior and system UI settings.</p>
+                  <CopyCommand command={`"%LOCALAPPDATA%\\Android\\Sdk\\platform-tools\\adb.exe" shell pm grant com.pisotab.app android.permission.WRITE_SECURE_SETTINGS`} />
+                </div>
+
+                {/* Verify Device Owner */}
+                <div>
+                  <p className="text-slate-300 font-medium mb-1">
+                    4. Verify Device Owner <span className="text-slate-400 font-normal">(optional — confirm it was set)</span>
+                  </p>
+                  <CopyCommand command={`"%LOCALAPPDATA%\\Android\\Sdk\\platform-tools\\adb.exe" shell dpm list-owners`} />
+                  <p className="text-slate-500 text-xs mt-1">Should show <span className="text-green-400">com.pisotab.app</span> as the device owner.</p>
+                </div>
+
+                {/* Remove Device Owner */}
+                <div>
+                  <p className="text-slate-300 font-medium mb-1">
+                    5. Remove Device Owner <span className="text-slate-400 font-normal">(only if you need to uninstall or reset)</span>
+                  </p>
+                  <p className="text-slate-500 text-xs mb-2">You can also remove it from Admin panel → Kiosk Mode → Deactivate. Use ADB only if the app is inaccessible.</p>
+                  <CopyCommand command={`"%LOCALAPPDATA%\\Android\\Sdk\\platform-tools\\adb.exe" shell dpm remove-active-admin com.pisotab.app/.receiver.DeviceAdminReceiver`} />
+                </div>
+
+              </div>
+            </div>
+
+            {/* Step 6 */}
+            <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
+              <div className="flex items-center gap-3 mb-3">
+                <span className="w-7 h-7 rounded-full bg-red-600 flex items-center justify-center text-white font-bold text-sm shrink-0">6</span>
                 <h3 className="text-white font-semibold">Final Configuration &amp; Kiosk Mode</h3>
               </div>
               <ol className="list-decimal list-inside space-y-1.5 text-slate-400 ml-10">
                 <li>In the Admin panel, go to <strong className="text-slate-300">Pricing</strong> — set your per-minute or per-session rates.</li>
                 <li>Go to <strong className="text-slate-300">Allowed Apps</strong> — enable only the apps customers should access.</li>
-                <li>Test a session: insert coins into the ESP32 and verify the timer starts on the tablet.</li>
+                <li>Test a session: insert coins (ESP32 mode) or connect USB power (USB mode) — verify the timer starts on the tablet.</li>
                 <li>Once everything works, go to <strong className="text-slate-300">Kiosk Mode</strong> and enable it — this locks the tablet to the app.</li>
                 <li>Change the Admin PIN from the default <code className="bg-slate-700 px-1.5 py-0.5 rounded text-red-300 font-mono">1234</code> to a secure PIN.</li>
               </ol>
