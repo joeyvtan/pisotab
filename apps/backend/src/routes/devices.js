@@ -168,6 +168,25 @@ router.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
   }
 });
 
+// POST /api/devices/:id/transfer — superadmin only
+router.post('/:id/transfer', requireAuth, async (req, res) => {
+  if (req.user.role !== 'superadmin') return res.status(403).json({ error: 'Superadmin only' });
+  const { to_user_id } = req.body;
+  if (!to_user_id) return res.status(400).json({ error: 'to_user_id required' });
+  try {
+    const db = getDb();
+    const device = await db.get('SELECT id FROM devices WHERE id = ?', [req.params.id]);
+    if (!device) return res.status(404).json({ error: 'Device not found' });
+    const toUser = await db.get('SELECT id FROM users WHERE id = ?', [to_user_id]);
+    if (!toUser) return res.status(404).json({ error: 'Target user not found' });
+    await db.run('UPDATE devices SET owner_user_id = ? WHERE id = ?', [to_user_id, req.params.id]);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // PATCH /api/devices/:id/fcm-token
 router.patch('/:id/fcm-token', async (req, res) => {
   const { fcm_token } = req.body;

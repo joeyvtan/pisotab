@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { Device, PricingTier } from '@/lib/api';
+import { Device, PricingTier, StaffUser } from '@/lib/api';
 import { api } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import { formatTime, formatPeso, timeSince } from '@/lib/utils';
@@ -20,6 +20,10 @@ export default function DeviceCard({ device, tiers, onUpdate }: Props) {
   const [showAddTime, setShowAddTime]     = useState(false);
   const [showTrial, setShowTrial]         = useState(false);
   const [showRemoteAdmin, setShowRemoteAdmin] = useState(false);
+  const [showTransfer, setShowTransfer]   = useState(false);
+  const [transferUsers, setTransferUsers] = useState<StaffUser[]>([]);
+  const [transferTo, setTransferTo]       = useState('');
+  const [transferBusy, setTransferBusy]   = useState(false);
   const [selectedTier, setSelectedTier] = useState(tiers[0]?.id || '');
   const [customMins, setCustomMins]     = useState('');
   const [addMins, setAddMins]           = useState('5');
@@ -84,6 +88,30 @@ export default function DeviceCard({ device, tiers, onUpdate }: Props) {
     } catch (e: unknown) {
       alert(e instanceof Error ? e.message : 'Failed to delete device');
     } finally { setBusy(false); }
+  }
+
+  async function openTransfer() {
+    setShowTransfer(true);
+    if (transferUsers.length === 0) {
+      try {
+        const users = await api.getUsers();
+        setTransferUsers(users.filter(u => u.status === 'approved'));
+      } catch { /* ignore */ }
+    }
+  }
+
+  async function doTransfer() {
+    if (!transferTo) { alert('Select a user first'); return; }
+    if (!confirm(`Transfer device "${device.name}" to selected user?`)) return;
+    setTransferBusy(true);
+    try {
+      await api.transferDevice(device.id, transferTo);
+      setShowTransfer(false);
+      setTransferTo('');
+      onUpdate();
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : 'Transfer failed');
+    } finally { setTransferBusy(false); }
   }
 
   async function resetTrial() {
@@ -193,6 +221,13 @@ export default function DeviceCard({ device, tiers, onUpdate }: Props) {
               ⚙ Trial settings
             </button>
           )}
+          {user?.role === 'superadmin' && (
+            <button
+              className="text-xs text-slate-500 hover:text-indigo-400 transition-colors"
+              onClick={() => { showTransfer ? setShowTransfer(false) : openTransfer(); }}>
+              ↔ Transfer
+            </button>
+          )}
           <button
             className="text-xs text-slate-500 hover:text-red-400 transition-colors ml-auto"
             onClick={deleteDevice}
@@ -242,6 +277,26 @@ export default function DeviceCard({ device, tiers, onUpdate }: Props) {
           <button className="btn-primary w-full text-sm" onClick={doAddTime} disabled={busy}>
             Add {addMins} min
           </button>
+        </div>
+      )}
+
+      {/* Transfer device panel */}
+      {showTransfer && user?.role === 'superadmin' && (
+        <div className="bg-slate-800 border border-indigo-700/40 rounded-lg p-3 space-y-3">
+          <p className="text-xs text-indigo-400 font-medium">Transfer Device to Another User</p>
+          <select className="input text-sm w-full" value={transferTo} onChange={e => setTransferTo(e.target.value)}>
+            <option value="">— Select user —</option>
+            {transferUsers.map(u => (
+              <option key={u.id} value={u.id}>{u.username}{u.business_name ? ` (${u.business_name})` : ''}</option>
+            ))}
+          </select>
+          <div className="flex gap-2">
+            <button className="flex-1 text-sm py-1.5 rounded bg-indigo-600 hover:bg-indigo-500 text-white transition-colors"
+              onClick={doTransfer} disabled={transferBusy}>
+              {transferBusy ? 'Transferring...' : 'Confirm Transfer'}
+            </button>
+            <button className="text-xs text-slate-500 hover:text-white" onClick={() => setShowTransfer(false)}>Cancel</button>
+          </div>
         </div>
       )}
 

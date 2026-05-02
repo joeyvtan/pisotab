@@ -34,6 +34,7 @@ function Navbar({ isLoggedIn }: { isLoggedIn: boolean }) {
           <a href="#features" className="hover:text-white transition-colors">Features</a>
           <a href="#how-it-works" className="hover:text-white transition-colors">How It Works</a>
           <a href="#downloads" className="hover:text-white transition-colors">Downloads</a>
+          <a href="#setup-guide" className="hover:text-white transition-colors">Setup Guide</a>
         </div>
         <div className="flex items-center gap-3">
           {isLoggedIn ? (
@@ -132,7 +133,6 @@ function DownloadCard({ label, icon, file }: { label: string; icon: string; file
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function LandingPage() {
   const { user, loading } = useAuth();
-  const [activeTab, setActiveTab] = useState<'android' | 'esp32'>('android');
   const [downloads, setDownloads] = useState<{ apk: DownloadFile | null; firmware: DownloadFile | null }>({ apk: null, firmware: null });
   const [apkUrl, setApkUrl]           = useState('');
   const [firmwareUrl, setFirmwareUrl] = useState('');
@@ -253,69 +253,92 @@ export default function LandingPage() {
         </p>
       </section>
 
-      {/* ── Install Guide ─────────────────────────────────────────────────── */}
-      <section className="py-24 px-6 bg-slate-800/30">
+      {/* ── Setup Guide ───────────────────────────────────────────────────── */}
+      <section id="setup-guide" className="py-24 px-6 bg-slate-800/30">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-white mb-3">Installation Guide</h2>
-            <p className="text-slate-400">Step-by-step setup for tablet and coin box</p>
+            <h2 className="text-3xl font-bold text-white mb-3">Complete Setup Guide</h2>
+            <p className="text-slate-400">Full step-by-step installation from registration to kiosk mode</p>
           </div>
 
-          {/* Tabs */}
-          <div className="flex gap-2 mb-8">
-            {(['android', 'esp32'] as const).map(tab => (
-              <button key={tab} onClick={() => setActiveTab(tab)}
-                className={`px-5 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  activeTab === tab
-                    ? 'bg-red-600 text-white'
-                    : 'bg-slate-800 text-slate-400 hover:text-white'
-                }`}>
-                {tab === 'android' ? '📱 Android Tablet' : '🔌 ESP32 Coin Box'}
-              </button>
-            ))}
+          <div className="space-y-4 text-sm">
+
+            <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
+              <div className="flex items-center gap-3 mb-3">
+                <span className="w-7 h-7 rounded-full bg-red-600 flex items-center justify-center text-white font-bold text-sm shrink-0">1</span>
+                <h3 className="text-white font-semibold">Register &amp; Get Approved</h3>
+              </div>
+              <ol className="list-decimal list-inside space-y-1.5 text-slate-400 ml-10">
+                <li>Go to the dashboard and register your admin account.</li>
+                <li>Wait for superadmin approval — you'll be able to log in once approved.</li>
+                <li>After approval, log in and go to <strong className="text-slate-300">Devices</strong> to add your tablet.</li>
+                <li>Copy the generated <strong className="text-slate-300">Device ID</strong> — you'll need it in the Android app.</li>
+              </ol>
+            </div>
+
+            <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
+              <div className="flex items-center gap-3 mb-3">
+                <span className="w-7 h-7 rounded-full bg-red-600 flex items-center justify-center text-white font-bold text-sm shrink-0">2</span>
+                <h3 className="text-white font-semibold">Flash the ESP32 Firmware (.bin)</h3>
+              </div>
+              <ol className="list-decimal list-inside space-y-1.5 text-slate-400 ml-10">
+                <li>Download the <strong className="text-slate-300">ESP32 Firmware (.bin)</strong> and <strong className="text-slate-300">Flash Download Tool</strong> from the Downloads section above.</li>
+                <li>Install and open the <strong className="text-slate-300">ESP32 Flash Download Tool</strong>.</li>
+                <li>When prompted, select chip type: <code className="bg-slate-700 px-1.5 py-0.5 rounded text-red-300 font-mono">ESP32</code>, work mode: <code className="bg-slate-700 px-1.5 py-0.5 rounded text-red-300 font-mono">Develop</code>, load mode: <code className="bg-slate-700 px-1.5 py-0.5 rounded text-red-300 font-mono">USB</code>.</li>
+                <li>In the SPIDownload tab, click <strong className="text-slate-300">...</strong> and select your <code className="bg-slate-700 px-1.5 py-0.5 rounded text-red-300 font-mono">.bin</code> firmware file.</li>
+                <li>Set flash address to <code className="bg-slate-700 px-1.5 py-0.5 rounded text-red-300 font-mono">0x0</code> and check the checkbox next to the file row.</li>
+                <li>Connect ESP32 to your PC via USB, select the correct <strong className="text-slate-300">COM port</strong>.</li>
+                <li>Set SPI speed: <code className="bg-slate-700 px-1.5 py-0.5 rounded text-red-300 font-mono">40MHz</code>, SPI mode: <code className="bg-slate-700 px-1.5 py-0.5 rounded text-red-300 font-mono">DIO</code>.</li>
+                <li>Click <strong className="text-slate-300">START</strong> — wait for the progress bar to reach 100% and show <span className="text-green-400">FINISH</span>.</li>
+              </ol>
+            </div>
+
+            <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
+              <div className="flex items-center gap-3 mb-3">
+                <span className="w-7 h-7 rounded-full bg-red-600 flex items-center justify-center text-white font-bold text-sm shrink-0">3</span>
+                <h3 className="text-white font-semibold">Configure the ESP32 (WiFi + Backend)</h3>
+              </div>
+              <ol className="list-decimal list-inside space-y-1.5 text-slate-400 ml-10">
+                <li>After powering on, the ESP32 creates a hotspot: <code className="bg-slate-700 px-1.5 py-0.5 rounded text-red-300 font-mono">PisoTab-Coin</code> (no password).</li>
+                <li>Connect your phone or PC to that WiFi network.</li>
+                <li>Open a browser and go to <code className="bg-slate-700 px-1.5 py-0.5 rounded text-red-300 font-mono">192.168.4.1</code>.</li>
+                <li>Enter your local WiFi <strong className="text-slate-300">SSID</strong> and <strong className="text-slate-300">Password</strong>.</li>
+                <li>Enter the Backend URL from your dashboard.</li>
+                <li>Click <strong className="text-slate-300">Save</strong> — ESP32 reboots and connects to your WiFi. LED blinks green when connected.</li>
+              </ol>
+            </div>
+
+            <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
+              <div className="flex items-center gap-3 mb-3">
+                <span className="w-7 h-7 rounded-full bg-red-600 flex items-center justify-center text-white font-bold text-sm shrink-0">4</span>
+                <h3 className="text-white font-semibold">Install the Android Kiosk App (APK)</h3>
+              </div>
+              <ol className="list-decimal list-inside space-y-1.5 text-slate-400 ml-10">
+                <li>Download the APK from the Downloads section above and install it on your Android tablet.</li>
+                <li>On your tablet go to <strong className="text-slate-300">Settings → Security</strong> and enable <strong className="text-slate-300">Install Unknown Apps</strong>.</li>
+                <li>Launch <strong className="text-slate-300">PisoTab</strong> — the idle screen will appear.</li>
+                <li>Long-press the <strong className="text-slate-300">bottom-right corner</strong> for 2 seconds → enter Admin PIN <code className="bg-slate-700 px-1.5 py-0.5 rounded text-red-300 font-mono">1234</code>.</li>
+                <li>Go to <strong className="text-slate-300">Connection Settings</strong> → enter the Backend URL from your dashboard.</li>
+                <li>Go to <strong className="text-slate-300">Device Settings</strong> → paste your Device ID from the dashboard.</li>
+                <li>Tap <strong className="text-slate-300">Connect</strong> — status should change to <span className="text-green-400">Connected</span>.</li>
+              </ol>
+            </div>
+
+            <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
+              <div className="flex items-center gap-3 mb-3">
+                <span className="w-7 h-7 rounded-full bg-red-600 flex items-center justify-center text-white font-bold text-sm shrink-0">5</span>
+                <h3 className="text-white font-semibold">Final Configuration &amp; Kiosk Mode</h3>
+              </div>
+              <ol className="list-decimal list-inside space-y-1.5 text-slate-400 ml-10">
+                <li>In the Admin panel, go to <strong className="text-slate-300">Pricing</strong> — set your per-minute or per-session rates.</li>
+                <li>Go to <strong className="text-slate-300">Allowed Apps</strong> — enable only the apps customers should access.</li>
+                <li>Test a session: insert coins into the ESP32 and verify the timer starts on the tablet.</li>
+                <li>Once everything works, go to <strong className="text-slate-300">Kiosk Mode</strong> and enable it — this locks the tablet to the app.</li>
+                <li>Change the Admin PIN from the default <code className="bg-slate-700 px-1.5 py-0.5 rounded text-red-300 font-mono">1234</code> to a secure PIN.</li>
+              </ol>
+            </div>
+
           </div>
-
-          {activeTab === 'android' && (
-            <ol className="space-y-4">
-              {[
-                'Download and install the APK on your Android tablet.',
-                'Open PisoTab — complete the first-time setup wizard (server URL, device name, admin PIN).',
-                'Enable Device Owner mode via ADB:\n`adb shell dpm set-device-owner com.pisotab.app/.receiver.DeviceAdminReceiver`',
-                'Enable Kiosk Mode in the app Settings → Security.',
-                'Register the device in your web dashboard: Devices → Add Device.',
-                'Tablet is now ready — insert a coin or press Start from the dashboard.',
-              ].map((step, i) => (
-                <li key={i} className="flex gap-4">
-                  <span className="w-7 h-7 rounded-full bg-red-600/20 border border-red-600/40 flex items-center justify-center text-red-400 text-sm font-bold shrink-0 mt-0.5">
-                    {i + 1}
-                  </span>
-                  <p className="text-slate-300 text-sm leading-relaxed whitespace-pre-line">{step}</p>
-                </li>
-              ))}
-            </ol>
-          )}
-
-          {activeTab === 'esp32' && (
-            <ol className="space-y-4">
-              {[
-                'Download the ESP32 Flash Tool and the firmware (.bin) from the Downloads section above.',
-                'Install the ESP32 Flash Tool on your PC (Windows/Mac/Linux).',
-                'Connect your ESP32 board to your PC via USB cable.',
-                'Open the Flash Tool → select your COM port → set address to 0x0 → select the pisotab_esp32.bin file.',
-                'Click "Flash" — wait until it shows "Done".',
-                'On first boot, connect your phone/PC to the WiFi network named "PisoTab-Coin" (no password).',
-                'A setup page will open — enter your WiFi SSID and password, then click Save.',
-                'The ESP32 reboots and connects to your network. LED blinks when connected.',
-              ].map((step, i) => (
-                <li key={i} className="flex gap-4">
-                  <span className="w-7 h-7 rounded-full bg-red-600/20 border border-red-600/40 flex items-center justify-center text-red-400 text-sm font-bold shrink-0 mt-0.5">
-                    {i + 1}
-                  </span>
-                  <p className="text-slate-300 text-sm leading-relaxed whitespace-pre-line">{step}</p>
-                </li>
-              ))}
-            </ol>
-          )}
         </div>
       </section>
 

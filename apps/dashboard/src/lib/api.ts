@@ -264,6 +264,10 @@ export const api = {
   transferLicense: (id: string, to_user_id: string) =>
     request(`/api/licenses/${id}/transfer`, { method: 'POST', body: JSON.stringify({ to_user_id }) }),
 
+  // Device transfer
+  transferDevice: (id: string, to_user_id: string) =>
+    request<{ ok: boolean }>(`/api/devices/${id}/transfer`, { method: 'POST', body: JSON.stringify({ to_user_id }) }),
+
   // Peak pricing rules (admin only)
   getPeakRules: () => request<PeakRule[]>('/api/peak-rules'),
   createPeakRule: (data: Omit<PeakRule, 'id' | 'created_at'>) =>

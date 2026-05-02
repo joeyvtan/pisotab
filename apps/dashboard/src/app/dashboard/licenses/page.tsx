@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { api, License } from '@/lib/api';
+import { api, License, StaffUser } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 
 interface LicenseWithOwner extends License {
@@ -19,6 +19,9 @@ export default function LicensesPage() {
   const [newKey, setNewKey]     = useState('');
   const [error, setError]       = useState('');
   const [busy, setBusy]         = useState<string | null>(null);
+  const [users, setUsers]       = useState<StaffUser[]>([]);
+  const [transferId, setTransferId]   = useState<string | null>(null);
+  const [transferTo, setTransferTo]   = useState('');
 
   const isAdmin      = user?.role === 'admin' || user?.role === 'superadmin';
   const isSuperAdmin = user?.role === 'superadmin';
@@ -34,7 +37,10 @@ export default function LicensesPage() {
     finally { setLoading(false); }
   }
 
-  useEffect(() => { if (isAdmin) load(); }, [isAdmin]);
+  useEffect(() => {
+    if (isAdmin) load();
+    if (isSuperAdmin) api.getUsers().then(u => setUsers(u.filter(x => x.status === 'approved'))).catch(() => {});
+  }, [isAdmin, isSuperAdmin]);
 
   async function generateKey() {
     setGen(true); setError(''); setNewKey('');
@@ -46,6 +52,20 @@ export default function LicensesPage() {
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Failed to generate');
     } finally { setGen(false); }
+  }
+
+  async function handleTransfer(id: string) {
+    if (!transferTo) { alert('Select a user first'); return; }
+    if (!confirm('Transfer this license?')) return;
+    setBusy(id);
+    try {
+      await api.transferLicense(id, transferTo);
+      setTransferId(null);
+      setTransferTo('');
+      load();
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : 'Transfer failed');
+    } finally { setBusy(null); }
   }
 
   async function handleAction(id: string, action: 'unbind' | 'deactivate' | 'delete') {
@@ -150,6 +170,11 @@ export default function LicensesPage() {
                 )}
                 {isSuperAdmin && (
                   <>
+                    <button disabled={busy === lic.id}
+                      onClick={() => { setTransferId(transferId === lic.id ? null : lic.id); setTransferTo(''); }}
+                      className="text-xs px-3 py-1.5 rounded bg-slate-700 hover:bg-indigo-700 text-slate-300 hover:text-white transition-colors">
+                      Transfer
+                    </button>
                     <button disabled={busy === lic.id} onClick={() => handleAction(lic.id, 'deactivate')}
                       className="text-xs px-3 py-1.5 rounded bg-slate-700 hover:bg-amber-700 text-slate-300 hover:text-white transition-colors">
                       Deactivate
@@ -161,6 +186,22 @@ export default function LicensesPage() {
                   </>
                 )}
               </div>
+              {/* Transfer panel */}
+              {isSuperAdmin && transferId === lic.id && (
+                <div className="flex items-center gap-2 flex-wrap pt-1">
+                  <select className="input text-xs flex-1 min-w-36" value={transferTo} onChange={e => setTransferTo(e.target.value)}>
+                    <option value="">— Select user —</option>
+                    {users.map(u => (
+                      <option key={u.id} value={u.id}>{u.username}{u.business_name ? ` (${u.business_name})` : ''}</option>
+                    ))}
+                  </select>
+                  <button disabled={busy === lic.id} onClick={() => handleTransfer(lic.id)}
+                    className="text-xs px-3 py-1.5 rounded bg-indigo-600 hover:bg-indigo-500 text-white transition-colors">
+                    Confirm Transfer
+                  </button>
+                  <button onClick={() => setTransferId(null)} className="text-xs text-slate-500 hover:text-white">Cancel</button>
+                </div>
+              )}
             </div>
           ))}
         </div>
