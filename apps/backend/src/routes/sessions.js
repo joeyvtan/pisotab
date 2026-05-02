@@ -31,7 +31,7 @@ router.get('/', requireAuth, async (req, res) => {
       WHERE 1=1
     `;
     const params = [];
-    if (role === 'admin') { query += ' AND d.owner_user_id = ?'; params.push(req.user.id); }
+    if (role === 'admin' || role === 'staff') { query += ' AND d.owner_user_id = ?'; params.push(req.user.id); }
     else if (role === 'superadmin' && account) { query += ' AND d.owner_user_id = ?'; params.push(account); }
     if (device_id) { query += ' AND s.device_id = ?'; params.push(device_id); }
     if (status)    { query += ' AND s.status = ?';    params.push(status); }
@@ -103,7 +103,7 @@ router.get('/analytics', requireAuth, async (req, res) => {
     let ownerJoin   = 'JOIN devices d ON s.device_id = d.id';
     let ownerClause = '';
     const scopeParam = [since];
-    if (role === 'admin') { ownerClause = 'AND d.owner_user_id = ?'; scopeParam.push(req.user.id); }
+    if (role === 'admin' || role === 'staff') { ownerClause = 'AND d.owner_user_id = ?'; scopeParam.push(req.user.id); }
     else if (role === 'superadmin' && account) { ownerClause = 'AND d.owner_user_id = ?'; scopeParam.push(account); }
 
     const hourly = await db.all(`
@@ -148,7 +148,7 @@ router.get('/revenue/summary', requireAuth, async (req, res) => {
     let ownerJoin   = '';
     let ownerClause = '';
     const scopeParam = [];
-    if (role === 'admin') {
+    if (role === 'admin' || role === 'staff') {
       ownerJoin = 'JOIN devices d ON s.device_id = d.id';
       ownerClause = 'AND d.owner_user_id = ?'; scopeParam.push(req.user.id);
     } else if (role === 'superadmin' && account) {
@@ -191,7 +191,7 @@ router.get('/export', requireAuth, async (req, res) => {
       WHERE 1=1
     `;
     const params = [];
-    if (role === 'admin')                        { query += ' AND d.owner_user_id = ?'; params.push(req.user.id); }
+    if (role === 'admin' || role === 'staff')     { query += ' AND d.owner_user_id = ?'; params.push(req.user.id); }
     else if (role === 'superadmin' && account)   { query += ' AND d.owner_user_id = ?'; params.push(account); }
     query += ' ORDER BY s.started_at DESC';
 

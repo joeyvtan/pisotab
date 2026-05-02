@@ -51,7 +51,7 @@ router.get('/', requireAuth, async (req, res) => {
 
     let ownerClause = '';
     const extraParams = [now];
-    if (role === 'admin') {
+    if (role === 'admin' || role === 'staff') {
       ownerClause = 'AND d.owner_user_id = ?';
       extraParams.push(req.user.id);
     } else if (role === 'superadmin' && account) {
