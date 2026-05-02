@@ -1,6 +1,6 @@
 /**
  * App settings routes — key/value store for platform feature flags.
- * GET  /api/app-settings         requireAuth     — returns all settings
+ * GET  /api/app-settings         public          — returns all settings (download URLs are public)
  * PATCH /api/app-settings/:key   requireSuperAdmin — update a single setting
  */
 const express = require('express');
@@ -8,7 +8,7 @@ const router = express.Router();
 const { getDb } = require('../db');
 const { requireAuth, requireSuperAdmin } = require('./auth');
 
-router.get('/', requireAuth, async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     const db = getDb();
     const rows = await db.all('SELECT key, value FROM app_settings', []);
