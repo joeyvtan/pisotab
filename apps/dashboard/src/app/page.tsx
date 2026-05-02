@@ -351,91 +351,10 @@ export default function LandingPage() {
               </ol>
             </div>
 
-            {/* Step 5 — ADB Commands */}
+            {/* Step 5 */}
             <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
               <div className="flex items-center gap-3 mb-3">
                 <span className="w-7 h-7 rounded-full bg-red-600 flex items-center justify-center text-white font-bold text-sm shrink-0">5</span>
-                <h3 className="text-white font-semibold">ADB Setup — Device Owner &amp; Permissions</h3>
-              </div>
-              <p className="text-slate-400 mb-4 ml-10">
-                These commands grant the app the system-level permissions required for Kiosk Mode, floating timer, and secure settings.
-                Connect the tablet to your PC via USB and run the commands below in <strong className="text-slate-300">Command Prompt (CMD)</strong>.
-              </p>
-
-              {/* Prerequisites */}
-              <div className="ml-10 mb-4">
-                <p className="text-slate-300 font-medium mb-2">Prerequisites — enable USB Debugging on the tablet:</p>
-                <ol className="list-decimal list-inside space-y-1 text-slate-400">
-                  <li>Go to <strong className="text-slate-300">Settings → About phone</strong> and tap <strong className="text-slate-300">Build number</strong> 7 times.</li>
-                  <li>Go to <strong className="text-slate-300">Settings → Developer options</strong> and enable <strong className="text-slate-300">USB Debugging</strong>.</li>
-                  <li>Connect the tablet to your PC via USB — accept the "Allow USB debugging" prompt on the tablet.</li>
-                </ol>
-              </div>
-
-              {/* ADB path note */}
-              <div className="ml-10 mb-4 p-3 bg-blue-950/40 border border-blue-800/50 rounded-lg">
-                <p className="text-blue-300 text-xs leading-relaxed">
-                  <strong>Full-path commands below work from any CMD window</strong> — no need to navigate to platform-tools first.
-                  The path <code className="bg-slate-800 px-1 rounded font-mono">%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe</code> is the default Android Studio install location.
-                  If you installed ADB elsewhere, replace that path with the folder where <code className="bg-slate-800 px-1 rounded font-mono">adb.exe</code> is located.
-                </p>
-              </div>
-
-              <div className="ml-10 space-y-5">
-
-                {/* Set Device Owner */}
-                <div>
-                  <p className="text-slate-300 font-medium mb-1">
-                    1. Set Device Owner <span className="text-red-400 font-normal">(required for Kiosk Mode)</span>
-                  </p>
-                  <p className="text-slate-500 text-xs mb-2">Run this once on a fresh install. The app must be the only accounts-capable app and no Google accounts should be added to the tablet before running.</p>
-                  <CopyCommand command={`"%LOCALAPPDATA%\\Android\\Sdk\\platform-tools\\adb.exe" shell dpm set-device-owner com.pisotab.app/.receiver.DeviceAdminReceiver`} />
-                  <p className="text-slate-500 text-xs mt-1">Expected output: <span className="text-green-400">Success: Device owner set to package com.pisotab.app</span></p>
-                </div>
-
-                {/* System Alert Window */}
-                <div>
-                  <p className="text-slate-300 font-medium mb-1">
-                    2. Grant System Alert Window <span className="text-slate-400 font-normal">(required for Floating Timer overlay)</span>
-                  </p>
-                  <p className="text-slate-500 text-xs mb-2">Allows the countdown timer to appear on top of other apps.</p>
-                  <CopyCommand command={`"%LOCALAPPDATA%\\Android\\Sdk\\platform-tools\\adb.exe" shell appops set com.pisotab.app SYSTEM_ALERT_WINDOW allow`} />
-                </div>
-
-                {/* Write Secure Settings */}
-                <div>
-                  <p className="text-slate-300 font-medium mb-1">
-                    3. Grant Write Secure Settings <span className="text-slate-400 font-normal">(required for lock screen &amp; kiosk controls)</span>
-                  </p>
-                  <p className="text-slate-500 text-xs mb-2">Allows the app to control screen lock behavior and system UI settings.</p>
-                  <CopyCommand command={`"%LOCALAPPDATA%\\Android\\Sdk\\platform-tools\\adb.exe" shell pm grant com.pisotab.app android.permission.WRITE_SECURE_SETTINGS`} />
-                </div>
-
-                {/* Verify Device Owner */}
-                <div>
-                  <p className="text-slate-300 font-medium mb-1">
-                    4. Verify Device Owner <span className="text-slate-400 font-normal">(optional — confirm it was set)</span>
-                  </p>
-                  <CopyCommand command={`"%LOCALAPPDATA%\\Android\\Sdk\\platform-tools\\adb.exe" shell dpm list-owners`} />
-                  <p className="text-slate-500 text-xs mt-1">Should show <span className="text-green-400">com.pisotab.app</span> as the device owner.</p>
-                </div>
-
-                {/* Remove Device Owner */}
-                <div>
-                  <p className="text-slate-300 font-medium mb-1">
-                    5. Remove Device Owner <span className="text-slate-400 font-normal">(only if you need to uninstall or reset)</span>
-                  </p>
-                  <p className="text-slate-500 text-xs mb-2">You can also remove it from Admin panel → Kiosk Mode → Deactivate. Use ADB only if the app is inaccessible.</p>
-                  <CopyCommand command={`"%LOCALAPPDATA%\\Android\\Sdk\\platform-tools\\adb.exe" shell dpm remove-active-admin com.pisotab.app/.receiver.DeviceAdminReceiver`} />
-                </div>
-
-              </div>
-            </div>
-
-            {/* Step 6 */}
-            <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
-              <div className="flex items-center gap-3 mb-3">
-                <span className="w-7 h-7 rounded-full bg-red-600 flex items-center justify-center text-white font-bold text-sm shrink-0">6</span>
                 <h3 className="text-white font-semibold">Final Configuration &amp; Kiosk Mode</h3>
               </div>
               <ol className="list-decimal list-inside space-y-1.5 text-slate-400 ml-10">
@@ -445,6 +364,10 @@ export default function LandingPage() {
                 <li>Once everything works, go to <strong className="text-slate-300">Kiosk Mode</strong> and enable it — this locks the tablet to the app.</li>
                 <li>Change the Admin PIN from the default <code className="bg-slate-700 px-1.5 py-0.5 rounded text-red-300 font-mono">1234</code> to a secure PIN.</li>
               </ol>
+              <p className="text-slate-500 text-xs mt-3 ml-10">
+                For ADB commands (Device Owner, System Alert, and other required permissions), see the full
+                <strong className="text-slate-400"> User Guides</strong> section after logging in to your dashboard.
+              </p>
             </div>
 
           </div>
