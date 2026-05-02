@@ -130,8 +130,19 @@ function computeLicenseStatus(device, now) {
 
 async function sendCurrentState(socket) {
   try {
-    const db = getDb();
-    const now = Math.floor(Date.now() / 1000);
+    const db   = getDb();
+    const now  = Math.floor(Date.now() / 1000);
+    const role = socket.user?.role;
+    const uid  = socket.user?.id;
+
+    // Mirror the same owner scoping used by GET /api/devices
+    let ownerClause = '';
+    const params = [now];
+    if (role === 'admin' || role === 'staff') {
+      ownerClause = 'AND d.owner_user_id = ?';
+      params.push(uid);
+    }
+
     const rows = await db.all(
       `SELECT d.*, l.name AS location_name,
         (SELECT id FROM sessions WHERE device_id = d.id AND status IN ('active','paused') LIMIT 1) AS active_session_id,
@@ -142,8 +153,9 @@ async function sendCurrentState(socket) {
         lic.expires_at AS lic_expires_at
        FROM devices d
        LEFT JOIN locations l ON d.location_id = l.id
-       LEFT JOIN licenses lic ON lic.device_id = d.id AND (lic.expires_at IS NULL OR lic.expires_at > ?)`,
-      [now]
+       LEFT JOIN licenses lic ON lic.device_id = d.id AND (lic.expires_at IS NULL OR lic.expires_at > ?)
+       WHERE 1=1 ${ownerClause}`,
+      params
     );
 
     const devices = rows.map(d => {

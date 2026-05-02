@@ -29,30 +29,33 @@ export function useDevices(account?: string) {
     if (!token) return;
     const socket = getSocket(token);
 
-    socket.on('device:status', ({ device_id, status }: { device_id: string; status: string }) => {
+    const onDeviceStatus = ({ device_id, status }: { device_id: string; status: string }) => {
       setDevices(prev => prev.map(d => d.id === device_id ? { ...d, status: status as Device['status'] } : d));
-    });
-
-    socket.on('session:started', () => refresh());
-    socket.on('session:ended', ({ device_id }: { device_id: string }) => {
+    };
+    const onSessionStarted = () => refresh();
+    const onSessionEnded = ({ device_id }: { device_id: string }) => {
       setDevices(prev => prev.map(d => d.id === device_id
         ? { ...d, status: 'online', active_session_id: undefined, time_remaining_secs: undefined }
         : d
       ));
-    });
-
-    socket.on('session:updated', ({ device_id, time_remaining_secs }: { device_id: string; time_remaining_secs: number }) => {
+    };
+    const onSessionUpdated = ({ device_id, time_remaining_secs }: { device_id: string; time_remaining_secs: number }) => {
       setDevices(prev => prev.map(d => d.id === device_id ? { ...d, time_remaining_secs } : d));
-    });
+    };
+    const onStateDevices = (data: Device[]) => setDevices(data);
 
-    socket.on('state:devices', (data: Device[]) => setDevices(data));
+    socket.on('device:status', onDeviceStatus);
+    socket.on('session:started', onSessionStarted);
+    socket.on('session:ended', onSessionEnded);
+    socket.on('session:updated', onSessionUpdated);
+    socket.on('state:devices', onStateDevices);
 
     return () => {
-      socket.off('device:status');
-      socket.off('session:started');
-      socket.off('session:ended');
-      socket.off('session:updated');
-      socket.off('state:devices');
+      socket.off('device:status', onDeviceStatus);
+      socket.off('session:started', onSessionStarted);
+      socket.off('session:ended', onSessionEnded);
+      socket.off('session:updated', onSessionUpdated);
+      socket.off('state:devices', onStateDevices);
     };
   }, [token, refresh]);
 
