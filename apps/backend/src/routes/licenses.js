@@ -179,34 +179,54 @@ router.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
   } catch (err) { console.error(err); res.status(500).json({ error: 'Server error' }); }
 });
 
-// POST /api/licenses/:id/transfer — superadmin transfers license ownership between admin accounts
-router.post('/:id/transfer', requireAuth, requireSuperAdmin, async (req, res) => {
-  const { to_user_id } = req.body;
-  if (!to_user_id) return res.status(400).json({ error: 'to_user_id required' });
+// POST /api/licenses/:id/transfer — superadmin uses to_user_id, admin uses to_email
+router.post('/:id/transfer', requireAuth, async (req, res) => {
+  const role = req.user.role;
+  if (role !== 'superadmin' && role !== 'admin') {
+    return res.status(403).json({ error: 'Admin or superadmin required' });
+  }
+
+  const { to_user_id, to_email } = req.body;
 
   try {
     const db = getDb();
     const license = await db.get('SELECT * FROM licenses WHERE id = ?', [req.params.id]);
     if (!license) return res.status(404).json({ error: 'License not found' });
 
-    const toUser = await db.get('SELECT id, role FROM users WHERE id = ?', [to_user_id]);
-    if (!toUser) return res.status(404).json({ error: 'Target user not found' });
+    // Admin can only transfer their own licenses
+    if (role === 'admin' && license.owner_user_id !== req.user.id) {
+      return res.status(403).json({ error: 'You can only transfer your own licenses' });
+    }
+
+    let toUser;
+    if (role === 'superadmin') {
+      if (!to_user_id) return res.status(400).json({ error: 'to_user_id required' });
+      toUser = await db.get('SELECT id, role FROM users WHERE id = ?', [to_user_id]);
+      if (!toUser) return res.status(404).json({ error: 'Target user not found' });
+    } else {
+      if (!to_email) return res.status(400).json({ error: 'to_email required' });
+      toUser = await db.get(
+        "SELECT id, role FROM users WHERE LOWER(email) = LOWER(?) AND status = 'approved'",
+        [to_email.trim()]
+      );
+      if (!toUser) return res.status(404).json({ error: 'No registered user found with that email address' });
+    }
+
     if (toUser.role !== 'admin' && toUser.role !== 'superadmin') {
       return res.status(400).json({ error: 'License can only be transferred to an admin account' });
     }
 
     const fromUserId = license.owner_user_id;
-    await db.run('UPDATE licenses SET owner_user_id = ? WHERE id = ?', [to_user_id, req.params.id]);
+    await db.run('UPDATE licenses SET owner_user_id = ? WHERE id = ?', [toUser.id, req.params.id]);
 
-    // Record in license_transfers audit table
     const transferId = 'ltr_' + uuidv4().replace(/-/g, '').slice(0, 8);
     await db.run(
       `INSERT INTO license_transfers (id, license_id, from_user_id, to_user_id, transferred_by)
        VALUES (?, ?, ?, ?, ?)`,
-      [transferId, req.params.id, fromUserId || null, to_user_id, req.user.id]
+      [transferId, req.params.id, fromUserId || null, toUser.id, req.user.id]
     );
 
-    res.json({ ok: true, license_id: req.params.id, from_user_id: fromUserId, to_user_id });
+    res.json({ ok: true });
   } catch (err) { console.error(err); res.status(500).json({ error: 'Server error' }); }
 });
 

@@ -22,6 +22,8 @@ export default function LicensesPage() {
   const [users, setUsers]       = useState<StaffUser[]>([]);
   const [transferId, setTransferId]   = useState<string | null>(null);
   const [transferTo, setTransferTo]   = useState('');
+  const [transferEmail, setTransferEmail] = useState('');
+  const [transferError, setTransferError] = useState('');
 
   const isAdmin      = user?.role === 'admin' || user?.role === 'superadmin';
   const isSuperAdmin = user?.role === 'superadmin';
@@ -55,16 +57,20 @@ export default function LicensesPage() {
   }
 
   async function handleTransfer(id: string) {
-    if (!transferTo) { alert('Select a user first'); return; }
+    setTransferError('');
+    if (isSuperAdmin && !transferTo) { setTransferError('Select a user first'); return; }
+    if (!isSuperAdmin && !transferEmail.trim()) { setTransferError('Enter an email address'); return; }
     if (!confirm('Transfer this license?')) return;
     setBusy(id);
     try {
-      await api.transferLicense(id, transferTo);
+      const data = isSuperAdmin ? { to_user_id: transferTo } : { to_email: transferEmail.trim() };
+      await api.transferLicense(id, data);
       setTransferId(null);
       setTransferTo('');
+      setTransferEmail('');
       load();
     } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : 'Transfer failed');
+      setTransferError(e instanceof Error ? e.message : 'Transfer failed');
     } finally { setBusy(null); }
   }
 
@@ -168,13 +174,15 @@ export default function LicensesPage() {
                     Unbind
                   </button>
                 )}
+                {isAdmin && (
+                  <button disabled={busy === lic.id}
+                    onClick={() => { setTransferId(transferId === lic.id ? null : lic.id); setTransferTo(''); setTransferEmail(''); setTransferError(''); }}
+                    className="text-xs px-3 py-1.5 rounded bg-slate-700 hover:bg-indigo-700 text-slate-300 hover:text-white transition-colors">
+                    Transfer
+                  </button>
+                )}
                 {isSuperAdmin && (
                   <>
-                    <button disabled={busy === lic.id}
-                      onClick={() => { setTransferId(transferId === lic.id ? null : lic.id); setTransferTo(''); }}
-                      className="text-xs px-3 py-1.5 rounded bg-slate-700 hover:bg-indigo-700 text-slate-300 hover:text-white transition-colors">
-                      Transfer
-                    </button>
                     <button disabled={busy === lic.id} onClick={() => handleAction(lic.id, 'deactivate')}
                       className="text-xs px-3 py-1.5 rounded bg-slate-700 hover:bg-amber-700 text-slate-300 hover:text-white transition-colors">
                       Deactivate
@@ -187,19 +195,33 @@ export default function LicensesPage() {
                 )}
               </div>
               {/* Transfer panel */}
-              {isSuperAdmin && transferId === lic.id && (
-                <div className="flex items-center gap-2 flex-wrap pt-1">
-                  <select className="input text-xs flex-1 min-w-36" value={transferTo} onChange={e => setTransferTo(e.target.value)}>
-                    <option value="">— Select user —</option>
-                    {users.map(u => (
-                      <option key={u.id} value={u.id}>{u.username}{u.business_name ? ` (${u.business_name})` : ''}</option>
-                    ))}
-                  </select>
-                  <button disabled={busy === lic.id} onClick={() => handleTransfer(lic.id)}
-                    className="text-xs px-3 py-1.5 rounded bg-indigo-600 hover:bg-indigo-500 text-white transition-colors">
-                    Confirm Transfer
-                  </button>
-                  <button onClick={() => setTransferId(null)} className="text-xs text-slate-500 hover:text-white">Cancel</button>
+              {transferId === lic.id && (
+                <div className="space-y-2 pt-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {isSuperAdmin ? (
+                      <select className="input text-xs flex-1 min-w-36" value={transferTo} onChange={e => setTransferTo(e.target.value)}>
+                        <option value="">— Select user —</option>
+                        {users.map(u => (
+                          <option key={u.id} value={u.id}>{u.username}{u.business_name ? ` (${u.business_name})` : ''}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        className="input text-xs flex-1 min-w-48"
+                        type="email"
+                        placeholder="Enter recipient's registered email"
+                        value={transferEmail}
+                        onChange={e => { setTransferEmail(e.target.value); setTransferError(''); }}
+                      />
+                    )}
+                    <button disabled={busy === lic.id} onClick={() => handleTransfer(lic.id)}
+                      className="text-xs px-3 py-1.5 rounded bg-indigo-600 hover:bg-indigo-500 text-white transition-colors">
+                      Confirm Transfer
+                    </button>
+                    <button onClick={() => { setTransferId(null); setTransferError(''); setTransferEmail(''); }}
+                      className="text-xs text-slate-500 hover:text-white">Cancel</button>
+                  </div>
+                  {transferError && <p className="text-red-400 text-xs">{transferError}</p>}
                 </div>
               )}
             </div>

@@ -260,13 +260,13 @@ export const api = {
       method: 'POST', body: JSON.stringify({ temp_token, code }),
     }),
 
-  // License transfer
-  transferLicense: (id: string, to_user_id: string) =>
-    request(`/api/licenses/${id}/transfer`, { method: 'POST', body: JSON.stringify({ to_user_id }) }),
+  // License transfer — superadmin uses to_user_id, admin uses to_email
+  transferLicense: (id: string, data: { to_user_id?: string; to_email?: string }) =>
+    request<{ ok: boolean }>(`/api/licenses/${id}/transfer`, { method: 'POST', body: JSON.stringify(data) }),
 
-  // Device transfer
-  transferDevice: (id: string, to_user_id: string) =>
-    request<{ ok: boolean }>(`/api/devices/${id}/transfer`, { method: 'POST', body: JSON.stringify({ to_user_id }) }),
+  // Device transfer — superadmin uses to_user_id, admin uses to_email
+  transferDevice: (id: string, data: { to_user_id?: string; to_email?: string }) =>
+    request<{ ok: boolean }>(`/api/devices/${id}/transfer`, { method: 'POST', body: JSON.stringify(data) }),
 
   // Peak pricing rules (admin only)
   getPeakRules: () => request<PeakRule[]>('/api/peak-rules'),

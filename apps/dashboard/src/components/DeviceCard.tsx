@@ -23,6 +23,8 @@ export default function DeviceCard({ device, tiers, onUpdate }: Props) {
   const [showTransfer, setShowTransfer]   = useState(false);
   const [transferUsers, setTransferUsers] = useState<StaffUser[]>([]);
   const [transferTo, setTransferTo]       = useState('');
+  const [transferEmail, setTransferEmail] = useState('');
+  const [transferError, setTransferError] = useState('');
   const [transferBusy, setTransferBusy]   = useState(false);
   const [selectedTier, setSelectedTier] = useState(tiers[0]?.id || '');
   const [customMins, setCustomMins]     = useState('');
@@ -101,16 +103,21 @@ export default function DeviceCard({ device, tiers, onUpdate }: Props) {
   }
 
   async function doTransfer() {
-    if (!transferTo) { alert('Select a user first'); return; }
-    if (!confirm(`Transfer device "${device.name}" to selected user?`)) return;
+    setTransferError('');
+    const isSuperAdmin = user?.role === 'superadmin';
+    if (isSuperAdmin && !transferTo) { setTransferError('Select a user first'); return; }
+    if (!isSuperAdmin && !transferEmail.trim()) { setTransferError('Enter an email address'); return; }
+    if (!confirm(`Transfer device "${device.name}"?`)) return;
     setTransferBusy(true);
     try {
-      await api.transferDevice(device.id, transferTo);
+      const data = isSuperAdmin ? { to_user_id: transferTo } : { to_email: transferEmail.trim() };
+      await api.transferDevice(device.id, data);
       setShowTransfer(false);
       setTransferTo('');
+      setTransferEmail('');
       onUpdate();
     } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : 'Transfer failed');
+      setTransferError(e instanceof Error ? e.message : 'Transfer failed');
     } finally { setTransferBusy(false); }
   }
 
@@ -221,10 +228,10 @@ export default function DeviceCard({ device, tiers, onUpdate }: Props) {
               ⚙ Trial settings
             </button>
           )}
-          {user?.role === 'superadmin' && (
+          {canManage && (
             <button
               className="text-xs text-slate-500 hover:text-indigo-400 transition-colors"
-              onClick={() => { showTransfer ? setShowTransfer(false) : openTransfer(); }}>
+              onClick={() => { if (showTransfer) { setShowTransfer(false); setTransferError(''); setTransferEmail(''); } else { openTransfer(); } }}>
               ↔ Transfer
             </button>
           )}
@@ -281,21 +288,35 @@ export default function DeviceCard({ device, tiers, onUpdate }: Props) {
       )}
 
       {/* Transfer device panel */}
-      {showTransfer && user?.role === 'superadmin' && (
+      {showTransfer && canManage && (
         <div className="bg-slate-800 border border-indigo-700/40 rounded-lg p-3 space-y-3">
           <p className="text-xs text-indigo-400 font-medium">Transfer Device to Another User</p>
-          <select className="input text-sm w-full" value={transferTo} onChange={e => setTransferTo(e.target.value)}>
-            <option value="">— Select user —</option>
-            {transferUsers.map(u => (
-              <option key={u.id} value={u.id}>{u.username}{u.business_name ? ` (${u.business_name})` : ''}</option>
-            ))}
-          </select>
+          {user?.role === 'superadmin' ? (
+            <select className="input text-sm w-full" value={transferTo} onChange={e => { setTransferTo(e.target.value); setTransferError(''); }}>
+              <option value="">— Select user —</option>
+              {transferUsers.map(u => (
+                <option key={u.id} value={u.id}>{u.username}{u.business_name ? ` (${u.business_name})` : ''}</option>
+              ))}
+            </select>
+          ) : (
+            <input
+              className="input text-sm w-full"
+              type="email"
+              placeholder="Enter recipient's registered email"
+              value={transferEmail}
+              onChange={e => { setTransferEmail(e.target.value); setTransferError(''); }}
+            />
+          )}
+          {transferError && <p className="text-red-400 text-xs">{transferError}</p>}
           <div className="flex gap-2">
             <button className="flex-1 text-sm py-1.5 rounded bg-indigo-600 hover:bg-indigo-500 text-white transition-colors"
               onClick={doTransfer} disabled={transferBusy}>
               {transferBusy ? 'Transferring...' : 'Confirm Transfer'}
             </button>
-            <button className="text-xs text-slate-500 hover:text-white" onClick={() => setShowTransfer(false)}>Cancel</button>
+            <button className="text-xs text-slate-500 hover:text-white"
+              onClick={() => { setShowTransfer(false); setTransferError(''); setTransferEmail(''); }}>
+              Cancel
+            </button>
           </div>
         </div>
       )}

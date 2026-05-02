@@ -168,18 +168,40 @@ router.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
   }
 });
 
-// POST /api/devices/:id/transfer — superadmin only
+// POST /api/devices/:id/transfer — superadmin uses to_user_id, admin uses to_email
 router.post('/:id/transfer', requireAuth, async (req, res) => {
-  if (req.user.role !== 'superadmin') return res.status(403).json({ error: 'Superadmin only' });
-  const { to_user_id } = req.body;
-  if (!to_user_id) return res.status(400).json({ error: 'to_user_id required' });
+  const role = req.user.role;
+  if (role !== 'superadmin' && role !== 'admin') {
+    return res.status(403).json({ error: 'Admin or superadmin required' });
+  }
+
+  const { to_user_id, to_email } = req.body;
+
   try {
     const db = getDb();
-    const device = await db.get('SELECT id FROM devices WHERE id = ?', [req.params.id]);
+    const device = await db.get('SELECT id, owner_user_id FROM devices WHERE id = ?', [req.params.id]);
     if (!device) return res.status(404).json({ error: 'Device not found' });
-    const toUser = await db.get('SELECT id FROM users WHERE id = ?', [to_user_id]);
-    if (!toUser) return res.status(404).json({ error: 'Target user not found' });
-    await db.run('UPDATE devices SET owner_user_id = ? WHERE id = ?', [to_user_id, req.params.id]);
+
+    // Admin can only transfer their own devices
+    if (role === 'admin' && device.owner_user_id !== req.user.id) {
+      return res.status(403).json({ error: 'You can only transfer your own devices' });
+    }
+
+    let toUser;
+    if (role === 'superadmin') {
+      if (!to_user_id) return res.status(400).json({ error: 'to_user_id required' });
+      toUser = await db.get('SELECT id FROM users WHERE id = ?', [to_user_id]);
+      if (!toUser) return res.status(404).json({ error: 'Target user not found' });
+    } else {
+      if (!to_email) return res.status(400).json({ error: 'to_email required' });
+      toUser = await db.get(
+        "SELECT id FROM users WHERE LOWER(email) = LOWER(?) AND status = 'approved'",
+        [to_email.trim()]
+      );
+      if (!toUser) return res.status(404).json({ error: 'No registered user found with that email address' });
+    }
+
+    await db.run('UPDATE devices SET owner_user_id = ? WHERE id = ?', [toUser.id, req.params.id]);
     res.json({ ok: true });
   } catch (err) {
     console.error(err);
