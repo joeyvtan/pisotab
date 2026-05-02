@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<bitmap xmlns:android="http://schemas.android.com/apk/res/android"
-    android:src="@drawable/ic_launcher_foreground_bitmap"
-    android:gravity="fill" />
+<!-- 17% inset on each side = 34% total, keeping logo inside the adaptive icon safe zone (72dp of 108dp) -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/ic_launcher_foreground_bitmap"
+    android:inset="17%" />
