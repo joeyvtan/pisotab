@@ -44,12 +44,17 @@ class SessionsFragment : Fragment() {
         lifecycleScope.launch {
             try {
                 val app = requireActivity().application as PisoTabApp
-                val response = app.api.getSessions(limit = 100)
+                // Do not fetch if device is not configured yet — would return other devices' data
+                if (!app.prefs.isConfigured) {
+                    adapter.update(emptyList())
+                    return@launch
+                }
+                val response = app.api.getSessions(limit = 100, deviceId = app.prefs.deviceId)
                 if (response.isSuccessful) {
                     adapter.update(response.body() ?: emptyList())
                 }
             } catch (_: Exception) {
-                // Network unavailable — show cached data or empty list
+                // Network unavailable — show empty list
             } finally {
                 swipeRefresh.isRefreshing = false
             }

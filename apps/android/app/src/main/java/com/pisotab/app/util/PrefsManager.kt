@@ -149,7 +149,7 @@ class PrefsManager(context: Context) {
 
     /** Animated background preset for idle + lock screens: 0=None, 1=CoinRain, 2=Pulse, 3=Stars */
     var animationPreset: Int
-        get() = prefs.getInt("animation_preset", 0)
+        get() = prefs.getInt("animation_preset", 1)  // default = CoinRain on fresh install
         set(v) = prefs.edit { putInt("animation_preset", v) }
 
     /** Built-in wallpaper preset: 0=Custom (use URI), 1=Galaxy, 2=Circuit, 3=Neon Grid */

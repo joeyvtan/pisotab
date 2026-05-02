@@ -43,7 +43,16 @@ class EarningsFragment : Fragment() {
         lifecycleScope.launch {
             try {
                 val app = requireActivity().application as PisoTabApp
-                val response = app.api.getSessions(limit = 10000)
+                // Do not fetch if device is not configured yet — would return other devices' data
+                if (!app.prefs.isConfigured) {
+                    tvTotalAllTime.text  = "₱0.00"
+                    tvTotalSessions.text = "0 sessions"
+                    tvToday.text         = "₱0.00"
+                    tvThisWeek.text      = "₱0.00"
+                    tvThisMonth.text     = "₱0.00"
+                    return@launch
+                }
+                val response = app.api.getSessions(limit = 10000, deviceId = app.prefs.deviceId)
                 if (!response.isSuccessful) return@launch
                 val sessions = response.body() ?: emptyList()
 
