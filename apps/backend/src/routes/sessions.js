@@ -326,16 +326,27 @@ router.delete('/', requireAuth, async (req, res) => {
   try {
     const db   = getDb();
     const role = req.user.role;
-    let query = "DELETE FROM sessions WHERE status = 'ended'";
+
+    // Build the set of ended session IDs to delete (scoped by owner)
+    let selectQuery = "SELECT id FROM sessions WHERE status = 'ended'";
     const params = [];
     if (role === 'admin' || role === 'staff') {
-      query += ' AND device_id IN (SELECT id FROM devices WHERE owner_user_id = ?)';
+      selectQuery += ' AND device_id IN (SELECT id FROM devices WHERE owner_user_id = ?)';
       params.push(req.user.id);
     } else if (role === 'superadmin' && req.query.account) {
-      query += ' AND device_id IN (SELECT id FROM devices WHERE owner_user_id = ?)';
+      selectQuery += ' AND device_id IN (SELECT id FROM devices WHERE owner_user_id = ?)';
       params.push(req.query.account);
     }
-    const result = await db.run(query, params);
+    const toDelete = await db.all(selectQuery, params);
+    if (toDelete.length === 0) return res.json({ deleted: 0 });
+
+    const ids = toDelete.map(r => r.id);
+    const placeholders = ids.map(() => '?').join(',');
+
+    // Delete child rows first to satisfy FK constraint
+    await db.run(`DELETE FROM session_time_additions WHERE session_id IN (${placeholders})`, ids);
+    const result = await db.run(`DELETE FROM sessions WHERE id IN (${placeholders})`, ids);
+
     res.json({ deleted: result.changes });
   } catch (err) {
     console.error(err);
