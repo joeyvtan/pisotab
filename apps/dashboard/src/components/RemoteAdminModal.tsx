@@ -22,7 +22,7 @@ export default function RemoteAdminModal({ deviceId, deviceName, onClose }: Prop
   // Editable fields
   const [mode, setMode]               = useState<'esp32' | 'usb'>('esp32');
   const [ratePerMin, setRatePerMin]   = useState('1');
-  const [secsPerCoin, setSecsPerCoin] = useState('300');
+  const [secsPerCoin, setSecsPerCoin] = useState('5');
   const [coinRates, setCoinRates]     = useState<CoinRate[]>([]);
   const [kioskMode, setKioskMode]     = useState(false);
   const [floatingTimer, setFloatingTimer] = useState(false);
@@ -42,7 +42,7 @@ export default function RemoteAdminModal({ deviceId, deviceName, onClose }: Prop
   function populateForm(c: DeviceConfig) {
     setMode(c.connection_mode as 'esp32' | 'usb');
     setRatePerMin(String(c.rate_per_min));
-    setSecsPerCoin(String(c.secs_per_coin));
+    setSecsPerCoin(String(c.secs_per_coin != null ? Math.round(c.secs_per_coin / 60) : 5));
     setCoinRates(parseCoinRates(c.coin_rates));
     setKioskMode(c.kiosk_mode);
     setFloatingTimer(c.floating_timer);
@@ -68,7 +68,7 @@ export default function RemoteAdminModal({ deviceId, deviceName, onClose }: Prop
       const result = await api.updateDeviceConfig(deviceId, {
         connection_mode:    mode,
         rate_per_min:       parseFloat(ratePerMin) || 1,
-        secs_per_coin:      parseInt(secsPerCoin) || 300,
+        secs_per_coin:      Math.round((parseFloat(secsPerCoin) || 5) * 60),
         coin_rates:         JSON.stringify(coinRates),
         kiosk_mode:         kioskMode,
         floating_timer:     floatingTimer,
@@ -156,8 +156,8 @@ export default function RemoteAdminModal({ deviceId, deviceName, onClose }: Prop
                     value={ratePerMin} onChange={e => setRatePerMin(e.target.value)} />
                 </div>
                 <div className="flex items-center gap-2">
-                  <label className="text-sm text-slate-300 w-32">Secs/coin</label>
-                  <input className="input flex-1 text-sm" type="number" min="1"
+                  <label className="text-sm text-slate-300 w-32">Mins/coin</label>
+                  <input className="input flex-1 text-sm" type="number" step="0.5" min="0.5"
                     value={secsPerCoin} onChange={e => setSecsPerCoin(e.target.value)} />
                 </div>
               </div>
