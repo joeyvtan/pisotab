@@ -57,10 +57,13 @@ async function handleMqttMessage(topic, data) {
     const { coin_value, pulses, credited_secs: rawCreditedSecs } = data;
 
     // Use device_configs as the authoritative source for coin-to-time conversion.
-    // ESP32 firmware sends its own credited_secs but that value is ignored when
-    // the admin has configured a rate — ensuring Remote Admin settings take effect.
+    // Priority:
+    //   1. coin_rates exact match → admin-configured minutes for that denomination
+    //   2. rate_per_min          → coin_value ÷ rate gives correct time for any denomination
+    //   3. secs_per_coin         → fixed per-pulse fallback (same time regardless of coin value)
+    //   4. rawCreditedSecs       → last resort: use ESP32 firmware value
     const deviceCfg = await db.get(
-      'SELECT secs_per_coin, coin_rates FROM device_configs WHERE device_id = ?',
+      'SELECT secs_per_coin, coin_rates, rate_per_min FROM device_configs WHERE device_id = ?',
       [device_id]
     );
 
@@ -70,9 +73,11 @@ async function handleMqttMessage(topic, data) {
       try { rates = JSON.parse(deviceCfg.coin_rates || '[]'); } catch { rates = []; }
       const match = rates.find(r => Math.abs(r.coin - coin_value) < 0.01);
       if (match) {
-        baseSecs = Math.round(match.minutes * 60); // coin_rates entry takes priority
+        baseSecs = Math.round(match.minutes * 60);                         // 1. coin_rates
+      } else if (deviceCfg.rate_per_min && deviceCfg.rate_per_min > 0) {
+        baseSecs = Math.round((coin_value / deviceCfg.rate_per_min) * 60); // 2. rate_per_min
       } else if (deviceCfg.secs_per_coin != null) {
-        baseSecs = deviceCfg.secs_per_coin;        // secs_per_coin as fallback
+        baseSecs = deviceCfg.secs_per_coin;                                // 3. secs_per_coin
       }
     }
 
@@ -101,17 +106,21 @@ async function handleMqttMessage(topic, data) {
     const deviceName = device?.name || device_id;
 
     if (session) {
+      const addedMins = Math.round(credited_secs / 60);
       await db.run(
-        'UPDATE sessions SET time_remaining_secs = time_remaining_secs + ?, amount_paid = amount_paid + ? WHERE id = ?',
-        [credited_secs, coin_value, session.id]
+        `UPDATE sessions
+         SET time_remaining_secs = time_remaining_secs + ?,
+             duration_mins       = duration_mins + ?,
+             amount_paid         = amount_paid + ?
+         WHERE id = ?`,
+        [credited_secs, addedMins, coin_value, session.id]
       );
       const newSecs = session.time_remaining_secs + credited_secs;
       io?.emit(EVENTS.SESSION_UPDATED, { device_id, session_id: session.id, time_remaining_secs: newSecs, status: session.status });
 
-      const addMins = Math.round(credited_secs / 60);
-      io?.to(`device:${device_id}`).emit('cmd:add_time', { added_mins: addMins, amount_paid: coin_value });
-      console.log(`[MQTT] Sent cmd:add_time (${addMins} min) → device:${device_id}`);
-      notify(`⏱ +${addMins} min added to ${deviceName} (₱${coin_value} coin)`);
+      io?.to(`device:${device_id}`).emit('cmd:add_time', { added_mins: addedMins, amount_paid: coin_value });
+      console.log(`[MQTT] Sent cmd:add_time (${addedMins} min) → device:${device_id}`);
+      notify(`⏱ +${addedMins} min added to ${deviceName} (₱${coin_value} coin)`);
     } else {
       // No active session — auto-start one from the coin insert
       const sessionId = 'ses_' + uuidv4().replace(/-/g, '').slice(0, 12);
