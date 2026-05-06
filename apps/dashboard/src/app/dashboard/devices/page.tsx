@@ -116,7 +116,7 @@ export default function DevicesPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {visibleDevices.map(device => (
-            <DeviceCard key={device.id} device={device} tiers={tiers} onUpdate={refresh} />
+            <DeviceCard key={device.id} device={device} tiers={tiers} locations={locations} onUpdate={refresh} />
           ))}
         </div>
       )}

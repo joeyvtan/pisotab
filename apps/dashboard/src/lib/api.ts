@@ -68,6 +68,10 @@ export const api = {
   pauseSession: (id: string) => request(`/api/sessions/${id}/pause`, { method: 'POST' }),
   resumeSession: (id: string) => request(`/api/sessions/${id}/resume`, { method: 'POST' }),
   endSession: (id: string) => request(`/api/sessions/${id}/end`, { method: 'POST' }),
+  clearSessions: (params?: Record<string, string>) => {
+    const qs = params && Object.keys(params).length ? '?' + new URLSearchParams(params).toString() : '';
+    return request<{ deleted: number }>('/api/sessions' + qs, { method: 'DELETE' });
+  },
   addTime: (id: string, added_mins: number, amount_paid: number) =>
     request(`/api/sessions/${id}/add-time`, {
       method: 'POST', body: JSON.stringify({ added_mins, amount_paid }),

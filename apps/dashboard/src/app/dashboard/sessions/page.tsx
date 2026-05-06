@@ -32,6 +32,14 @@ export default function SessionsPage() {
     load();
   }
 
+  async function clearHistory() {
+    if (!confirm('Delete all ended session records? Active/paused sessions are not affected.')) return;
+    const params: Record<string, string> = {};
+    if (account) params.account = account;
+    await api.clearSessions(params);
+    load();
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -44,6 +52,9 @@ export default function SessionsPage() {
             <option value="paused">Paused</option>
             <option value="ended">Ended</option>
           </select>
+          <button className="btn-secondary text-sm" onClick={clearHistory}>
+            🗑 Reset Logs
+          </button>
         </div>
       </div>
 

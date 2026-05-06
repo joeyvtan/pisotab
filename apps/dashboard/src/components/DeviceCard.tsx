@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { Device, PricingTier, StaffUser } from '@/lib/api';
+import { Device, Location, PricingTier, StaffUser } from '@/lib/api';
 import { api } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import { formatTime, formatPeso, timeSince } from '@/lib/utils';
@@ -9,13 +9,18 @@ import RemoteAdminModal from './RemoteAdminModal';
 interface Props {
   device: Device;
   tiers: PricingTier[];
+  locations: Location[];
   onUpdate: () => void;
 }
 
-export default function DeviceCard({ device, tiers, onUpdate }: Props) {
+export default function DeviceCard({ device, tiers, locations, onUpdate }: Props) {
   const { user } = useAuth();
   const canManage = user?.role === 'admin' || user?.role === 'superadmin';
 
+  const [showEdit, setShowEdit]           = useState(false);
+  const [editName, setEditName]           = useState(device.name);
+  const [editLocId, setEditLocId]         = useState(device.location_id || '');
+  const [editBusy, setEditBusy]           = useState(false);
   const [showStart, setShowStart]         = useState(false);
   const [showAddTime, setShowAddTime]     = useState(false);
   const [showTrial, setShowTrial]         = useState(false);
@@ -92,6 +97,18 @@ export default function DeviceCard({ device, tiers, onUpdate }: Props) {
     } finally { setBusy(false); }
   }
 
+  async function saveEdit() {
+    if (!editName.trim()) return;
+    setEditBusy(true);
+    try {
+      await api.updateDevice(device.id, { name: editName.trim(), location_id: editLocId || undefined });
+      setShowEdit(false);
+      onUpdate();
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : 'Failed to update device');
+    } finally { setEditBusy(false); }
+  }
+
   async function openTransfer() {
     setShowTransfer(true);
     if (transferUsers.length === 0) {
@@ -150,7 +167,17 @@ export default function DeviceCard({ device, tiers, onUpdate }: Props) {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h3 className="font-bold text-white text-lg">{device.name}</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="font-bold text-white text-lg">{device.name}</h3>
+            {canManage && (
+              <button
+                onClick={() => { setEditName(device.name); setEditLocId(device.location_id || ''); setShowEdit(!showEdit); }}
+                className="text-slate-500 hover:text-orange-400 transition-colors text-xs"
+                title="Edit device">
+                ✏
+              </button>
+            )}
+          </div>
           <p className="text-xs text-slate-400">{device.location_name || 'No location'}</p>
           <div className="mt-1">{licenseBadge()}</div>
         </div>
@@ -158,6 +185,34 @@ export default function DeviceCard({ device, tiers, onUpdate }: Props) {
           {device.status.replace('_', ' ')}
         </span>
       </div>
+
+      {/* Inline edit form */}
+      {showEdit && canManage && (
+        <div className="bg-slate-700 rounded-lg p-3 space-y-2">
+          <p className="text-xs text-slate-400 font-medium">Edit Device</p>
+          <input
+            className="input text-sm w-full"
+            placeholder="Device name"
+            value={editName}
+            onChange={e => setEditName(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && saveEdit()}
+          />
+          {locations.length > 0 && (
+            <select className="input text-sm w-full" value={editLocId} onChange={e => setEditLocId(e.target.value)}>
+              <option value="">No branch</option>
+              {locations.map(loc => (
+                <option key={loc.id} value={loc.id}>{loc.name}</option>
+              ))}
+            </select>
+          )}
+          <div className="flex gap-2">
+            <button className="btn-primary text-sm flex-1" onClick={saveEdit} disabled={editBusy}>
+              {editBusy ? 'Saving...' : 'Save'}
+            </button>
+            <button className="btn-secondary text-sm" onClick={() => setShowEdit(false)}>Cancel</button>
+          </div>
+        </div>
+      )}
 
       {/* Timer */}
       {isActive && (

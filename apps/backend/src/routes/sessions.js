@@ -321,4 +321,26 @@ router.patch('/:id/sync', async (req, res) => {
   }
 });
 
+// DELETE /api/sessions — clear ended sessions scoped to the user's devices
+router.delete('/', requireAuth, async (req, res) => {
+  try {
+    const db   = getDb();
+    const role = req.user.role;
+    let query = "DELETE FROM sessions WHERE status = 'ended'";
+    const params = [];
+    if (role === 'admin' || role === 'staff') {
+      query += ' AND device_id IN (SELECT id FROM devices WHERE owner_user_id = ?)';
+      params.push(req.user.id);
+    } else if (role === 'superadmin' && req.query.account) {
+      query += ' AND device_id IN (SELECT id FROM devices WHERE owner_user_id = ?)';
+      params.push(req.query.account);
+    }
+    const result = await db.run(query, params);
+    res.json({ deleted: result.changes });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 module.exports = router;
