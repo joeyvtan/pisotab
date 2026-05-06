@@ -55,9 +55,30 @@ async function handleMqttMessage(topic, data) {
   if (coinMatch) {
     const device_id = coinMatch[1];
     const { coin_value, pulses, credited_secs: rawCreditedSecs } = data;
-    // Apply peak pricing multiplier — reduces effective seconds credited per coin
+
+    // Use device_configs as the authoritative source for coin-to-time conversion.
+    // ESP32 firmware sends its own credited_secs but that value is ignored when
+    // the admin has configured a rate — ensuring Remote Admin settings take effect.
+    const deviceCfg = await db.get(
+      'SELECT secs_per_coin, coin_rates FROM device_configs WHERE device_id = ?',
+      [device_id]
+    );
+
+    let baseSecs = rawCreditedSecs; // fallback: use ESP32 value if no config exists
+    if (deviceCfg) {
+      let rates = [];
+      try { rates = JSON.parse(deviceCfg.coin_rates || '[]'); } catch { rates = []; }
+      const match = rates.find(r => Math.abs(r.coin - coin_value) < 0.01);
+      if (match) {
+        baseSecs = Math.round(match.minutes * 60); // coin_rates entry takes priority
+      } else if (deviceCfg.secs_per_coin != null) {
+        baseSecs = deviceCfg.secs_per_coin;        // secs_per_coin as fallback
+      }
+    }
+
+    // Apply peak pricing multiplier on top of the configured base time
     const multiplier = await getCurrentMultiplier();
-    const credited_secs = Math.round(rawCreditedSecs / multiplier);
+    const credited_secs = Math.round(baseSecs / multiplier);
 
     // Auto-register device if it doesn't exist yet
     const exists = await db.get('SELECT id FROM devices WHERE id = ?', [device_id]);
