@@ -111,7 +111,7 @@ class SettingsFragment : Fragment() {
         }
         swKiosk.isChecked         = prefs.isKioskModeEnabled
         etRatePerMin.setText(prefs.timerRatePerMinute.toString())
-        etSecsPerCoin.setText(prefs.timerSecondsPerCoin.toString())
+        etSecsPerCoin.setText((prefs.timerSecondsPerCoin / 60).toString())
         swFloatingTimer.isChecked = prefs.floatingTimerEnabled
         swDeepFreeze.isChecked    = prefs.deepFreezeEnabled
         etGrace.setText(prefs.deepFreezeGracePeriodSecs.toString())
@@ -167,7 +167,7 @@ class SettingsFragment : Fragment() {
             }
             prefs.isKioskModeEnabled     = swKiosk.isChecked
             prefs.timerRatePerMinute     = etRatePerMin.text.toString().toFloatOrNull() ?: 1.0f
-            prefs.timerSecondsPerCoin    = etSecsPerCoin.text.toString().toIntOrNull() ?: 300
+            prefs.timerSecondsPerCoin    = ((etSecsPerCoin.text.toString().toFloatOrNull() ?: 5f) * 60).toInt()
             prefs.floatingTimerEnabled   = swFloatingTimer.isChecked
             prefs.deepFreezeEnabled      = swDeepFreeze.isChecked
             prefs.deepFreezeGracePeriodSecs = etGrace.text.toString().toIntOrNull() ?: 30
@@ -293,7 +293,7 @@ class SettingsFragment : Fragment() {
         }
         vSwKiosk?.isChecked        = prefs.isKioskModeEnabled
         vEtRatePerMin?.setText(prefs.timerRatePerMinute.toString())
-        vEtSecsPerCoin?.setText(prefs.timerSecondsPerCoin.toString())
+        vEtSecsPerCoin?.setText((prefs.timerSecondsPerCoin / 60).toString())
         vSwFloatingTimer?.isChecked = prefs.floatingTimerEnabled
         vSwDeepFreeze?.isChecked    = prefs.deepFreezeEnabled
         vEtGrace?.setText(prefs.deepFreezeGracePeriodSecs.toString())
