@@ -23,6 +23,20 @@
 #include <WiFiManager.h>  // https://github.com/tzapu/WiFiManager
 #include <HTTPUpdate.h>   // ESP32 OTA over HTTP
 
+// ── Optional 16×2 LCD I2C display ───────────────────────────────────────────
+// Wiring: SDA → GPIO 21 | SCL → GPIO 22 (ESP32 I2C defaults)
+// Common I2C address: 0x27 (PCF8574 backpack) or 0x3F
+// Comment out the next line to build without LCD support:
+#define USE_LCD
+#ifdef USE_LCD
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+int  lcdTimeRemaining = 0;   // seconds remaining (updated by coin events + timer_sync)
+bool lcdInSession     = false;
+unsigned long lcdLastTickMs = 0;
+#endif
+
 // ── Pin config ──────────────────────────────────────────────────────────────
 // WIRING REQUIRED: coin acceptor outputs 5V — must use voltage divider on signal:
 //   Coin signal → 10kΩ → GPIO4 → 20kΩ → GND  (brings 5V down to 3.3V)
@@ -76,6 +90,35 @@ void IRAM_ATTR onCoinPulse() {
   pulseCount++;
 }
 
+// ── LCD helpers ───────────────────────────────────────────────────────────────
+#ifdef USE_LCD
+void lcdShowIdle() {
+  lcd.clear();
+  lcd.setCursor(0, 0); lcd.print(" Please Insert  ");
+  lcd.setCursor(0, 1); lcd.print("     Coins      ");
+}
+
+void lcdShowTime(int secs) {
+  int h = secs / 3600;
+  int m = (secs % 3600) / 60;
+  int s = secs % 60;
+  char buf[17];
+  lcd.setCursor(0, 0); lcd.print("  Time Left:    ");
+  lcd.setCursor(0, 1);
+  if (h > 0) snprintf(buf, sizeof(buf), "  %02d:%02d:%02d      ", h, m, s);
+  else        snprintf(buf, sizeof(buf), "    %02d:%02d        ", m, s);
+  lcd.print(buf);
+}
+
+void lcdSetSession(int secs) {
+  lcdInSession     = (secs > 0);
+  lcdTimeRemaining = secs;
+  lcdLastTickMs    = millis();
+  if (lcdInSession) lcdShowTime(secs);
+  else              lcdShowIdle();
+}
+#endif
+
 // ── Setup ────────────────────────────────────────────────────────────────────
 void setup() {
   Serial.begin(115200);
@@ -84,6 +127,14 @@ void setup() {
   pinMode(COIN_PIN, INPUT_PULLDOWN);
   pinMode(LED_PIN, OUTPUT);
   attachInterrupt(digitalPinToInterrupt(COIN_PIN), onCoinPulse, RISING);
+
+#ifdef USE_LCD
+  Wire.begin(21, 22);
+  lcd.init();
+  lcd.backlight();
+  lcdShowIdle();
+  Serial.println("[LCD] Initialized");
+#endif
 
   loadConfig();
   setupWiFi();
@@ -115,6 +166,19 @@ void loop() {
     flushOfflineQueue();
   }
 
+#ifdef USE_LCD
+  // Tick local countdown once per second between backend syncs
+  if (lcdInSession && lcdTimeRemaining > 0) {
+    unsigned long now = millis();
+    if (now - lcdLastTickMs >= 1000) {
+      lcdLastTickMs = now;
+      lcdTimeRemaining--;
+      if (lcdTimeRemaining <= 0) lcdSetSession(0);
+      else                       lcdShowTime(lcdTimeRemaining);
+    }
+  }
+#endif
+
   delay(10);
 }
 
@@ -134,6 +198,10 @@ void processCoinEvent(int pulses) {
 
   Serial.printf("[Coin] ₱%.1f → %d seconds credited\n", pesos, seconds);
   blinkLED(pulses);
+#ifdef USE_LCD
+  // Extend local timer immediately; backend timer_sync will correct the total
+  lcdSetSession(lcdTimeRemaining + seconds);
+#endif
 
   StaticJsonDocument<256> doc;
   doc["device_id"]     = deviceId;
@@ -251,7 +319,14 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
   deserializeJson(doc, msg);
   String cmd = doc["command"].as<String>();
 
-  if (cmd == "reboot") {
+  if (cmd == "timer_sync") {
+    int secs = doc["time_remaining_secs"] | 0;
+#ifdef USE_LCD
+    lcdSetSession(secs);
+#endif
+    Serial.printf("[LCD] Timer sync: %d secs\n", secs);
+
+  } else if (cmd == "reboot") {
     ESP.restart();
 
   } else if (cmd == "ota") {

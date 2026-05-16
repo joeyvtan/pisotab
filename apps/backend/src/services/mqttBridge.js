@@ -121,6 +121,8 @@ async function handleMqttMessage(topic, data) {
       io?.to(`device:${device_id}`).emit('cmd:add_time', { added_mins: addedMins, amount_paid: coin_value });
       console.log(`[MQTT] Sent cmd:add_time (${addedMins} min) → device:${device_id}`);
       notify(`⏱ +${addedMins} min added to ${deviceName} (₱${coin_value} coin)`);
+      // Sync LCD on ESP32 with authoritative remaining time
+      publishCommand(device_id, 'timer_sync', { time_remaining_secs: newSecs });
     } else {
       // No active session — auto-start one from the coin insert
       const sessionId = 'ses_' + uuidv4().replace(/-/g, '').slice(0, 12);
@@ -143,6 +145,8 @@ async function handleMqttMessage(topic, data) {
       io?.emit(EVENTS.SESSION_UPDATED, { device_id, session_id: sessionId, time_remaining_secs: credited_secs, status: 'active' });
       console.log(`[MQTT] Auto-started session ${sessionId} (${durationMins} min) for device:${device_id}`);
       notify(`🪙 Session started on ${deviceName}\n${durationMins} min | ₱${coin_value} (coin)`);
+      // Sync LCD on ESP32 with session start time
+      publishCommand(device_id, 'timer_sync', { time_remaining_secs: credited_secs });
     }
 
     io?.emit(EVENTS.COIN_INSERTED, { device_id, coin_value, credited_secs });

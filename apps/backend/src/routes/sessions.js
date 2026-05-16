@@ -8,6 +8,7 @@ const { getDb } = require('../db');
 const { requireAuth } = require('./auth');
 const { notify } = require('../services/notifier');
 const { sendToDevice } = require('../services/fcm');
+const { publishCommand } = require('../services/mqttBridge');
 const { getCurrentMultiplier } = require('../services/peakPricing');
 
 function emitToDevice(req, device_id, event, payload = {}) {
@@ -269,6 +270,7 @@ router.post('/:id/end', async (req, res) => {
 
     emitToDevice(req, session.device_id, 'cmd:end', { session_id: req.params.id });
     req.io?.to('dashboard').emit('session:ended', { session_id: req.params.id, device_id: session.device_id });
+    publishCommand(session.device_id, 'timer_sync', { time_remaining_secs: 0 });
 
     const device = await db.get('SELECT name, fcm_token FROM devices WHERE id = ?', [session.device_id]);
     const deviceName = device?.name || session.device_id;

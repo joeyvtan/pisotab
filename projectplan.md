@@ -3,6 +3,61 @@
 
 ---
 
+## PHASE 14 — ESP32 LCD I2C Display (2026-05-16)
+
+### Problem Statement
+The ESP32 coin box has no visual feedback for the customer. Adding an optional 16×2 LCD I2C module lets the customer see "Please Insert Coins" when idle and a live countdown when a session is active, synced with the backend.
+
+### Solution
+
+**Hardware:** 16×2 LCD with PCF8574 I2C backpack (address 0x27 or 0x3F)
+**Wiring:** SDA → GPIO 21 | SCL → GPIO 22 (ESP32 I2C defaults)
+**Optional:** compile-time `#define USE_LCD` — comment out to build without LCD
+
+#### Display States
+| State | Line 1 | Line 2 |
+|-------|--------|--------|
+| Idle / Lock Screen | ` Please Insert ` | `    Coins      ` |
+| Session Active | `  Time Left:   ` | `    MM:SS      ` or `  HH:MM:SS    ` |
+
+#### Timer Sync Flow
+```
+Coin inserted → ESP32 extends local countdown immediately (no lag)
+     ↓
+Backend processes MQTT coin event
+     ↓
+Backend publishes: pisotab/devices/{id}/cmd
+  { "command": "timer_sync", "time_remaining_secs": N }
+     ↓
+ESP32 mqttCallback receives timer_sync → corrects LCD to authoritative value
+```
+
+Session end (from dashboard or natural expiry):
+```
+sessions.js POST /:id/end → publishCommand(device_id, 'timer_sync', { time_remaining_secs: 0 })
+     ↓
+ESP32 lcdSetSession(0) → lcdShowIdle()
+```
+
+#### Local countdown
+ESP32 ticks `lcdTimeRemaining` every 1000ms via `millis()` in main loop — LCD stays accurate between backend syncs without any WiFi dependency.
+
+### Files Changed
+| File | Change |
+|------|--------|
+| `firmware/esp32/pisotab_coin/platformio.ini` | Added `marcoschwartz/LiquidCrystal_I2C@^1.1.4` |
+| `firmware/esp32/pisotab_coin/pisotab_coin.ino` | LCD init, helpers, loop tick, coin event update, `timer_sync` cmd handler |
+| `apps/backend/src/services/mqttBridge.js` | `publishCommand timer_sync` after coin add-time and session start |
+| `apps/backend/src/routes/sessions.js` | `publishCommand timer_sync` on session end |
+
+### Design Decisions
+- `#define USE_LCD` compile-time flag — zero overhead when LCD not attached; no runtime detection needed
+- Local countdown on ESP32 between syncs — LCD stays accurate even if MQTT is slow
+- Backend publishes only on state changes (start/add/end) — not every second, avoiding MQTT flood
+- `timer_sync` reuses the existing `pisotab/devices/{id}/cmd` topic — no new MQTT topics needed
+
+---
+
 ## PHASE 13 — UX Improvements, Security & Mobile (2026-04-26)
 
 ### Tasks
