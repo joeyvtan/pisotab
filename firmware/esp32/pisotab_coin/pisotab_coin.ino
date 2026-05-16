@@ -28,6 +28,20 @@
 // Common I2C address: 0x27 (PCF8574 backpack) or 0x3F
 // Comment out the next line to build without LCD support:
 #define USE_LCD
+
+// ── Optional Charger Relay (Charge Protection) ───────────────────────────────
+// Wiring: Relay IN pin ← GPIO 26 (3.3V compatible; no voltage divider needed)
+// Use a NC (Normally-Closed) relay module for fail-safe:
+//   Charger reconnects automatically if the ESP32 loses power.
+//   NC relay: LOW signal = coil energized = contacts OPEN = charger DISCONNECTED
+//             HIGH signal = coil off     = contacts CLOSED = charger CONNECTED
+// Comment out the next line to build without relay support:
+#define USE_RELAY
+#ifdef USE_RELAY
+#define RELAY_PIN          26
+#define RELAY_CHARGER_ON   HIGH  // NC contact closed  → charger connected
+#define RELAY_CHARGER_OFF  LOW   // NC contact open    → charger disconnected
+#endif
 #ifdef USE_LCD
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
@@ -127,6 +141,11 @@ void setup() {
   pinMode(COIN_PIN, INPUT_PULLDOWN);
   pinMode(LED_PIN, OUTPUT);
   attachInterrupt(digitalPinToInterrupt(COIN_PIN), onCoinPulse, RISING);
+#ifdef USE_RELAY
+  pinMode(RELAY_PIN, OUTPUT);
+  digitalWrite(RELAY_PIN, RELAY_CHARGER_ON);  // charger connected at boot
+  Serial.println("[Relay] Initialized — charger ON");
+#endif
 
 #ifdef USE_LCD
   Wire.begin(21, 22);
@@ -325,6 +344,18 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
     lcdSetSession(secs);
 #endif
     Serial.printf("[LCD] Timer sync: %d secs\n", secs);
+
+  } else if (cmd == "relay_on") {
+#ifdef USE_RELAY
+    digitalWrite(RELAY_PIN, RELAY_CHARGER_ON);
+    Serial.println("[Relay] Charger ON");
+#endif
+
+  } else if (cmd == "relay_off") {
+#ifdef USE_RELAY
+    digitalWrite(RELAY_PIN, RELAY_CHARGER_OFF);
+    Serial.println("[Relay] Charger OFF");
+#endif
 
   } else if (cmd == "reboot") {
     ESP.restart();

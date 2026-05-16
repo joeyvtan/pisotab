@@ -283,6 +283,54 @@
 
         </LinearLayout>
 
+        <!-- CHARGE PROTECTION -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@color/card_bg"
+            android:padding="16dp"
+            android:layout_marginBottom="12dp">
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="CHARGE PROTECTION" android:textColor="#F97316"
+                android:textSize="11sp" android:textStyle="bold" android:layout_marginBottom="6dp"/>
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Shows a notification when battery reaches the set thresholds."
+                android:textColor="@color/text_secondary" android:textSize="11sp"
+                android:layout_marginBottom="14dp"/>
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:gravity="center_vertical"
+                android:layout_marginBottom="14dp">
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:text="Enable Charge Protection"
+                    android:textColor="@color/text_primary" android:textSize="14sp"/>
+                <Switch android:id="@+id/sw_charge_protect"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:thumbTint="#F97316" android:trackTint="@color/edit_bg"/>
+            </LinearLayout>
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Stop Charging Alert (%)" android:textColor="@color/text_secondary"
+                android:textSize="12sp" android:layout_marginBottom="4dp"/>
+            <EditText android:id="@+id/et_charge_stop"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:backgroundTint="@color/edit_bg" android:textColor="@color/text_primary"
+                android:padding="12dp" android:layout_marginBottom="14dp"
+                android:inputType="number" android:hint="80"/>
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Start Charging Alert (%)" android:textColor="@color/text_secondary"
+                android:textSize="12sp" android:layout_marginBottom="4dp"/>
+            <EditText android:id="@+id/et_charge_start"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:backgroundTint="@color/edit_bg" android:textColor="@color/text_primary"
+                android:padding="12dp" android:inputType="number" android:hint="20"/>
+
+        </LinearLayout>
+
         <!-- ACTIONS -->
         <LinearLayout
             android:layout_width="match_parent"

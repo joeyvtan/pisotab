@@ -394,4 +394,7 @@ export interface DeviceConfig {
   applied_at:         number | null;
   config_pending:     boolean;
   admin_pin:          string | null;
+  charge_protect:     boolean;
+  charge_stop_pct:    number;
+  charge_start_pct:   number;
 }

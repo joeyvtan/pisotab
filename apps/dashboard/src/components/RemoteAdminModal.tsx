@@ -33,6 +33,9 @@ export default function RemoteAdminModal({ deviceId, deviceName, onClose }: Prop
   const [alarmSessionOnly, setAlarmSessionOnly] = useState(true);
   const [alarmDelay, setAlarmDelay]   = useState('30');
   const [newPin, setNewPin]           = useState('');
+  const [chargeProtect, setChargeProtect] = useState(false);
+  const [chargeStop, setChargeStop]   = useState('80');
+  const [chargeStart, setChargeStart] = useState('20');
 
   function showToast(msg: string) {
     setToast(msg);
@@ -52,6 +55,9 @@ export default function RemoteAdminModal({ deviceId, deviceName, onClose }: Prop
     setAlarmCharger(c.alarm_charger);
     setAlarmSessionOnly(c.alarm_session_only);
     setAlarmDelay(String(c.alarm_delay_secs));
+    setChargeProtect(c.charge_protect ?? false);
+    setChargeStop(String(c.charge_stop_pct ?? 80));
+    setChargeStart(String(c.charge_start_pct ?? 20));
   }
 
   useEffect(() => {
@@ -61,6 +67,12 @@ export default function RemoteAdminModal({ deviceId, deviceName, onClose }: Prop
       .finally(() => setLoading(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deviceId]);
+
+  // Auto-disable charger alarm when charge protection is on (relay manages charger)
+  // or when USB mode is selected (charger is always the device cable — not meaningful to alarm on it).
+  useEffect(() => {
+    if (chargeProtect || mode === 'usb') setAlarmCharger(false);
+  }, [chargeProtect, mode]);
 
   async function save() {
     setSaving(true);
@@ -78,6 +90,9 @@ export default function RemoteAdminModal({ deviceId, deviceName, onClose }: Prop
         alarm_charger:      alarmCharger,
         alarm_session_only: alarmSessionOnly,
         alarm_delay_secs:   parseInt(alarmDelay) || 30,
+        charge_protect:     chargeProtect,
+        charge_stop_pct:    parseInt(chargeStop) || 80,
+        charge_start_pct:   parseInt(chargeStart) || 20,
         ...(newPin.trim() ? { admin_pin: newPin.trim() } : {}),
       });
       if (newPin.trim()) setNewPin('');
@@ -214,13 +229,45 @@ export default function RemoteAdminModal({ deviceId, deviceName, onClose }: Prop
               <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Anti-Theft Alarm</h3>
               <div className="space-y-2">
                 <Toggle label="Alarm on WiFi disconnect" checked={alarmWifi} onChange={setAlarmWifi} />
-                <Toggle label="Alarm on charger unplug" checked={alarmCharger} onChange={setAlarmCharger} />
+                <Toggle
+                  label={`Alarm on charger unplug${chargeProtect ? ' (disabled — relay manages charger)' : mode === 'usb' ? ' (disabled — USB mode)' : ''}`}
+                  checked={alarmCharger}
+                  onChange={setAlarmCharger}
+                  disabled={chargeProtect || mode === 'usb'}
+                />
                 <Toggle label="Only during active session" checked={alarmSessionOnly} onChange={setAlarmSessionOnly} />
                 <div className="flex items-center gap-2">
                   <label className="text-sm text-slate-300 w-32">Alarm delay (s)</label>
                   <input className="input flex-1 text-sm" type="number" min="0"
                     value={alarmDelay} onChange={e => setAlarmDelay(e.target.value)} />
                 </div>
+              </div>
+            </section>
+
+            {/* Charge Protection */}
+            <section>
+              <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Charge Protection</h3>
+              <p className="text-xs text-slate-500 mb-2">
+                {mode === 'esp32'
+                  ? 'Relay (GPIO 26) automatically cuts/restores charger power at set thresholds. Charger alarm is disabled when active.'
+                  : 'Shows a notification when battery hits set thresholds (no relay in USB mode).'}
+              </p>
+              <div className="space-y-2">
+                <Toggle label="Enable charge protection" checked={chargeProtect} onChange={setChargeProtect} />
+                {chargeProtect && (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <label className="text-sm text-slate-300 w-40">Stop charging alert (%)</label>
+                      <input className="input flex-1 text-sm" type="number" min="1" max="100"
+                        value={chargeStop} onChange={e => setChargeStop(e.target.value)} />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <label className="text-sm text-slate-300 w-40">Start charging alert (%)</label>
+                      <input className="input flex-1 text-sm" type="number" min="1" max="100"
+                        value={chargeStart} onChange={e => setChargeStart(e.target.value)} />
+                    </div>
+                  </>
+                )}
               </div>
             </section>
 
@@ -281,11 +328,11 @@ export default function RemoteAdminModal({ deviceId, deviceName, onClose }: Prop
   );
 }
 
-function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
+function Toggle({ label, checked, onChange, disabled }: { label: string; checked: boolean; onChange: (v: boolean) => void; disabled?: boolean }) {
   return (
-    <label className="flex items-center gap-3 cursor-pointer">
+    <label className={`flex items-center gap-3 ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}>
       <div
-        onClick={() => onChange(!checked)}
+        onClick={() => { if (!disabled) onChange(!checked); }}
         className={`relative w-10 h-5 rounded-full transition-colors ${checked ? 'bg-orange-500' : 'bg-slate-600'}`}>
         <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${checked ? 'translate-x-5' : ''}`} />
       </div>

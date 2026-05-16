@@ -45,6 +45,9 @@ class SettingsFragment : Fragment() {
     private var vSwAlarmCharger: Switch? = null
     private var vSwAlarmSession: Switch? = null
     private var vEtAlarmDelay: EditText? = null
+    private var vSwChargeProtect: Switch? = null
+    private var vEtChargeStop: EditText? = null
+    private var vEtChargeStart: EditText? = null
 
     private val ringtonePicker = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
@@ -86,6 +89,9 @@ class SettingsFragment : Fragment() {
         val swAlarmSession   = view.findViewById<Switch>(R.id.sw_alarm_session_only)
         val etAlarmDelay     = view.findViewById<EditText>(R.id.et_alarm_delay)
         val btnAlarmSound    = view.findViewById<Button>(R.id.btn_alarm_sound)
+        val swChargeProtect  = view.findViewById<Switch>(R.id.sw_charge_protect)
+        val etChargeStop     = view.findViewById<EditText>(R.id.et_charge_stop)
+        val etChargeStart    = view.findViewById<EditText>(R.id.et_charge_start)
         val btnChangePin     = view.findViewById<Button>(R.id.btn_change_pin)
         val btnSave          = view.findViewById<Button>(R.id.btn_save)
         val btnRestartApp         = view.findViewById<Button>(R.id.btn_restart_app)
@@ -98,6 +104,7 @@ class SettingsFragment : Fragment() {
         vSwFloatingTimer = swFloatingTimer; vSwDeepFreeze = swDeepFreeze; vEtGrace = etGrace
         vSwAlarmWifi = swAlarmWifi; vSwAlarmCharger = swAlarmCharger
         vSwAlarmSession = swAlarmSession; vEtAlarmDelay = etAlarmDelay
+        vSwChargeProtect = swChargeProtect; vEtChargeStop = etChargeStop; vEtChargeStart = etChargeStart
 
         // Load current values
         etBackendUsername.setText(prefs.backendUsername)
@@ -119,11 +126,25 @@ class SettingsFragment : Fragment() {
         swAlarmCharger.isChecked  = prefs.alarmOnChargerDisconnect
         swAlarmSession.isChecked  = prefs.alarmOnlyDuringSession
         etAlarmDelay.setText(prefs.alarmDelaySeconds.toString())
+        swChargeProtect.isChecked = prefs.chargeProtectionEnabled
+        etChargeStop.setText(prefs.chargeStopPercent.toString())
+        etChargeStart.setText(prefs.chargeStartPercent.toString())
         selectedRingtoneUri       = prefs.alarmSoundUri
         if (selectedRingtoneUri.isNotEmpty()) {
             val uri  = Uri.parse(selectedRingtoneUri)
             btnAlarmSound.text = RingtoneManager.getRingtone(requireContext(), uri)?.getTitle(requireContext()) ?: "Custom"
         }
+
+        // Lock charger alarm switch when charge protection (relay handles charger) or USB mode.
+        fun applyChargerAlarmLock() {
+            val locked = swChargeProtect.isChecked || rgMode.checkedRadioButtonId == R.id.rb_mode_usb
+            swAlarmCharger.isEnabled = !locked
+            if (locked) swAlarmCharger.isChecked = false
+        }
+        applyChargerAlarmLock()  // apply on load
+
+        swChargeProtect.setOnCheckedChangeListener { _, _ -> applyChargerAlarmLock() }
+        rgMode.setOnCheckedChangeListener { _, _ -> applyChargerAlarmLock() }
 
         btnAllowedApps.setOnClickListener {
             findNavController().navigate(R.id.allowedAppsFragment)
@@ -176,6 +197,9 @@ class SettingsFragment : Fragment() {
             prefs.alarmOnlyDuringSession = swAlarmSession.isChecked
             prefs.alarmDelaySeconds      = etAlarmDelay.text.toString().toIntOrNull() ?: 30
             prefs.alarmSoundUri          = selectedRingtoneUri
+            prefs.chargeProtectionEnabled = swChargeProtect.isChecked
+            prefs.chargeStopPercent      = etChargeStop.text.toString().toIntOrNull()?.coerceIn(1, 100) ?: 80
+            prefs.chargeStartPercent     = etChargeStart.text.toString().toIntOrNull()?.coerceIn(1, 100) ?: 20
 
             val app = (requireActivity().application as PisoTabApp)
             app.initApi()
@@ -199,7 +223,10 @@ class SettingsFragment : Fragment() {
                     alarm_wifi         = prefs.alarmOnWifiDisconnect,
                     alarm_charger      = prefs.alarmOnChargerDisconnect,
                     alarm_session_only = prefs.alarmOnlyDuringSession,
-                    alarm_delay_secs   = prefs.alarmDelaySeconds
+                    alarm_delay_secs   = prefs.alarmDelaySeconds,
+                    charge_protect     = prefs.chargeProtectionEnabled,
+                    charge_stop_pct    = prefs.chargeStopPercent,
+                    charge_start_pct   = prefs.chargeStartPercent
                 )
                 viewLifecycleOwner.lifecycleScope.launch {
                     try { app.api.updateDeviceConfig(deviceId, req) } catch (_: Exception) {}
@@ -284,6 +311,7 @@ class SettingsFragment : Fragment() {
         vSwFloatingTimer = null; vSwDeepFreeze = null; vEtGrace = null
         vSwAlarmWifi = null; vSwAlarmCharger = null
         vSwAlarmSession = null; vEtAlarmDelay = null
+        vSwChargeProtect = null; vEtChargeStop = null; vEtChargeStart = null
     }
 
     private fun refreshUiFromPrefs() {
@@ -298,9 +326,15 @@ class SettingsFragment : Fragment() {
         vSwDeepFreeze?.isChecked    = prefs.deepFreezeEnabled
         vEtGrace?.setText(prefs.deepFreezeGracePeriodSecs.toString())
         vSwAlarmWifi?.isChecked     = prefs.alarmOnWifiDisconnect
-        vSwAlarmCharger?.isChecked  = prefs.alarmOnChargerDisconnect
         vSwAlarmSession?.isChecked  = prefs.alarmOnlyDuringSession
         vEtAlarmDelay?.setText(prefs.alarmDelaySeconds.toString())
+        vSwChargeProtect?.isChecked = prefs.chargeProtectionEnabled
+        vEtChargeStop?.setText(prefs.chargeStopPercent.toString())
+        vEtChargeStart?.setText(prefs.chargeStartPercent.toString())
+        // Re-apply lock so remote config cannot re-enable charger alarm when relay/USB is active
+        val locked = (vSwChargeProtect?.isChecked == true) || (vRbUsb?.isChecked == true)
+        vSwAlarmCharger?.isEnabled = !locked
+        vSwAlarmCharger?.isChecked = if (locked) false else prefs.alarmOnChargerDisconnect
         Toast.makeText(requireContext(), "Settings updated from Remote Admin", Toast.LENGTH_SHORT).show()
     }
 

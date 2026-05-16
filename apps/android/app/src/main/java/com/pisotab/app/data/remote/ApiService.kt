@@ -83,7 +83,10 @@ data class DeviceConfigRequest(
     val alarm_wifi: Boolean,
     val alarm_charger: Boolean,
     val alarm_session_only: Boolean,
-    val alarm_delay_secs: Int
+    val alarm_delay_secs: Int,
+    val charge_protect: Boolean = false,
+    val charge_stop_pct: Int = 80,
+    val charge_start_pct: Int = 20
 )
 
 // ── Request / Response DTOs ─────────────────────────────────────────────────
@@ -113,7 +116,10 @@ data class DeviceConfig(
     val alarm_charger: Boolean?,
     val alarm_session_only: Boolean?,
     val alarm_delay_secs: Int?,
-    val admin_pin: String?
+    val admin_pin: String?,
+    val charge_protect: Boolean?,
+    val charge_stop_pct: Int?,
+    val charge_start_pct: Int?
 )
 data class StartSessionRequest(
     val device_id: String,

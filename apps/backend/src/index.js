@@ -175,6 +175,10 @@ async function main() {
     await db.exec(`INSERT INTO device_configs (device_id) SELECT id FROM devices ON CONFLICT DO NOTHING`);
     // Migration: add admin_pin column if missing
     try { await db.exec(`ALTER TABLE device_configs ADD COLUMN admin_pin TEXT`); } catch (_) {}
+    // Phase 15 — charge protection
+    try { await db.exec(`ALTER TABLE device_configs ADD COLUMN charge_protect INTEGER NOT NULL DEFAULT 0`); } catch (_) {}
+    try { await db.exec(`ALTER TABLE device_configs ADD COLUMN charge_stop_pct INTEGER NOT NULL DEFAULT 80`); } catch (_) {}
+    try { await db.exec(`ALTER TABLE device_configs ADD COLUMN charge_start_pct INTEGER NOT NULL DEFAULT 20`); } catch (_) {}
   } catch (_) {}
 
   // Migration: add per-user telegram columns

@@ -3,6 +3,72 @@
 
 ---
 
+## PHASE 15 — Smart Charge Protection (2026-05-16)
+
+### Problem Statement
+Tablets left permanently plugged in suffer battery degradation. The admin needs a way to set upper and lower battery % thresholds to automatically protect the battery.
+
+### Solution
+Two modes depending on connection type:
+
+**ESP32 mode (automatic):** Android monitors battery → calls backend relay endpoint → backend publishes MQTT → ESP32 physically controls a relay that cuts/restores charger power. Charger alarm is suppressed since relay disconnects charger intentionally.
+
+**Non-ESP32 / notification-only mode:** Shows a persistent notification telling admin to manually plug/unplug.
+
+#### Automatic Relay Flow (ESP32 mode)
+```
+Battery ≥ stop %  AND  charging
+  → Android POST /api/devices/{id}/remote-cmd { cmd: "relay_off" }
+  → Backend publishes MQTT: { command: "relay_off" }
+  → ESP32 GPIO 26 → LOW → relay coil energized → NC contacts open → charger disconnected
+
+Battery ≤ start %  AND  not charging
+  → Android POST /api/devices/{id}/remote-cmd { cmd: "relay_on" }
+  → Backend publishes MQTT: { command: "relay_on" }
+  → ESP32 GPIO 26 → HIGH → relay coil off → NC contacts closed → charger reconnected
+```
+
+#### ESP32 Relay Wiring
+- Relay IN pin ← GPIO 26 (3.3V compatible)
+- Use NC (Normally-Closed) relay module — charger reconnects if ESP32 loses power (fail-safe)
+- `#define USE_RELAY` compile-time flag — comment out to build without relay
+
+#### Behavior Table
+| Mode | Condition | Action |
+|------|-----------|--------|
+| ESP32 relay | Charging ≥ stop % | Relay OFF (charger disconnected) + info notification |
+| ESP32 relay | Not charging ≤ start % | Relay ON (charger reconnected) + info notification |
+| Notification only | Charging ≥ stop % | Persistent "Unplug charger" notification |
+| Notification only | Not charging ≤ start % | Persistent "Plug in charger" notification |
+| Either | Battery in normal range | Notification cancelled |
+
+#### Defaults
+- Charge stop: 80% | Charge start: 20%
+
+### Files Changed
+| File | Change |
+|------|--------|
+| `firmware/esp32/pisotab_coin/pisotab_coin.ino` | `#define USE_RELAY`, RELAY_PIN=26, init relay in setup(), handle `relay_on`/`relay_off` in mqttCallback |
+| `apps/backend/src/routes/deviceConfigs.js` | `relay_on`, `relay_off` added to remote-cmd allowed list + `formatConfig` + upsert SQL |
+| `apps/android/.../util/AntiTheftManager.kt` | `watchBatteryLevel()` calls relay API when ESP32 mode; charger alarm suppressed when relay active; `sendRelayCommand()` via HttpURLConnection |
+| `apps/android/.../util/PrefsManager.kt` | `chargeProtectionEnabled`, `chargeStopPercent`, `chargeStartPercent` |
+| `apps/android/.../util/RemoteConfigManager.kt` | Apply `charge_protect`, `charge_stop_pct`, `charge_start_pct` from remote config |
+| `apps/android/.../data/remote/ApiService.kt` | 3 fields added to `DeviceConfigRequest` and `DeviceConfig` |
+| `apps/android/.../res/layout/fragment_settings.xml` | CHARGE PROTECTION card with toggle + two % inputs |
+| `apps/android/.../ui/admin/SettingsFragment.kt` | Bind, load, save, refresh, and sync new charge protect fields |
+| `apps/backend/src/index.js` | 3 ALTER TABLE migrations |
+| `apps/dashboard/src/lib/api.ts` | 3 fields added to `DeviceConfig` interface |
+| `apps/dashboard/src/components/RemoteAdminModal.tsx` | Charge Protection section with toggle + threshold inputs |
+
+### Design Decisions
+- Relay uses NC (normally-closed) type: if ESP32 loses power, charger reconnects automatically — no risk of tablet dying
+- `sendRelayCommand()` is fire-and-forget via a background `Thread` using `HttpURLConnection` — no Retrofit dependency in AntiTheftManager
+- Charger alarm is suppressed only when `chargeProtectionEnabled && connectionMode == "esp32"` — alarms work normally in all other configurations
+- `#define USE_RELAY` compile-time flag — zero flash/RAM overhead when not used
+- Notification still shown in relay mode so admin has visibility of what happened
+
+---
+
 ## PHASE 14 — ESP32 LCD I2C Display (2026-05-16)
 
 ### Problem Statement

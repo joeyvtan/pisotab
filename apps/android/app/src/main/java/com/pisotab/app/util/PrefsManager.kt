@@ -187,4 +187,21 @@ class PrefsManager(context: Context) {
     var deepFreezeGracePeriodSecs: Int
         get() = prefs.getInt("deep_freeze_grace", 30)
         set(v) = prefs.edit { putInt("deep_freeze_grace", v) }
+
+    // ── Charge Protection ─────────────────────────────────────────────────────
+
+    /** Show notification when battery hits stop/start thresholds */
+    var chargeProtectionEnabled: Boolean
+        get() = prefs.getBoolean("charge_protect_enabled", false)
+        set(v) = prefs.edit { putBoolean("charge_protect_enabled", v) }
+
+    /** Stop charging alert threshold (%) — notify when battery reaches this level while charging */
+    var chargeStopPercent: Int
+        get() = prefs.getInt("charge_stop_pct", 80)
+        set(v) = prefs.edit { putInt("charge_stop_pct", v) }
+
+    /** Start charging alert threshold (%) — notify when battery drops to this level */
+    var chargeStartPercent: Int
+        get() = prefs.getInt("charge_start_pct", 20)
+        set(v) = prefs.edit { putInt("charge_start_pct", v) }
 }

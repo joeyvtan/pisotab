@@ -59,6 +59,15 @@ object RemoteConfigManager {
                 val pin = config.getString("admin_pin")
                 if (pin.isNotEmpty()) prefs.adminPin = pin
             }
+            if (config.has("charge_protect")) {
+                prefs.chargeProtectionEnabled = config.getBoolean("charge_protect")
+            }
+            if (config.has("charge_stop_pct")) {
+                prefs.chargeStopPercent = config.getInt("charge_stop_pct")
+            }
+            if (config.has("charge_start_pct")) {
+                prefs.chargeStartPercent = config.getInt("charge_start_pct")
+            }
             Log.d(TAG, "Remote config applied successfully")
             onConfigChanged?.invoke()
         } catch (e: Exception) {

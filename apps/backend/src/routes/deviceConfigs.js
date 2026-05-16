@@ -34,6 +34,9 @@ function formatConfig(cfg) {
     applied_at:         cfg.applied_at,
     config_pending:     cfg.applied_at === null || cfg.applied_at < cfg.updated_at,
     admin_pin:          cfg.admin_pin ?? null,
+    charge_protect:     cfg.charge_protect === 1 || cfg.charge_protect === true,
+    charge_stop_pct:    cfg.charge_stop_pct ?? 80,
+    charge_start_pct:   cfg.charge_start_pct ?? 20,
   };
 }
 
@@ -64,7 +67,7 @@ router.patch('/:id/config', requireAuth, requireAdmin, async (req, res) => {
       connection_mode, rate_per_min, secs_per_coin, coin_rates,
       kiosk_mode, floating_timer, deep_freeze, deep_freeze_grace,
       alarm_wifi, alarm_charger, alarm_session_only, alarm_delay_secs,
-      admin_pin,
+      admin_pin, charge_protect, charge_stop_pct, charge_start_pct,
     } = req.body;
 
     // Upsert config — applied_at reset to NULL so device knows it's pending
@@ -73,8 +76,9 @@ router.patch('/:id/config', requireAuth, requireAdmin, async (req, res) => {
         connection_mode, rate_per_min, secs_per_coin, coin_rates,
         kiosk_mode, floating_timer, deep_freeze, deep_freeze_grace,
         alarm_wifi, alarm_charger, alarm_session_only, alarm_delay_secs,
-        admin_pin, updated_at, applied_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, unixepoch(), NULL)
+        admin_pin, charge_protect, charge_stop_pct, charge_start_pct,
+        updated_at, applied_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, unixepoch(), NULL)
        ON CONFLICT(device_id) DO UPDATE SET
          connection_mode    = excluded.connection_mode,
          rate_per_min       = excluded.rate_per_min,
@@ -89,6 +93,9 @@ router.patch('/:id/config', requireAuth, requireAdmin, async (req, res) => {
          alarm_session_only = excluded.alarm_session_only,
          alarm_delay_secs   = excluded.alarm_delay_secs,
          admin_pin          = COALESCE(excluded.admin_pin, device_configs.admin_pin),
+         charge_protect     = excluded.charge_protect,
+         charge_stop_pct    = excluded.charge_stop_pct,
+         charge_start_pct   = excluded.charge_start_pct,
          updated_at         = unixepoch(),
          applied_at         = NULL`,
       [
@@ -106,6 +113,9 @@ router.patch('/:id/config', requireAuth, requireAdmin, async (req, res) => {
         alarm_session_only ? 1 : 0,
         alarm_delay_secs ?? 30,
         admin_pin || null,
+        charge_protect ? 1 : 0,
+        charge_stop_pct ?? 80,
+        charge_start_pct ?? 20,
       ]
     );
 
@@ -128,7 +138,7 @@ router.patch('/:id/config', requireAuth, requireAdmin, async (req, res) => {
 // POST /api/devices/:id/remote-cmd — send a fire-and-forget command
 router.post('/:id/remote-cmd', requireAuth, requireAdmin, async (req, res) => {
   const { cmd } = req.body;
-  const allowed = ['restart_app', 'restart_device', 'lock_screen'];
+  const allowed = ['restart_app', 'restart_device', 'lock_screen', 'relay_on', 'relay_off'];
   if (!allowed.includes(cmd)) {
     return res.status(400).json({ error: `Unknown command. Allowed: ${allowed.join(', ')}` });
   }
