@@ -32,7 +32,7 @@ function startMqttBridge(_io) {
   mqttClient.on('connect', () => {
     console.log('✅ MQTT connected to', brokerUrl);
     mqttClient.subscribe('pisotab/coins/#');
-    mqttClient.subscribe('pisotab/devices/#/status');
+    mqttClient.subscribe('pisotab/devices/+/status'); // + matches exactly one level; # must be last (MQTT spec)
   });
 
   mqttClient.on('message', (topic, payload) => {
