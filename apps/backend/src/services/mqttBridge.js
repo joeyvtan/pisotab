@@ -157,20 +157,35 @@ async function handleMqttMessage(topic, data) {
   const statusMatch = topic.match(/^pisotab\/devices\/(.+)\/status$/);
   if (statusMatch) {
     const device_id = statusMatch[1];
-    await db.run("UPDATE devices SET status = 'online', last_seen = unixepoch() WHERE id = ?", [device_id]);
-    io?.emit(EVENTS.DEVICE_STATUS, { device_id, status: 'online', last_seen: Math.floor(Date.now() / 1000) });
+    const now = Math.floor(Date.now() / 1000);
 
-    // When the ESP32 comes back online, sync any active session to its LCD so it
-    // doesn't show "Please Insert Coins" while a session is still running.
-    if (data.status === 'online') {
-      const session = await db.get(
-        "SELECT * FROM sessions WHERE device_id = ? AND status IN ('active', 'paused')",
-        [device_id]
-      );
-      if (session && session.time_remaining_secs > 0) {
-        publishCommand(device_id, 'timer_sync', { time_remaining_secs: session.time_remaining_secs });
-        console.log(`[MQTT] Sent timer_sync on reconnect → ${device_id} (${session.time_remaining_secs}s remaining)`);
+    // When the ESP32 reconnects, check for an active session BEFORE deciding what
+    // status to broadcast. Blindly emitting 'online' causes the dashboard to hide
+    // the session timer (DeviceCard only shows the timer when status='in_session'),
+    // and it stays hidden until the Android heartbeat (~30s) corrects it.
+    const session = data.status === 'online'
+      ? await db.get("SELECT * FROM sessions WHERE device_id = ? AND status IN ('active','paused')", [device_id])
+      : null;
+
+    const effectiveStatus = session ? 'in_session' : 'online';
+    await db.run("UPDATE devices SET status = ?, last_seen = unixepoch() WHERE id = ?", [effectiveStatus, device_id]);
+    io?.emit(EVENTS.DEVICE_STATUS, { device_id, status: effectiveStatus, last_seen: now });
+
+    if (session && session.time_remaining_secs > 0) {
+      // Push current session time to the dashboard immediately so the timer
+      // does not show a stale value from before the ESP32 was offline.
+      io?.emit(EVENTS.SESSION_UPDATED, {
+        device_id,
+        session_id: session.id,
+        time_remaining_secs: session.time_remaining_secs,
+        status: session.status,
+      });
+      // Restore the ESP32 LCD
+      publishCommand(device_id, 'timer_sync', { time_remaining_secs: session.time_remaining_secs });
+      if (session.status === 'paused') {
+        publishCommand(device_id, 'pause', {});
       }
+      console.log(`[MQTT] ESP32 reconnect: device=${device_id} status=${effectiveStatus} secs=${session.time_remaining_secs}`);
     }
   }
 }

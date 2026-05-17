@@ -46,18 +46,20 @@
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 LiquidCrystal_I2C lcd(0x27, 16, 2);
-int  lcdTimeRemaining = 0;   // seconds remaining (updated by coin events + timer_sync)
+int  lcdTimeRemaining = 0;   // seconds remaining (set by timer_sync from backend)
 bool lcdInSession     = false;
+bool lcdPaused        = false;  // true while session is paused; stops local countdown
 unsigned long lcdLastTickMs = 0;
 #endif
 
 // ── Pin config ──────────────────────────────────────────────────────────────
 // WIRING: Coin acceptor signal → 10kΩ → GPIO4
-//   The 10kΩ series resistor limits current and protects the GPIO.
-//   Do NOT use INPUT_PULLDOWN here — the internal ~45kΩ pull-down combined with
-//   a 5V coin signal pushes GPIO4 to ~4.1V, exceeding the 3.6V absolute maximum
-//   and causing ESD clamping that prevents reliable interrupt detection.
-#define COIN_PIN        4    // Coin acceptor signal (active HIGH pulse, via voltage divider)
+//   INPUT_PULLUP is correct for open-drain/open-collector coin acceptors (standard
+//   Philippine market CH-926 and clones). The internal pull-up keeps the line at
+//   3.3V when idle; the acceptor pulls it LOW for each pulse. This prevents
+//   floating-input noise from triggering spurious interrupts on noisy PSUs.
+//   The RISING interrupt fires at the end of each LOW pulse — still counts correctly.
+#define COIN_PIN        4    // Coin acceptor signal (open-drain, pulled up by INPUT_PULLUP)
 #define LED_PIN         2    // Built-in LED
 #define PULSE_DEBOUNCE  50000UL  // µs — ignore pulses faster than 50ms (ISR uses micros(), which is ISR-safe)
 #define PULSE_TIMEOUT   400      // ms — silence after last pulse = end of coin event
@@ -126,6 +128,7 @@ void lcdShowTime(int secs) {
 }
 
 void lcdSetSession(int secs) {
+  lcdPaused        = false;     // timer_sync always clears pause (resume restores via timer_sync)
   lcdInSession     = (secs > 0);
   lcdTimeRemaining = secs;
   lcdLastTickMs    = millis();
@@ -139,7 +142,7 @@ void setup() {
   Serial.begin(115200);
   Serial.println("\n[PisoTab] Coin firmware starting...");
 
-  pinMode(COIN_PIN, INPUT);
+  pinMode(COIN_PIN, INPUT_PULLUP);
   pinMode(LED_PIN, OUTPUT);
   attachInterrupt(digitalPinToInterrupt(COIN_PIN), onCoinPulse, RISING);
 #ifdef USE_RELAY
@@ -188,8 +191,8 @@ void loop() {
   }
 
 #ifdef USE_LCD
-  // Tick local countdown once per second between backend syncs
-  if (lcdInSession && lcdTimeRemaining > 0) {
+  // Tick local countdown once per second between backend syncs; stop when paused
+  if (lcdInSession && !lcdPaused && lcdTimeRemaining > 0) {
     unsigned long now = millis();
     if (now - lcdLastTickMs >= 1000) {
       lcdLastTickMs = now;
@@ -351,6 +354,12 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
     lcdSetSession(secs);
 #endif
     Serial.printf("[LCD] Timer sync: %d secs\n", secs);
+
+  } else if (cmd == "pause") {
+#ifdef USE_LCD
+    lcdPaused = true;
+    Serial.println("[LCD] Session paused — countdown stopped");
+#endif
 
   } else if (cmd == "relay_on") {
 #ifdef USE_RELAY

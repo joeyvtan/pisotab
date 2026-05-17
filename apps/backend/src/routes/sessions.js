@@ -229,6 +229,7 @@ router.post('/:id/pause', requireAuth, async (req, res) => {
     if (session.status !== 'active') return res.status(400).json({ error: 'Session is not active' });
     await db.run("UPDATE sessions SET status = 'paused', paused_at = unixepoch() WHERE id = ?", [req.params.id]);
     emitToDevice(req, session.device_id, 'cmd:pause', { session_id: req.params.id });
+    publishCommand(session.device_id, 'pause', {});
     res.json({ ok: true, status: 'paused' });
   } catch (err) {
     console.error(err);
@@ -250,6 +251,7 @@ router.post('/:id/resume', requireAuth, async (req, res) => {
       [pausedSecs, req.params.id]
     );
     emitToDevice(req, session.device_id, 'cmd:resume', { session_id: req.params.id });
+    publishCommand(session.device_id, 'timer_sync', { time_remaining_secs: session.time_remaining_secs });
     res.json({ ok: true, status: 'active' });
   } catch (err) {
     console.error(err);
