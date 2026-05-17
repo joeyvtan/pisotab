@@ -220,8 +220,13 @@ void processCoinEvent(int pulses) {
   Serial.printf("[Coin] ₱%.1f → %d seconds credited\n", pesos, seconds);
   blinkLED(pulses);
 #ifdef USE_LCD
-  // Extend local timer immediately; backend timer_sync will correct the total
-  lcdSetSession(lcdTimeRemaining + seconds);
+  // Show acknowledgement immediately; do NOT update lcdTimeRemaining here because
+  // the COIN_MAP values are hardcoded and will not match the admin-configured rates
+  // in device_configs. The authoritative timer_sync from the backend arrives within
+  // ~1 second and will call lcdSetSession() with the correct remaining time.
+  lcd.clear();
+  lcd.setCursor(0, 0); lcd.print(" Coin Accepted! ");
+  lcd.setCursor(0, 1); lcd.print(" Please wait... ");
 #endif
 
   StaticJsonDocument<256> doc;

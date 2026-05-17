@@ -159,6 +159,19 @@ async function handleMqttMessage(topic, data) {
     const device_id = statusMatch[1];
     await db.run("UPDATE devices SET status = 'online', last_seen = unixepoch() WHERE id = ?", [device_id]);
     io?.emit(EVENTS.DEVICE_STATUS, { device_id, status: 'online', last_seen: Math.floor(Date.now() / 1000) });
+
+    // When the ESP32 comes back online, sync any active session to its LCD so it
+    // doesn't show "Please Insert Coins" while a session is still running.
+    if (data.status === 'online') {
+      const session = await db.get(
+        "SELECT * FROM sessions WHERE device_id = ? AND status IN ('active', 'paused')",
+        [device_id]
+      );
+      if (session && session.time_remaining_secs > 0) {
+        publishCommand(device_id, 'timer_sync', { time_remaining_secs: session.time_remaining_secs });
+        console.log(`[MQTT] Sent timer_sync on reconnect → ${device_id} (${session.time_remaining_secs}s remaining)`);
+      }
+    }
   }
 }
 
