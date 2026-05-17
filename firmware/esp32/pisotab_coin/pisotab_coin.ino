@@ -58,8 +58,8 @@ unsigned long lcdLastTickMs = 0;
 //   Connecting 5V directly to GPIO4 causes erratic behavior (overvoltage clamping).
 #define COIN_PIN        4    // Coin acceptor signal (active HIGH pulse, via voltage divider)
 #define LED_PIN         2    // Built-in LED
-#define PULSE_DEBOUNCE  30   // ms — ignore pulses faster than this (signal settling time)
-#define PULSE_TIMEOUT   400  // ms — silence after last pulse = end of coin event
+#define PULSE_DEBOUNCE  50000UL  // µs — ignore pulses faster than 50ms (ISR uses micros(), which is ISR-safe)
+#define PULSE_TIMEOUT   400      // ms — silence after last pulse = end of coin event
 
 // ── Server config ────────────────────────────────────────────────────────────
 // Public EMQX broker — accessible from anywhere, no port-forwarding needed.
@@ -83,7 +83,7 @@ WiFiClient wifiClient;
 PubSubClient mqtt(wifiClient);
 
 volatile int pulseCount = 0;
-volatile unsigned long lastPulseTime = 0;
+volatile unsigned long lastPulseMicros = 0;
 
 String deviceId   = "";
 // Broker IP/port come from compile-time constants, not NVS
@@ -98,9 +98,9 @@ int queueSize = 0;
 
 // ── Interrupt handler ────────────────────────────────────────────────────────
 void IRAM_ATTR onCoinPulse() {
-  unsigned long now = millis();
-  if (now - lastPulseTime < PULSE_DEBOUNCE) return;
-  lastPulseTime = now;
+  unsigned long now = micros();  // micros() is ISR-safe on ESP32; millis() is not
+  if (now - lastPulseMicros < PULSE_DEBOUNCE) return;
+  lastPulseMicros = now;
   pulseCount++;
 }
 
@@ -168,11 +168,12 @@ void loop() {
   // Read both volatile ISR variables atomically to avoid race condition
   // where an interrupt fires between the two reads and corrupts pulse count.
   noInterrupts();
-  int   capturedPulses    = pulseCount;
-  unsigned long capturedLastPulse = lastPulseTime;
+  int           capturedPulses    = pulseCount;
+  unsigned long capturedLastPulse = lastPulseMicros;  // in µs
   interrupts();
 
-  if (capturedPulses > 0 && (millis() - capturedLastPulse) > PULSE_TIMEOUT) {
+  // PULSE_TIMEOUT is in ms; lastPulseMicros is in µs — multiply timeout by 1000 to match units
+  if (capturedPulses > 0 && (micros() - capturedLastPulse) > (unsigned long)PULSE_TIMEOUT * 1000UL) {
     noInterrupts();
     pulseCount = 0;
     interrupts();
