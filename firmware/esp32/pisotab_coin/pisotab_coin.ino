@@ -52,10 +52,11 @@ unsigned long lcdLastTickMs = 0;
 #endif
 
 // ── Pin config ──────────────────────────────────────────────────────────────
-// WIRING REQUIRED: coin acceptor outputs 5V — must use voltage divider on signal:
-//   Coin signal → 10kΩ → GPIO4 → 20kΩ → GND  (brings 5V down to 3.3V)
-//   For 12V signal output: use 33kΩ + 15kΩ instead.
-//   Connecting 5V directly to GPIO4 causes erratic behavior (overvoltage clamping).
+// WIRING: Coin acceptor signal → 10kΩ → GPIO4
+//   The 10kΩ series resistor limits current and protects the GPIO.
+//   Do NOT use INPUT_PULLDOWN here — the internal ~45kΩ pull-down combined with
+//   a 5V coin signal pushes GPIO4 to ~4.1V, exceeding the 3.6V absolute maximum
+//   and causing ESD clamping that prevents reliable interrupt detection.
 #define COIN_PIN        4    // Coin acceptor signal (active HIGH pulse, via voltage divider)
 #define LED_PIN         2    // Built-in LED
 #define PULSE_DEBOUNCE  50000UL  // µs — ignore pulses faster than 50ms (ISR uses micros(), which is ISR-safe)
@@ -138,7 +139,7 @@ void setup() {
   Serial.begin(115200);
   Serial.println("\n[PisoTab] Coin firmware starting...");
 
-  pinMode(COIN_PIN, INPUT_PULLDOWN);
+  pinMode(COIN_PIN, INPUT);
   pinMode(LED_PIN, OUTPUT);
   attachInterrupt(digitalPinToInterrupt(COIN_PIN), onCoinPulse, RISING);
 #ifdef USE_RELAY
