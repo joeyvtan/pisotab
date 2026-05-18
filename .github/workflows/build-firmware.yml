@@ -30,6 +30,7 @@ jobs:
       - name: Install libraries
         run: |
           arduino-cli lib install "PubSubClient@2.8"
+          arduino-cli lib install "ArduinoJson@7.3.1"
           arduino-cli lib install "LiquidCrystal I2C@1.1.2"
           arduino-cli lib install "WiFiManager@2.0.17"
 
@@ -83,6 +84,7 @@ jobs:
       - name: Install libraries
         run: |
           arduino-cli lib install "PubSubClient@2.8"
+          arduino-cli lib install "ArduinoJson@7.3.1"
           arduino-cli lib install "LiquidCrystal I2C@1.1.2"
           arduino-cli lib install "WiFiManager@2.0.17"
 
