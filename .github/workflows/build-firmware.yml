@@ -1,0 +1,159 @@
+name: Build Firmware
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'firmware/**'
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build-esp32:
+    name: Build ESP32 Firmware
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install arduino-cli
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | sh
+          echo "$HOME/bin" >> $GITHUB_PATH
+
+      - name: Install ESP32 board
+        run: |
+          arduino-cli config init
+          arduino-cli config add board_manager.additional_urls \
+            https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
+          arduino-cli core update-index
+          arduino-cli core install esp32:esp32@2.0.17
+
+      - name: Install libraries
+        run: |
+          arduino-cli lib install "PubSubClient@2.8"
+          arduino-cli lib install "LiquidCrystal I2C@1.1.2"
+          arduino-cli lib install "WiFiManager@2.0.17"
+
+      - name: Compile ESP32 firmware
+        run: |
+          mkdir -p firmware/esp32/build
+          arduino-cli compile \
+            --fqbn esp32:esp32:esp32 \
+            --output-dir firmware/esp32/build \
+            firmware/esp32/pisotab_coin/pisotab_coin.ino
+
+      - name: Install esptool
+        run: pip install esptool
+
+      - name: Merge ESP32 binaries
+        run: |
+          BOOT=$(find ~/.arduino15/packages/esp32 -name "boot_app0.bin" | head -1)
+          echo "Using boot_app0.bin: $BOOT"
+          esptool.py --chip esp32 merge_bin \
+            --fill-flash-size 4MB \
+            -o firmware/esp32/build/pisotab_coin_esp32.bin \
+            0x1000  firmware/esp32/build/pisotab_coin.ino.bootloader.bin \
+            0x8000  firmware/esp32/build/pisotab_coin.ino.partitions.bin \
+            0xe000  "$BOOT" \
+            0x10000 firmware/esp32/build/pisotab_coin.ino.bin
+
+      - name: Upload ESP32 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pisotab-esp32
+          path: firmware/esp32/build/pisotab_coin_esp32.bin
+          retention-days: 30
+
+  build-esp8266:
+    name: Build ESP8266 Firmware
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install arduino-cli
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | sh
+          echo "$HOME/bin" >> $GITHUB_PATH
+
+      - name: Install ESP8266 board
+        run: |
+          arduino-cli config init
+          arduino-cli config add board_manager.additional_urls \
+            https://arduino.esp8266.com/stable/package_esp8266com_index.json
+          arduino-cli core update-index
+          arduino-cli core install esp8266:esp8266@3.1.2
+
+      - name: Install libraries
+        run: |
+          arduino-cli lib install "PubSubClient@2.8"
+          arduino-cli lib install "LiquidCrystal I2C@1.1.2"
+          arduino-cli lib install "WiFiManager@2.0.17"
+
+      - name: Compile ESP8266 firmware
+        run: |
+          mkdir -p firmware/esp8266/build
+          arduino-cli compile \
+            --fqbn esp8266:esp8266:nodemcuv2 \
+            --output-dir firmware/esp8266/build \
+            firmware/esp8266/pisotab_coin_8266/pisotab_coin_8266.ino
+
+      - name: Rename ESP8266 binary
+        run: |
+          cp firmware/esp8266/build/pisotab_coin_8266.ino.bin \
+             firmware/esp8266/build/pisotab_coin_esp8266.bin
+
+      - name: Upload ESP8266 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pisotab-esp8266
+          path: firmware/esp8266/build/pisotab_coin_esp8266.bin
+          retention-days: 30
+
+  release:
+    name: Create GitHub Release
+    needs: [build-esp32, build-esp8266]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - name: Download ESP32 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: pisotab-esp32
+          path: release/
+
+      - name: Download ESP8266 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: pisotab-esp8266
+          path: release/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            release/pisotab_coin_esp32.bin
+            release/pisotab_coin_esp8266.bin
+          body: |
+            ## PisoTab Firmware ${{ github.ref_name }}
+
+            ### Flash Instructions
+
+            #### ESP32
+            | File | Flash Address |
+            |------|--------------|
+            | `pisotab_coin_esp32.bin` | `0x0` |
+
+            Use [ESP32 Flash Download Tool](https://www.espressif.com/en/support/download/other-tools) or ESPFlasher.
+            Set flash address to **0x0** and flash `pisotab_coin_esp32.bin`.
+
+            #### ESP8266 / NodeMCU
+            | File | Flash Address |
+            |------|--------------|
+            | `pisotab_coin_esp8266.bin` | `0x0` |
+
+            Use [ESPFlasher](https://github.com/esphome/esphome-flasher) or NodeMCU Flasher.
+            Set flash address to **0x0** and flash `pisotab_coin_esp8266.bin`.
+
+            ---
+            > Both binaries are merged (bootloader + partitions + app) — flash at **address 0x0**, no separate files needed.
