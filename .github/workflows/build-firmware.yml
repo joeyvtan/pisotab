@@ -108,10 +108,41 @@ jobs:
           path: firmware/esp8266/build/pisotab_coin_esp8266.bin
           retention-days: 30
 
+  save-binaries:
+    name: Save Binaries to Repo
+    needs: [build-esp32, build-esp8266]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download ESP32 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: pisotab-esp32
+          path: firmware/esp32/
+
+      - name: Download ESP8266 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: pisotab-esp8266
+          path: firmware/esp8266/
+
+      - name: Commit binaries to repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add firmware/esp32/pisotab_coin_esp32.bin firmware/esp8266/pisotab_coin_esp8266.bin
+          git diff --staged --quiet || git commit -m "build: update firmware binaries [skip ci]"
+          git push
+
   release:
     name: Create GitHub Release
     needs: [build-esp32, build-esp8266]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     if: startsWith(github.ref, 'refs/tags/v')
     steps:
       - name: Download ESP32 artifact
