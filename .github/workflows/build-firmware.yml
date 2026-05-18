@@ -135,7 +135,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add firmware/esp32/pisotab_coin_esp32.bin firmware/esp8266/pisotab_coin_esp8266.bin
           git diff --staged --quiet || git commit -m "build: update firmware binaries [skip ci]"
-          git push
+          git push origin HEAD:main
 
   release:
     name: Create GitHub Release
