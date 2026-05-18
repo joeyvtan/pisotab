@@ -3,6 +3,71 @@
 
 ---
 
+## PHASE 17 — ESP8266 (NodeMCU) Firmware Support (2026-05-18)
+
+### Problem Statement
+The project only supported ESP32. Users with NodeMCU ESP8266 boards need a compatible firmware since the hardware is cheaper and more widely available.
+
+### Solution
+Created a separate ESP8266 firmware at `firmware/esp8266/pisotab_coin_8266/pisotab_coin_8266.ino` that is functionally identical to the ESP32 version but adapted for the ESP8266 platform. The backend, dashboard, and Android app require **no changes** — both firmware variants use the same MQTT topics.
+
+### Key Platform Differences
+| Component | ESP32 | ESP8266 (NodeMCU) |
+|-----------|-------|-------------------|
+| WiFi header | `<WiFi.h>` | `<ESP8266WiFi.h>` |
+| OTA header | `<HTTPUpdate.h>` | `<ESP8266httpUpdate.h>` |
+| OTA object | `httpUpdate` | `ESPhttpUpdate` |
+| Storage | `Preferences` (NVS) | `EEPROM` (Flash emulation) |
+| I2C pins | GPIO21/22 | GPIO4/5 (D2/D1) |
+| Coin pin | GPIO4 | GPIO14 (D5) |
+| LED pin | GPIO2 (active HIGH) | GPIO2 (D4, **active LOW**) |
+| Relay pin | GPIO26 | GPIO12 (D6) |
+
+### NodeMCU Pin Assignments
+| Function | NodeMCU Pin | GPIO |
+|----------|------------|------|
+| Coin acceptor | D5 | GPIO14 |
+| Built-in LED | D4 | GPIO2 (active LOW) |
+| Relay IN | D6 | GPIO12 |
+| LCD SDA | D2 | GPIO4 |
+| LCD SCL | D1 | GPIO5 |
+
+> GPIO14(D5) chosen for coin pin: no boot constraint, supports interrupts, no internal boot pull.
+
+### Arduino IDE Setup for ESP8266
+1. Add board URL: `http://arduino.esp8266.com/stable/package_esp8266com_index.json`
+2. Install: **esp8266** board package
+3. Select board: **NodeMCU 1.0 (ESP-12E Module)**
+4. Install libraries via Library Manager: PubSubClient, ArduinoJson (v6), WiFiManager (tzapu), LiquidCrystal_I2C
+
+### Files Changed
+| File | Change |
+|------|--------|
+| `firmware/esp8266/pisotab_coin_8266/pisotab_coin_8266.ino` | New — complete ESP8266 firmware |
+
+---
+
+## PHASE 16 — LCD Fixes + Pause + INPUT_PULLUP (2026-05-18)
+
+### Problem Statement
+1. Dashboard timer disappeared for ~15 seconds when ESP32 rebooted mid-session
+2. Pausing from dashboard did not stop the LCD countdown
+3. `INPUT_PULLUP` needed for open-drain coin acceptors (all power supplies)
+
+### Root Causes & Fixes
+1. **Dashboard flicker**: Backend emitted `device:status='online'` on reconnect → `isActive=false` in DeviceCard → timer hidden. Fixed: check for active session first; emit `'in_session'` if one exists, also emit `session:updated` immediately.
+2. **LCD not pausing**: Pause/resume routes only called `emitToDevice()` (Socket.io → Android only). ESP32 listens via MQTT only. Fixed: added `publishCommand('pause')` in pause route, `publishCommand('timer_sync')` in resume route. Added `pause` MQTT command handler in firmware.
+3. **INPUT_PULLUP**: Correct for open-drain CH-926 Philippine coin acceptors. Prevents floating-input noise from noisy PSUs. Updated comments in both firmwares.
+
+### Files Changed
+| File | Change |
+|------|--------|
+| `apps/backend/src/services/mqttBridge.js` | Status handler: check session before emitting, emit `session:updated` |
+| `apps/backend/src/routes/sessions.js` | Pause: add `publishCommand('pause')`. Resume: add `publishCommand('timer_sync')` |
+| `firmware/esp32/pisotab_coin/pisotab_coin.ino` | Add `lcdPaused`, `pause` MQTT handler, INPUT_PULLUP comment |
+
+---
+
 ## PHASE 15 — Smart Charge Protection (2026-05-16)
 
 ### Problem Statement
