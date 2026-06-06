@@ -134,8 +134,12 @@ export default function UsersPage() {
     finally { setBusy(null); }
   }
 
-  const pending  = users.filter(u => u.status === 'pending');
-  const approved = users.filter(u => u.status !== 'pending');
+  const pending   = users.filter(u => u.status === 'pending');
+  // Superadmin: non-pending only (pending shown in the separate approval section above).
+  // Admin: all staff including pending — admin can't approve, but should be able to see who's waiting.
+  const approved  = isSuperAdmin
+    ? users.filter(u => u.status !== 'pending')
+    : users;
 
   if (!isAdmin) return null;
 
@@ -241,6 +245,10 @@ export default function UsersPage() {
       {/* All / approved users */}
       {loading ? (
         <div className="text-slate-400">Loading users...</div>
+      ) : approved.length === 0 ? (
+        <div className="card">
+          <p className="text-slate-500 text-sm text-center py-4">No users found.</p>
+        </div>
       ) : (
         <div className="card divide-y divide-slate-700">
           {approved.map(u => (

@@ -12,7 +12,8 @@ type BadgeKey = 'pending_users' | 'pending_requests' | 'unread_notifications';
 // visibleTo: 'all' | 'admin' | 'superadmin'
 // 'admin' means both admin and superadmin can see it
 // 'superadmin' means only superadmin can see it
-const NAV: { href: string; icon: string; label: string; visibleTo: string; badge?: BadgeKey }[] = [
+// badgeRole: if set, the red count badge only renders for that role
+const NAV: { href: string; icon: string; label: string; visibleTo: string; badge?: BadgeKey; badgeRole?: string }[] = [
   { href: '/dashboard',                   icon: '📊', label: 'Overview',          visibleTo: 'all'        },
   { href: '/dashboard/devices',           icon: '📱', label: 'Devices',           visibleTo: 'all'        },
   { href: '/dashboard/branches',          icon: '🏪', label: 'Branches',          visibleTo: 'all'        },
@@ -22,7 +23,7 @@ const NAV: { href: string; icon: string; label: string; visibleTo: string; badge
   { href: '/dashboard/pricing',           icon: '💰', label: 'Pricing',           visibleTo: 'all'        },
   { href: '/dashboard/buy-license',       icon: '🛒', label: 'Buy License',       visibleTo: 'adminOnly'  },
   { href: '/dashboard/purchase-requests', icon: '📨', label: 'Purchase Requests', visibleTo: 'admin',      badge: 'pending_requests' },
-  { href: '/dashboard/users',             icon: '👥', label: 'Users',             visibleTo: 'admin',      badge: 'pending_users'    },
+  { href: '/dashboard/users',             icon: '👥', label: 'Users',             visibleTo: 'admin',      badge: 'pending_users',    badgeRole: 'superadmin' },
   { href: '/dashboard/licenses',          icon: '🔑', label: 'Licenses',          visibleTo: 'admin'      },
   { href: '/dashboard/gcash-settings',    icon: '💳', label: 'GCash Settings',    visibleTo: 'superadmin' },
   { href: '/dashboard/firmware',          icon: '🔧', label: 'Firmware OTA',      visibleTo: 'admin'      },
@@ -76,7 +77,7 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
 
       <nav className="flex-1 p-3 space-y-1 overflow-y-auto scrollbar-hide">
         {NAV.filter(item => canSee(item.visibleTo, user?.role)).map(item => {
-          const badgeCount = item.badge ? badges[item.badge] : 0;
+          const badgeCount = item.badge && (!item.badgeRole || item.badgeRole === user?.role) ? badges[item.badge] : 0;
           return (
             <Link key={item.href} href={item.href}
               className={cn(

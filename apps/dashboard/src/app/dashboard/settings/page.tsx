@@ -123,34 +123,6 @@ export default function SettingsPage() {
         </form>
       </div>
 
-      <div className="card space-y-3">
-        <h2 className="font-bold text-white">API Connection</h2>
-        <div>
-          <label className="block text-xs text-slate-400 mb-1">Backend URL</label>
-          <div className="input opacity-60 text-sm">{process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}</div>
-        </div>
-        <p className="text-xs text-slate-500">
-          To change, set NEXT_PUBLIC_API_URL in your .env file.
-        </p>
-      </div>
-
-      <div className="card space-y-3">
-        <h2 className="font-bold text-white">Android App Setup</h2>
-        <p className="text-sm text-slate-400">
-          Configure the Android kiosk app by entering the backend URL and device ID in the app settings screen.
-        </p>
-        <div className="bg-slate-700 rounded-lg p-3 space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span className="text-slate-400">API URL</span>
-            <span className="text-white font-mono text-xs">{process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-slate-400">Default port</span>
-            <span className="text-white font-mono text-xs">4000</span>
-          </div>
-        </div>
-      </div>
-
       {/* Telegram Notifications */}
       <div className="card space-y-4">
         <h2 className="font-bold text-white">Telegram Notifications</h2>

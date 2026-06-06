@@ -110,6 +110,11 @@ class PrefsManager(context: Context) {
         get() = prefs.getBoolean("floating_timer", false)
         set(v) = prefs.edit { putBoolean("floating_timer", v) }
 
+    /** Show the countdown timer on the active session screen (default on) */
+    var showSessionTimer: Boolean
+        get() = prefs.getBoolean("show_session_timer", true)
+        set(v) = prefs.edit { putBoolean("show_session_timer", v) }
+
     // ── Appearance ────────────────────────────────────────────────────────────
 
     /** Business name shown in sidebar header and lock screen */
@@ -122,9 +127,9 @@ class PrefsManager(context: Context) {
         get() = prefs.getBoolean("dark_mode", true)
         set(v) = prefs.edit { putBoolean("dark_mode", v) }
 
-    /** 0 = Orange (default), 1 = Blue, 2 = Green */
+    /** 0 = Orange, 1 = Blue, 2 = Green (default) */
     var themeId: Int
-        get() = prefs.getInt("theme_id", 0)
+        get() = prefs.getInt("theme_id", 2)
         set(v) = prefs.edit { putInt("theme_id", v) }
 
     /** Hex accent color override, empty = use theme default */
@@ -142,19 +147,29 @@ class PrefsManager(context: Context) {
         get() = prefs.getString("landscape_wallpaper_uri", "") ?: ""
         set(v) = prefs.edit { putString("landscape_wallpaper_uri", v) }
 
-    /** URI to audio file played when lock screen opens */
-    var lockScreenAudioUri: String
-        get() = prefs.getString("lock_screen_audio_uri", "") ?: ""
-        set(v) = prefs.edit { putString("lock_screen_audio_uri", v) }
+    /** URI to short video clip played on loop on the lock screen (optional) */
+    var lockScreenVideoUri: String
+        get() = prefs.getString("lock_screen_video_uri", "") ?: ""
+        set(v) = prefs.edit { putString("lock_screen_video_uri", v) }
+
+    /** Seconds of wallpaper/animation to show before switching to lock screen video (0 = immediate) */
+    var lockScreenVideoDelaySecs: Int
+        get() = prefs.getInt("lock_video_delay_secs", 0)
+        set(v) = prefs.edit { putInt("lock_video_delay_secs", v) }
+
+    /** Play lock screen video with sound (default muted) */
+    var lockScreenVideoSound: Boolean
+        get() = prefs.getBoolean("lock_video_sound", false)
+        set(v) = prefs.edit { putBoolean("lock_video_sound", v) }
 
     /** Animated background preset for idle + lock screens: 0=None, 1=CoinRain, 2=Pulse, 3=Stars */
     var animationPreset: Int
         get() = prefs.getInt("animation_preset", 1)  // default = CoinRain on fresh install
         set(v) = prefs.edit { putInt("animation_preset", v) }
 
-    /** Built-in wallpaper preset: 0=Custom (use URI), 1=Galaxy, 2=Circuit, 3=Neon Grid */
+    /** Built-in wallpaper preset: 0=Custom (use URI), 1=Galaxy, 2=Cyber, 3=Lava (default) */
     var wallpaperPreset: Int
-        get() = prefs.getInt("wallpaper_preset", 0)
+        get() = prefs.getInt("wallpaper_preset", 3)
         set(v) = prefs.edit { putInt("wallpaper_preset", v) }
 
     // ── Allowed Apps whitelist ────────────────────────────────────────────────

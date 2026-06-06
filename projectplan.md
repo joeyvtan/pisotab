@@ -1886,3 +1886,50 @@ Step 20: Testing + QA (role boundary checks, purchase flow end-to-end)
 - Phase 3: Device Owner provisioning script + full kiosk enforcement
 - Phase 4: Telegram alerts + offline sync polish
 - Phase 5: QR payments, AI analytics, dynamic pricing, licensing system
+
+---
+
+## Known Issues
+
+### KI-001 — Lock Screen Video Does Not Play (Unresolved)
+
+**Status:** Open — do not attempt further fixes without a dedicated debugging session on-device.
+
+**Symptom:** When a video URI is configured in Appearance > Lock Screen Video, the video never plays on the Insert Coin screen, even after the configured delay has elapsed.
+
+**Investigation history:**
+
+| Attempt | Change | Result |
+|---------|--------|--------|
+| 1 | Replaced `VideoView` with `TextureView + MediaPlayer` | `VideoView` has Z-order conflict with `FLAG_SHOW_WHEN_LOCKED`; switch was correct but video still silent |
+| 2 | Changed `setDataSource` from `context+uri` form to manual `openFileDescriptor + fd` | Some content providers return non-seekable pipe-based FDs; reverted to `setDataSource(context, uri)` |
+| 3 | Added `android:configChanges` to manifest | Fixed Deep Freeze countdown reset and handler cancellation on rotation, but video still did not play |
+| 4 | Moved `surfaceTextureListener` assignment before `visibility = VISIBLE` + added `isAvailable` guard | Correct ordering per TextureView docs; `onSurfaceTextureAvailable` confirmed to fire (via log), but `prepareAsync` callback never arrives |
+
+**Suspected root cause:** The `MediaPlayer.prepareAsync()` call appears to complete without error but `onPreparedListener` is never invoked. Possible causes:
+- Content URI permissions expire between admin configuration and lock screen display (test: re-pick video immediately before triggering lock screen)
+- The specific video codec/container is not supported on the target device
+- `FLAG_SHOW_WHEN_LOCKED` windows have a restricted media session context on certain OEM Android builds that silently blocks `MediaPlayer`
+- Hardware decoder not available for the video while in lock-screen window mode
+
+**Workaround:** No workaround. The feature degrades silently — the fallback static wallpaper is shown.
+
+**To diagnose properly:** Run with USB debugging connected, filter logcat for `LockVideo` and `MediaPlayer` tags, confirm whether `onPreparedListener` fires after `prepareAsync`, and check `MediaPlayer error` callbacks.
+
+**Files involved:** `LockScreenActivity.kt` — `startLockVideo()`, `attachMediaPlayer()`
+
+---
+
+## Changelog
+
+### 2026-06-06 — Fresh install defaults + Appearance cleanup
+
+**Changes:**
+- `PrefsManager.kt`: `themeId` default changed from Orange (0) to Green (2)
+- `PrefsManager.kt`: `wallpaperPreset` default changed from Custom (0) to Lava Core (3)
+- `AppearanceFragment.kt`: `reset()` now resets to Green theme + Lava Core preset to match new defaults
+- Removed Pulse Ring and Neon Grid from animation preset options (UI and logic)
+- Added Cyber Grid and Lava Core as built-in wallpaper presets (vector drawables)
+- Added lock screen video delay (seconds) and sound toggle settings
+- Fixed Deep Freeze countdown resetting on tablet rotation (`android:configChanges` in manifest)
+- Fixed video delay handler being cancelled on rotation (same manifest fix)

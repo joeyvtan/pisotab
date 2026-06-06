@@ -22,7 +22,7 @@ function CopyCommand({ command }: { command: string }) {
   );
 }
 
-const STORAGE_KEY = 'pisotab_guide_links';
+const GUIDE_LINKS_KEY = 'guide_links';
 
 interface GuideLink {
   id: string;
@@ -107,24 +107,30 @@ export default function GuidesPage() {
       setApkUrl(s['apk_download_url'] || '');
       setFirmwareUrl(s['firmware_download_url'] || '');
       setFlasherUrl(s['flasher_download_url'] || '');
+      try {
+        const raw = s[GUIDE_LINKS_KEY];
+        if (raw) setLinks(JSON.parse(raw));
+      } catch { /* ignore malformed JSON */ }
     }).catch(() => {});
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) setLinks(JSON.parse(saved));
   }, []);
 
-  function saveLinks(updated: GuideLink[]) {
+  async function saveLinks(updated: GuideLink[]) {
     setLinks(updated);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    try {
+      await api.updateAppSetting(GUIDE_LINKS_KEY, JSON.stringify(updated));
+    } catch (e: unknown) {
+      alert('Failed to save: ' + (e instanceof Error ? e.message : String(e)));
+    }
   }
 
-  function addLink() {
+  async function addLink() {
     if (!form.title.trim() || !form.url.trim()) return;
     const url = form.url.startsWith('http') ? form.url : 'https://' + form.url;
     if (editId) {
-      saveLinks(links.map(l => l.id === editId ? { ...l, ...form, url } : l));
+      await saveLinks(links.map(l => l.id === editId ? { ...l, ...form, url } : l));
       setEditId(null);
     } else {
-      saveLinks([...links, { id: Date.now().toString(), ...form, url }]);
+      await saveLinks([...links, { id: Date.now().toString(), ...form, url }]);
     }
     setForm({ title: '', url: '', type: 'video' });
     setShowAdd(false);
@@ -136,9 +142,9 @@ export default function GuidesPage() {
     setShowAdd(true);
   }
 
-  function removeLink(id: string) {
+  async function removeLink(id: string) {
     if (!confirm('Remove this link?')) return;
-    saveLinks(links.filter(l => l.id !== id));
+    await saveLinks(links.filter(l => l.id !== id));
   }
 
   // Resolve firmware download: prefer external URL, fallback to backend
