@@ -173,7 +173,11 @@ router.patch('/:id/deactivate', requireAuth, requireAdmin, async (req, res) => {
 // DELETE /api/licenses/:id — admin only — hard delete
 router.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
   try {
-    const { changes } = await getDb().run('DELETE FROM licenses WHERE id = ?', [req.params.id]);
+    const db = getDb();
+    // Remove transfer audit rows first — license_transfers.license_id has a FK to licenses(id)
+    // with no ON DELETE CASCADE, so deleting the license without this step raises a constraint error.
+    await db.run('DELETE FROM license_transfers WHERE license_id = ?', [req.params.id]);
+    const { changes } = await db.run('DELETE FROM licenses WHERE id = ?', [req.params.id]);
     if (changes === 0) return res.status(404).json({ error: 'License not found' });
     res.json({ ok: true });
   } catch (err) { console.error(err); res.status(500).json({ error: 'Server error' }); }
