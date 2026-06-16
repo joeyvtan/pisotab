@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api, FirmwareInfo } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
+import { toEmbedUrl } from '@/lib/utils';
 
 function CopyCommand({ command }: { command: string }) {
   const [copied, setCopied] = useState(false);
@@ -93,6 +94,7 @@ export default function GuidesPage() {
   const [apkUrl, setApkUrl]             = useState('');
   const [firmwareUrl, setFirmwareUrl]   = useState('');
   const [flasherUrl, setFlasherUrl]     = useState('');
+  const [setupVideoUrl, setSetupVideoUrl] = useState('');
   const [links, setLinks]               = useState<GuideLink[]>([]);
 
   const [showAdd, setShowAdd] = useState(false);
@@ -107,6 +109,7 @@ export default function GuidesPage() {
       setApkUrl(s['apk_download_url'] || '');
       setFirmwareUrl(s['firmware_download_url'] || '');
       setFlasherUrl(s['flasher_download_url'] || '');
+      setSetupVideoUrl(s['setup_video_url'] || '');
       try {
         const raw = s[GUIDE_LINKS_KEY];
         if (raw) setLinks(JSON.parse(raw));
@@ -345,6 +348,23 @@ export default function GuidesPage() {
             ⬇ Download PDF
           </button>
         </div>
+
+        {isSuperAdmin && (
+          <UrlField
+            label="How-to-Setup Video URL (shown on the public landing page)"
+            settingKey="setup_video_url"
+            value={setupVideoUrl}
+            onChange={setSetupVideoUrl}
+            placeholder="https://youtube.com/watch?v=... or https://drive.google.com/file/d/..."
+          />
+        )}
+
+        {setupVideoUrl && (
+          <div className="aspect-video rounded-lg overflow-hidden border border-slate-700">
+            <iframe src={toEmbedUrl(setupVideoUrl)} className="w-full h-full" allowFullScreen
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" />
+          </div>
+        )}
 
         <div className="space-y-3 text-sm">
 

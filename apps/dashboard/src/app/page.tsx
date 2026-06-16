@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import JjtLogo from '@/components/JjtLogo';
 import { api, DownloadFile } from '@/lib/api';
+import { toEmbedUrl } from '@/lib/utils';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function formatBytes(bytes: number) {
@@ -156,6 +157,7 @@ export default function LandingPage() {
   const [apkUrl, setApkUrl]           = useState('');
   const [firmwareUrl, setFirmwareUrl] = useState('');
   const [flasherUrl, setFlasherUrl]   = useState('');
+  const [setupVideoUrl, setSetupVideoUrl] = useState('');
 
   useEffect(() => {
     api.getDownloads().then(d => setDownloads({ apk: d.apk, firmware: d.firmware })).catch(() => {});
@@ -163,6 +165,7 @@ export default function LandingPage() {
       setApkUrl(s['apk_download_url'] || '');
       setFirmwareUrl(s['firmware_download_url'] || '');
       setFlasherUrl(s['flasher_download_url'] || '');
+      setSetupVideoUrl(s['setup_video_url'] || '');
     }).catch(() => {});
   }, []);
 
@@ -279,6 +282,13 @@ export default function LandingPage() {
             <h2 className="text-3xl font-bold text-white mb-3">Complete Setup Guide</h2>
             <p className="text-slate-400">Full step-by-step installation from registration to kiosk mode</p>
           </div>
+
+          {setupVideoUrl && (
+            <div className="aspect-video rounded-xl overflow-hidden border border-slate-700 mb-8">
+              <iframe src={toEmbedUrl(setupVideoUrl)} className="w-full h-full" allowFullScreen
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" />
+            </div>
+          )}
 
           <div className="space-y-4 text-sm">
 
