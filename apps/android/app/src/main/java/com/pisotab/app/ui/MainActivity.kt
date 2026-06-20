@@ -281,13 +281,12 @@ class MainActivity : AppCompatActivity() {
         screenIdle.visibility       = View.VISIBLE
         screenActive.visibility     = View.GONE
         flAnimationIdle.visibility  = if (vm.prefs.animationPreset != AnimationPreset.NONE) View.VISIBLE else View.GONE
-        // Hide all idle text when a video is configured so it doesn't obstruct the video
-        val idleTextVis = if (vm.prefs.lockScreenVideoUri.isNotEmpty()) View.GONE else View.VISIBLE
-        tvBusinessNameIdle.visibility = idleTextVis
-        tvDeviceNameIdle.visibility   = idleTextVis
-        tvConnectionIdle.visibility   = idleTextVis
-        tvCoinEmoji.visibility        = idleTextVis
-        tvInsertCoin.visibility       = idleTextVis
+        // Always show idle text here; attachIdleVideo() will hide it when the video takes over.
+        tvBusinessNameIdle.visibility = View.VISIBLE
+        tvDeviceNameIdle.visibility   = View.VISIBLE
+        tvConnectionIdle.visibility   = View.VISIBLE
+        tvCoinEmoji.visibility        = View.VISIBLE
+        tvInsertCoin.visibility       = View.VISIBLE
         applyLicenseOverlay()
         TimerService.isRunning = false
         // Only stop TimerService if the session was intentionally ended by the ViewModel
@@ -485,7 +484,7 @@ class MainActivity : AppCompatActivity() {
         val withSound = vm.prefs.lockScreenVideoSound
         val delaySecs = vm.prefs.lockScreenVideoDelaySecs
         if (vm.prefs.idleVideoLandscape) {
-            requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+            requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
         }
         if (delaySecs > 0) {
             idleHandler.postDelayed({ if (!isFinishing) attachIdleVideo(videoUri, withSound) }, delaySecs * 1000L)
@@ -499,6 +498,12 @@ class MainActivity : AppCompatActivity() {
         idleVideoActive = true
         ivWallpaper.visibility     = View.GONE
         flAnimationIdle.visibility = View.GONE
+        // Hide idle text now that the video is taking over the screen
+        tvBusinessNameIdle.visibility = View.GONE
+        tvDeviceNameIdle.visibility   = View.GONE
+        tvConnectionIdle.visibility   = View.GONE
+        tvCoinEmoji.visibility        = View.GONE
+        tvInsertCoin.visibility       = View.GONE
         // Listener must be set before VISIBLE — SurfaceTexture may allocate in the same render pass.
         val stListener = object : TextureView.SurfaceTextureListener {
             override fun onSurfaceTextureAvailable(st: SurfaceTexture, w: Int, h: Int) {
@@ -538,6 +543,11 @@ class MainActivity : AppCompatActivity() {
         idleMediaPlayer = null
         idleVideoActive = false
         tvIdleVideo.visibility = View.GONE
+        tvBusinessNameIdle.visibility = View.VISIBLE
+        tvDeviceNameIdle.visibility   = View.VISIBLE
+        tvConnectionIdle.visibility   = View.VISIBLE
+        tvCoinEmoji.visibility        = View.VISIBLE
+        tvInsertCoin.visibility       = View.VISIBLE
         if (vm.prefs.idleVideoLandscape) {
             requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR
         }
