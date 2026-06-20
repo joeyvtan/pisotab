@@ -281,7 +281,7 @@ class MainActivity : AppCompatActivity() {
         screenIdle.visibility       = View.VISIBLE
         screenActive.visibility     = View.GONE
         flAnimationIdle.visibility  = if (vm.prefs.animationPreset != AnimationPreset.NONE) View.VISIBLE else View.GONE
-        // Always show idle text here; attachIdleVideo() will hide it when the video takes over.
+        // Always show idle text here; attachIdleVideo() hides it only when the video takes over.
         tvBusinessNameIdle.visibility = View.VISIBLE
         tvDeviceNameIdle.visibility   = View.VISIBLE
         tvConnectionIdle.visibility   = View.VISIBLE
@@ -498,7 +498,7 @@ class MainActivity : AppCompatActivity() {
         idleVideoActive = true
         ivWallpaper.visibility     = View.GONE
         flAnimationIdle.visibility = View.GONE
-        // Hide idle text now that the video is taking over the screen
+        // Hide idle text only now that the video is actually taking over the screen.
         tvBusinessNameIdle.visibility = View.GONE
         tvDeviceNameIdle.visibility   = View.GONE
         tvConnectionIdle.visibility   = View.GONE
@@ -543,11 +543,15 @@ class MainActivity : AppCompatActivity() {
         idleMediaPlayer = null
         idleVideoActive = false
         tvIdleVideo.visibility = View.GONE
+        // Restore idle text and wallpaper that attachIdleVideo() hid.
+        // With configChanges declared, onResume() is not called on orientation change, so
+        // we must restore the wallpaper here rather than relying on activity recreation.
         tvBusinessNameIdle.visibility = View.VISIBLE
         tvDeviceNameIdle.visibility   = View.VISIBLE
         tvConnectionIdle.visibility   = View.VISIBLE
         tvCoinEmoji.visibility        = View.VISIBLE
         tvInsertCoin.visibility       = View.VISIBLE
+        WallpaperManager.applyToImageView(ivWallpaper, this, false)
         if (vm.prefs.idleVideoLandscape) {
             requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR
         }
