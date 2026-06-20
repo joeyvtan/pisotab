@@ -1,10 +1,17 @@
 package com.pisotab.app.ui
 
 import android.content.Intent
+import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
+import android.graphics.SurfaceTexture
+import android.media.MediaPlayer
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.KeyEvent
+import android.view.Surface
+import android.view.TextureView
 import android.view.View
 import android.view.WindowManager
 import android.widget.EditText
@@ -40,6 +47,8 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var ivWallpaper: ImageView
     private lateinit var flAnimationIdle: FrameLayout
+    private lateinit var tvIdleVideo: TextureView
+    private lateinit var tvInsertCoin: TextView
     private lateinit var screenIdle: View
     private lateinit var screenActive: View
     private lateinit var screenLicenseExpired: View
@@ -51,6 +60,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tvAlarmReason: TextView
     private lateinit var rvLauncher: RecyclerView
     private lateinit var launcherAdapter: LauncherAdapter
+    private var idleMediaPlayer: MediaPlayer? = null
+    private var idleVideoActive = false
+    private val idleHandler = Handler(Looper.getMainLooper())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         ThemeManager.applyTheme(this)
@@ -60,6 +72,8 @@ class MainActivity : AppCompatActivity() {
 
         ivWallpaper          = findViewById(R.id.iv_wallpaper)
         flAnimationIdle      = findViewById(R.id.fl_animation_idle)
+        tvIdleVideo          = findViewById(R.id.tv_idle_video)
+        tvInsertCoin         = findViewById(R.id.tv_insert_coin)
         screenIdle           = findViewById(R.id.screen_idle)
         applyAnimationPreset()
         screenActive         = findViewById(R.id.screen_active)
@@ -159,8 +173,8 @@ class MainActivity : AppCompatActivity() {
             setConnectionStatus(true, null)
         }
 
-        SyncService.onStartSession = { sessionId, mins, amount ->
-            runOnUiThread { vm.startSession(mins, amount, serverSessionId = sessionId) }
+        SyncService.onStartSession = { sessionId, durationSecs, amount ->
+            runOnUiThread { vm.startSession(durationSecs / 60, amount, serverSessionId = sessionId, durationSecs = durationSecs) }
         }
         SyncService.onPauseSession = {
             runOnUiThread { vm.pauseSession() }
@@ -260,6 +274,7 @@ class MainActivity : AppCompatActivity() {
         screenIdle.visibility       = View.VISIBLE
         screenActive.visibility     = View.GONE
         flAnimationIdle.visibility  = if (vm.prefs.animationPreset != AnimationPreset.NONE) View.VISIBLE else View.GONE
+        tvInsertCoin.visibility     = if (vm.prefs.showInsertCoinText) View.VISIBLE else View.GONE
         applyLicenseOverlay()
         TimerService.isRunning = false
         // Only stop TimerService if the session was intentionally ended by the ViewModel
@@ -271,12 +286,15 @@ class MainActivity : AppCompatActivity() {
         if (vm.prefs.activeSessionId.isEmpty()) {
             startService(Intent(this, TimerService::class.java).apply { action = TimerService.ACTION_END })
         }
+        startIdleVideo()
     }
 
     private fun showActive(secs: Int) {
+        stopIdleVideo()
         screenIdle.visibility      = View.GONE
         flAnimationIdle.visibility = View.GONE
         screenActive.visibility    = View.VISIBLE
+        tvTimer.visibility = if (vm.prefs.showSessionTimer) View.VISIBLE else View.INVISIBLE
         val isUsb = vm.prefs.connectionMode == "usb"
         val timerBelongsToCurrentSession =
             TimerService.isRunning &&
@@ -300,6 +318,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showPaused(secs: Int) {
+        stopIdleVideo()
         screenIdle.visibility      = View.GONE
         flAnimationIdle.visibility = View.GONE
         screenActive.visibility    = View.VISIBLE
@@ -369,11 +388,11 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        WallpaperManager.applyToImageView(ivWallpaper, this, false)
+        if (!idleVideoActive) WallpaperManager.applyToImageView(ivWallpaper, this, false)
         // Re-register callback in case LockScreenActivity overwrote it
-        SyncService.onStartSession = { sessionId, mins, amount ->
+        SyncService.onStartSession = { sessionId, durationSecs, amount ->
             if (vm.prefs.licenseStatus != "trial_expired") {
-                runOnUiThread { vm.startSession(mins, amount, serverSessionId = sessionId) }
+                runOnUiThread { vm.startSession(durationSecs / 60, amount, serverSessionId = sessionId, durationSecs = durationSecs) }
             }
         }
         KioskManager.applyImmersiveMode(window)
@@ -415,13 +434,17 @@ class MainActivity : AppCompatActivity() {
         }
         val sessionId = intent.getStringExtra("session_id") ?: return
         val mins = intent.getIntExtra("duration_mins", 0)
+        val secs = intent.getIntExtra("duration_secs", mins * 60)
         val amount = intent.getDoubleExtra("amount_paid", 0.0)
         if (sessionId.isNotEmpty() && mins > 0) {
-            vm.startSession(mins, amount, serverSessionId = sessionId)
+            vm.startSession(mins, amount, serverSessionId = sessionId, durationSecs = secs)
         }
     }
 
     override fun onDestroy() {
+        idleHandler.removeCallbacksAndMessages(null)
+        idleMediaPlayer?.release()
+        idleMediaPlayer = null
         TimerService.onTick = null
         SyncService.onConnectionChange = null
         SyncService.onStartSession = null
@@ -434,6 +457,71 @@ class MainActivity : AppCompatActivity() {
         // presses Back during an active session and MainActivity is destroyed.
         // SyncService (always alive) manages the full shutdown when the session ends.
         super.onDestroy()
+    }
+
+    private fun startIdleVideo() {
+        if (idleVideoActive) return
+        val videoUri = vm.prefs.lockScreenVideoUri
+        if (videoUri.isEmpty()) return
+        val withSound = vm.prefs.lockScreenVideoSound
+        val delaySecs = vm.prefs.lockScreenVideoDelaySecs
+        if (vm.prefs.idleVideoLandscape) {
+            requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+        }
+        if (delaySecs > 0) {
+            idleHandler.postDelayed({ if (!isFinishing) attachIdleVideo(videoUri, withSound) }, delaySecs * 1000L)
+        } else {
+            attachIdleVideo(videoUri, withSound)
+        }
+    }
+
+    private fun attachIdleVideo(videoUri: String, withSound: Boolean) {
+        if (isFinishing) return
+        idleVideoActive = true
+        ivWallpaper.visibility     = View.GONE
+        flAnimationIdle.visibility = View.GONE
+        // Listener must be set before VISIBLE — SurfaceTexture may allocate in the same render pass.
+        val stListener = object : TextureView.SurfaceTextureListener {
+            override fun onSurfaceTextureAvailable(st: SurfaceTexture, w: Int, h: Int) {
+                startIdleMediaPlayer(st, videoUri, withSound)
+            }
+            override fun onSurfaceTextureSizeChanged(st: SurfaceTexture, w: Int, h: Int) {}
+            override fun onSurfaceTextureDestroyed(st: SurfaceTexture): Boolean {
+                idleMediaPlayer?.release(); idleMediaPlayer = null; return true
+            }
+            override fun onSurfaceTextureUpdated(st: SurfaceTexture) {}
+        }
+        tvIdleVideo.surfaceTextureListener = stListener
+        tvIdleVideo.visibility = View.VISIBLE
+        if (tvIdleVideo.isAvailable) startIdleMediaPlayer(tvIdleVideo.surfaceTexture!!, videoUri, withSound)
+    }
+
+    private fun startIdleMediaPlayer(st: SurfaceTexture, videoUri: String, withSound: Boolean) {
+        try {
+            idleMediaPlayer = MediaPlayer().apply {
+                setDataSource(this@MainActivity, android.net.Uri.parse(videoUri))
+                setSurface(Surface(st))
+                isLooping = true
+                val vol = if (withSound) 1f else 0f
+                setVolume(vol, vol)
+                setOnErrorListener { _, _, _ -> runOnUiThread { stopIdleVideo() }; true }
+                setOnPreparedListener { start() }
+                prepareAsync()
+            }
+        } catch (_: Exception) {
+            runOnUiThread { stopIdleVideo() }
+        }
+    }
+
+    private fun stopIdleVideo() {
+        idleHandler.removeCallbacksAndMessages(null)
+        idleMediaPlayer?.release()
+        idleMediaPlayer = null
+        idleVideoActive = false
+        tvIdleVideo.visibility = View.GONE
+        if (vm.prefs.idleVideoLandscape) {
+            requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR
+        }
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {

@@ -4,7 +4,7 @@
     android:layout_height="match_parent"
     android:background="#0F172A">
 
-    <!-- Wallpaper — sits behind all content; GONE when no wallpaper is set -->
+    <!-- Wallpaper — sits behind all content; GONE when no wallpaper / when video plays -->
     <ImageView
         android:id="@+id/iv_wallpaper_lock"
         android:layout_width="match_parent"

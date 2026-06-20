@@ -35,6 +35,8 @@ class AppearanceFragment : Fragment() {
     private lateinit var tvVideoName: TextView
     private lateinit var etVideoDelay: EditText
     private lateinit var swVideoSound: SwitchCompat
+    private lateinit var swShowInsertCoin: SwitchCompat
+    private lateinit var swVideoLandscape: SwitchCompat
     private lateinit var btnSave: Button
     private lateinit var btnReset: Button
 
@@ -77,6 +79,8 @@ class AppearanceFragment : Fragment() {
         tvVideoName       = view.findViewById(R.id.tv_video_name)
         etVideoDelay      = view.findViewById(R.id.et_video_delay)
         swVideoSound      = view.findViewById(R.id.sw_video_sound)
+        swShowInsertCoin  = view.findViewById(R.id.sw_show_insert_coin)
+        swVideoLandscape  = view.findViewById(R.id.sw_video_landscape)
         btnSave           = view.findViewById(R.id.btn_save_appearance)
         btnReset          = view.findViewById(R.id.btn_reset_appearance)
 
@@ -138,7 +142,9 @@ class AppearanceFragment : Fragment() {
             tvVideoName.text = Uri.parse(videoUri).lastPathSegment ?: "Video selected"
         }
         etVideoDelay.setText(prefs.lockScreenVideoDelaySecs.toString())
-        swVideoSound.isChecked = prefs.lockScreenVideoSound
+        swVideoSound.isChecked     = prefs.lockScreenVideoSound
+        swShowInsertCoin.isChecked = prefs.showInsertCoinText
+        swVideoLandscape.isChecked = prefs.idleVideoLandscape
     }
 
     private fun save() {
@@ -162,6 +168,8 @@ class AppearanceFragment : Fragment() {
         }
         prefs.lockScreenVideoDelaySecs = etVideoDelay.text.toString().toIntOrNull()?.coerceAtLeast(0) ?: 0
         prefs.lockScreenVideoSound     = swVideoSound.isChecked
+        prefs.showInsertCoinText       = swShowInsertCoin.isChecked
+        prefs.idleVideoLandscape       = swVideoLandscape.isChecked
         Toast.makeText(requireContext(), "Appearance saved. Restart app to apply.", Toast.LENGTH_LONG).show()
     }
 
@@ -172,9 +180,11 @@ class AppearanceFragment : Fragment() {
         prefs.animationPreset      = AnimationPreset.NONE
         prefs.wallpaperPreset      = WallpaperManager.PRESET_LAVA
         prefs.portraitWallpaperUri    = ""
-        prefs.lockScreenVideoUri      = ""
+        prefs.lockScreenVideoUri       = ""
         prefs.lockScreenVideoDelaySecs = 0
-        prefs.lockScreenVideoSound    = false
+        prefs.lockScreenVideoSound     = false
+        prefs.showInsertCoinText       = true
+        prefs.idleVideoLandscape       = false
         loadCurrentValues()
         Toast.makeText(requireContext(), "Reset to defaults.", Toast.LENGTH_SHORT).show()
     }

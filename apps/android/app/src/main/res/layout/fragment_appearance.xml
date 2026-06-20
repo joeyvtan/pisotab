@@ -11,21 +11,20 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <!-- Dark / Light Mode toggle -->
+        <!-- Display Mode -->
         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
             android:text="Display Mode" android:textColor="@color/text_secondary" android:textSize="12sp"
             android:layout_marginBottom="6dp"/>
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
             android:orientation="horizontal" android:gravity="center_vertical"
-            android:background="@color/card_bg" android:padding="14dp"
-            android:layout_marginBottom="20dp">
+            android:background="@color/card_bg" android:padding="14dp" android:layout_marginBottom="20dp">
             <TextView android:layout_width="0dp" android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="Dark Mode" android:textColor="@color/text_primary" android:textSize="14sp"/>
             <androidx.appcompat.widget.SwitchCompat
                 android:id="@+id/sw_dark_mode"
                 android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:checked="true" />
+                android:checked="true"/>
         </LinearLayout>
 
         <!-- Business Name -->
@@ -74,22 +73,21 @@
                     android:layout_width="match_parent" android:layout_height="wrap_content"
                     android:text="🪙 Coin Rain  —  falling coins" android:textColor="@color/text_primary" android:textSize="14sp"
                     android:paddingTop="4dp" android:paddingBottom="4dp"/>
-                <RadioButton android:id="@+id/rb_anim_pulse"
-                    android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:text="⭕ Pulse Rings  —  expanding rings" android:textColor="@color/text_primary" android:textSize="14sp"
-                    android:paddingTop="4dp" android:paddingBottom="4dp"/>
                 <RadioButton android:id="@+id/rb_anim_stars"
                     android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:text="✨ Star Field  —  twinkling stars" android:textColor="@color/text_primary" android:textSize="14sp"
+                    android:text="🚀 Star Field  —  warp speed flythrough" android:textColor="@color/text_primary" android:textSize="14sp"
+                    android:paddingTop="4dp" android:paddingBottom="4dp"/>
+                <RadioButton android:id="@+id/rb_anim_circuit"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="🔌 Circuit Board  —  glowing PCB traces" android:textColor="@color/text_primary" android:textSize="14sp"
                     android:paddingTop="4dp" android:paddingBottom="4dp"/>
             </RadioGroup>
         </LinearLayout>
         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:text="Animations play on the Insert Coin and Session Expired screens."
-            android:textColor="@color/text_hint" android:textSize="11sp"
-            android:layout_marginBottom="20dp"/>
+            android:text="Plays on the Insert Coin and Session Expired screens."
+            android:textColor="@color/text_hint" android:textSize="11sp" android:layout_marginBottom="20dp"/>
 
-        <!-- Built-in Wallpaper Presets -->
+        <!-- Background Preset -->
         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
             android:text="BACKGROUND PRESET" android:textColor="@color/text_secondary" android:textSize="11sp"
             android:letterSpacing="0.08" android:layout_marginBottom="8dp"/>
@@ -101,83 +99,126 @@
                 android:orientation="vertical">
                 <RadioButton android:id="@+id/rb_wp_custom"
                     android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:text="Custom (use uploaded image below)" android:textColor="@color/text_primary" android:textSize="14sp"
+                    android:text="Custom (use uploaded wallpaper below)" android:textColor="@color/text_primary" android:textSize="14sp"
                     android:paddingTop="4dp" android:paddingBottom="4dp"/>
                 <RadioButton android:id="@+id/rb_wp_galaxy"
                     android:layout_width="match_parent" android:layout_height="wrap_content"
                     android:text="🌌 Galaxy  —  deep space starfield" android:textColor="@color/text_primary" android:textSize="14sp"
                     android:paddingTop="4dp" android:paddingBottom="4dp"/>
-                <RadioButton android:id="@+id/rb_wp_circuit"
+                <RadioButton android:id="@+id/rb_wp_cyber"
                     android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:text="🔌 Circuit Board  —  copper PCB traces" android:textColor="@color/text_primary" android:textSize="14sp"
+                    android:text="⚡ Cyber Grid  —  electric blue matrix" android:textColor="@color/text_primary" android:textSize="14sp"
                     android:paddingTop="4dp" android:paddingBottom="4dp"/>
-                <RadioButton android:id="@+id/rb_wp_neon"
+                <RadioButton android:id="@+id/rb_wp_lava"
                     android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:text="💠 Neon Grid  —  cyan grid on dark" android:textColor="@color/text_primary" android:textSize="14sp"
+                    android:text="🌋 Lava Core  —  molten volcanic glow" android:textColor="@color/text_primary" android:textSize="14sp"
                     android:paddingTop="4dp" android:paddingBottom="4dp"/>
             </RadioGroup>
         </LinearLayout>
         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:text="Selecting a preset overrides the uploaded wallpaper image."
-            android:textColor="@color/text_hint" android:textSize="11sp"
-            android:layout_marginBottom="20dp"/>
+            android:text="Selecting a preset overrides the uploaded wallpaper."
+            android:textColor="@color/text_hint" android:textSize="11sp" android:layout_marginBottom="20dp"/>
 
-        <!-- Portrait Wallpaper -->
+        <!-- Wallpaper (single) -->
         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:text="Portrait Wallpaper" android:textColor="@color/text_secondary" android:textSize="12sp"
+            android:text="Wallpaper" android:textColor="@color/text_secondary" android:textSize="12sp"
             android:layout_marginBottom="8dp"/>
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:orientation="horizontal" android:layout_marginBottom="20dp">
-            <Button android:id="@+id/btn_pick_portrait"
+            android:orientation="horizontal" android:layout_marginBottom="8dp">
+            <Button android:id="@+id/btn_pick_wallpaper"
                 android:layout_width="0dp" android:layout_height="40dp" android:layout_weight="1"
                 android:text="Pick Image" android:backgroundTint="@color/edit_bg"
                 android:textColor="@color/text_primary" android:layout_marginEnd="8dp"/>
-            <Button android:id="@+id/btn_clear_portrait"
+            <Button android:id="@+id/btn_clear_wallpaper"
                 android:layout_width="wrap_content" android:layout_height="40dp"
                 android:text="Clear" android:backgroundTint="#7F1D1D" android:textColor="#FFFFFF"/>
         </LinearLayout>
-        <ImageView android:id="@+id/iv_portrait_preview"
+        <ImageView android:id="@+id/iv_wallpaper_preview"
             android:layout_width="match_parent" android:layout_height="160dp"
             android:scaleType="centerCrop" android:background="@color/card_bg"
             android:layout_marginBottom="20dp" android:visibility="gone"/>
 
-        <!-- Landscape Wallpaper -->
+        <!-- Lock Screen Video -->
         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:text="Landscape Wallpaper" android:textColor="@color/text_secondary" android:textSize="12sp"
-            android:layout_marginBottom="8dp"/>
+            android:text="LOCK SCREEN VIDEO (optional)" android:textColor="@color/text_secondary" android:textSize="11sp"
+            android:letterSpacing="0.08" android:layout_marginBottom="6dp"/>
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="Pick a short video clip (up to ~30 s) to play on loop on the Insert Coin screen instead of a static wallpaper."
+            android:textColor="@color/text_hint" android:textSize="11sp" android:layout_marginBottom="8dp"/>
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:orientation="horizontal" android:layout_marginBottom="20dp">
-            <Button android:id="@+id/btn_pick_landscape"
+            android:orientation="horizontal" android:layout_marginBottom="8dp">
+            <Button android:id="@+id/btn_pick_video"
                 android:layout_width="0dp" android:layout_height="40dp" android:layout_weight="1"
-                android:text="Pick Image" android:backgroundTint="@color/edit_bg"
+                android:text="Pick Video" android:backgroundTint="@color/edit_bg"
                 android:textColor="@color/text_primary" android:layout_marginEnd="8dp"/>
-            <Button android:id="@+id/btn_clear_landscape"
+            <Button android:id="@+id/btn_clear_video"
                 android:layout_width="wrap_content" android:layout_height="40dp"
                 android:text="Clear" android:backgroundTint="#7F1D1D" android:textColor="#FFFFFF"/>
         </LinearLayout>
-        <ImageView android:id="@+id/iv_landscape_preview"
-            android:layout_width="match_parent" android:layout_height="100dp"
-            android:scaleType="centerCrop" android:background="@color/card_bg"
-            android:layout_marginBottom="20dp" android:visibility="gone"/>
-
-        <!-- Lock Screen Audio -->
-        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:text="Lock Screen Audio" android:textColor="@color/text_secondary" android:textSize="12sp"
-            android:layout_marginBottom="8dp"/>
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:orientation="horizontal" android:layout_marginBottom="20dp">
-            <Button android:id="@+id/btn_pick_audio"
-                android:layout_width="0dp" android:layout_height="40dp" android:layout_weight="1"
-                android:text="Pick Audio" android:backgroundTint="@color/edit_bg"
-                android:textColor="@color/text_primary" android:layout_marginEnd="8dp"/>
-            <Button android:id="@+id/btn_clear_audio"
-                android:layout_width="wrap_content" android:layout_height="40dp"
-                android:text="Clear" android:backgroundTint="#7F1D1D" android:textColor="#FFFFFF"/>
-        </LinearLayout>
-        <TextView android:id="@+id/tv_audio_name"
+        <TextView android:id="@+id/tv_video_name"
             android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:text="No audio selected" android:textColor="@color/text_hint" android:textSize="12sp"
-            android:layout_marginBottom="20dp"/>
+            android:text="No video selected" android:textColor="@color/text_hint" android:textSize="12sp"
+            android:layout_marginBottom="12dp"/>
+
+        <!-- Video delay and sound options -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:background="@color/card_bg"
+            android:padding="14dp" android:layout_marginBottom="4dp">
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:gravity="center_vertical"
+                android:layout_marginBottom="14dp">
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Play after (seconds)" android:textColor="@color/text_primary"
+                    android:textSize="14sp"/>
+                <EditText android:id="@+id/et_video_delay"
+                    android:layout_width="72dp" android:layout_height="wrap_content"
+                    android:inputType="number" android:gravity="center"
+                    android:backgroundTint="@color/edit_bg" android:textColor="@color/text_primary"
+                    android:padding="8dp" android:text="0"/>
+            </LinearLayout>
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:gravity="center_vertical"
+                android:layout_marginBottom="14dp">
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Play with sound" android:textColor="@color/text_primary"
+                    android:textSize="14sp"/>
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/sw_video_sound"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            </LinearLayout>
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:gravity="center_vertical"
+                android:layout_marginBottom="14dp">
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Show 'Insert Coin to Start' text" android:textColor="@color/text_primary"
+                    android:textSize="14sp"/>
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/sw_show_insert_coin"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:checked="true"/>
+            </LinearLayout>
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:gravity="center_vertical">
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Force landscape when video plays" android:textColor="@color/text_primary"
+                    android:textSize="14sp"/>
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/sw_video_landscape"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            </LinearLayout>
+        </LinearLayout>
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="Delay: seconds of animation shown before video starts. Sound: off by default."
+            android:textColor="@color/text_hint" android:textSize="11sp"
+            android:layout_marginBottom="24dp"/>
 
         <!-- Save + Reset -->
         <Button android:id="@+id/btn_save_appearance"

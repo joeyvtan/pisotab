@@ -5,15 +5,11 @@ import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.ApplicationInfo
-import android.graphics.SurfaceTexture
-import android.media.MediaPlayer
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.KeyEvent
-import android.view.Surface
-import android.view.TextureView
 import android.view.View
 import android.view.WindowManager
 import android.widget.EditText
@@ -36,10 +32,6 @@ class LockScreenActivity : AppCompatActivity() {
     private val autoDismiss = Runnable { finish() }
     private lateinit var ivWallpaper: ImageView
     private lateinit var flAnimLock: FrameLayout
-    private lateinit var tvLockVideo: TextureView
-    private var mediaPlayer: MediaPlayer? = null
-    // true while the TextureView video is active — prevents onResume from restoring wallpaper
-    private var videoActive = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         ThemeManager.applyTheme(this)
@@ -55,28 +47,10 @@ class LockScreenActivity : AppCompatActivity() {
 
         ivWallpaper = findViewById(R.id.iv_wallpaper_lock)
         flAnimLock  = findViewById(R.id.fl_animation_lock)
-        tvLockVideo = findViewById(R.id.tv_lock_video)
 
         val prefs = (application as PisoTabApp).prefs
-        val videoUri = prefs.lockScreenVideoUri
-
-        // Video only plays on the Insert Coin screen, NOT during Deep Freeze countdown.
-        // Deep Freeze needs a clean, static UI so the countdown numbers are clearly visible.
-        if (videoUri.isNotEmpty() && !prefs.deepFreezeEnabled) {
-            val delaySecs = prefs.lockScreenVideoDelaySecs
-            val withSound = prefs.lockScreenVideoSound
-            if (delaySecs > 0) {
-                // Show wallpaper + animation for the configured delay, then switch to video
-                WallpaperManager.applyToImageView(ivWallpaper, this, false)
-                showAnimationLayer(flAnimLock, prefs.animationPreset)
-                handler.postDelayed({ startLockVideo(videoUri, withSound) }, delaySecs * 1000L)
-            } else {
-                startLockVideo(videoUri, withSound)
-            }
-        } else {
-            WallpaperManager.applyToImageView(ivWallpaper, this, false)
-            showAnimationLayer(flAnimLock, prefs.animationPreset)
-        }
+        WallpaperManager.applyToImageView(ivWallpaper, this, false)
+        showAnimationLayer(flAnimLock, prefs.animationPreset)
 
         if (prefs.deepFreezeEnabled) {
             // Replace default 30s dismiss with a visible countdown that wipes app data at 0
@@ -112,80 +86,8 @@ class LockScreenActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        // Skip wallpaper refresh while the lock screen video is active to avoid
-        // un-hiding ivWallpaper and adding unnecessary image loads on every resume.
-        if (!videoActive) WallpaperManager.applyToImageView(ivWallpaper, this, false)
-        KioskManager.applyImmersiveMode(window)
-    }
-
-    // Activates the TextureView + MediaPlayer for the lock screen video.
-    // Called either immediately (delay=0) or via a handler.postDelayed when delay>0.
-    private fun startLockVideo(videoUri: String, withSound: Boolean) {
-        if (isFinishing) return
-        videoActive = true
-        ivWallpaper.visibility = View.GONE
-        flAnimLock.visibility  = View.GONE
-
-        // The listener MUST be set before visibility changes to VISIBLE.
-        // Reason: when the window is already rendering (common for the delay>0 path, where
-        // the window has been drawing the animation for several seconds), the SurfaceTexture
-        // can be allocated in the same render pass that processes the GONE→VISIBLE change.
-        // If the listener is set after setVisibility, that allocation fires onSurfaceTextureAvailable
-        // with no listener attached — it will NEVER fire again for this listener instance.
-        val stListener = object : TextureView.SurfaceTextureListener {
-            override fun onSurfaceTextureAvailable(st: SurfaceTexture, w: Int, h: Int) {
-                attachMediaPlayer(st, videoUri, withSound)
-            }
-            override fun onSurfaceTextureSizeChanged(st: SurfaceTexture, w: Int, h: Int) {}
-            override fun onSurfaceTextureDestroyed(st: SurfaceTexture): Boolean {
-                mediaPlayer?.release()
-                mediaPlayer = null
-                return true
-            }
-            override fun onSurfaceTextureUpdated(st: SurfaceTexture) {}
-        }
-        tvLockVideo.surfaceTextureListener = stListener
-        tvLockVideo.visibility = View.VISIBLE
-
-        // Safety: if the SurfaceTexture was already available when the listener was set
-        // (e.g., the view was briefly VISIBLE earlier, or the render thread was very fast),
-        // onSurfaceTextureAvailable will NOT be called automatically — invoke it manually.
-        if (tvLockVideo.isAvailable) {
-            attachMediaPlayer(tvLockVideo.surfaceTexture!!, videoUri, withSound)
-        }
-    }
-
-    private fun attachMediaPlayer(st: SurfaceTexture, videoUri: String, withSound: Boolean) {
-        try {
-            mediaPlayer = MediaPlayer().apply {
-                // setDataSource(context, uri) is the most robust path — it handles both
-                // seekable and non-seekable content providers via internal fallback logic,
-                // covering Downloads, OEM file managers, and Google Drive equally.
-                setDataSource(this@LockScreenActivity, android.net.Uri.parse(videoUri))
-                setSurface(Surface(st))
-                isLooping = true
-                val vol = if (withSound) 1f else 0f
-                setVolume(vol, vol)
-                setOnErrorListener { _, what, extra ->
-                    android.util.Log.e("LockVideo", "MediaPlayer error what=$what extra=$extra")
-                    runOnUiThread { fallbackToStaticBackground() }
-                    true
-                }
-                setOnPreparedListener { start() }
-                prepareAsync()
-            }
-        } catch (e: Exception) {
-            android.util.Log.e("LockVideo", "MediaPlayer setup failed: ${e.message}")
-            runOnUiThread { fallbackToStaticBackground() }
-        }
-    }
-
-    private fun fallbackToStaticBackground() {
-        videoActive = false
-        tvLockVideo.visibility = View.GONE
-        val prefs = (application as PisoTabApp).prefs
         WallpaperManager.applyToImageView(ivWallpaper, this, false)
-        showAnimationLayer(flAnimLock, prefs.animationPreset)
+        KioskManager.applyImmersiveMode(window)
     }
 
     private fun startDeepFreezeCountdown(totalSecs: Int) {
@@ -346,8 +248,6 @@ class LockScreenActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         handler.removeCallbacksAndMessages(null)
-        mediaPlayer?.release()
-        mediaPlayer = null
         SyncService.onStartSession = null
         super.onDestroy()
     }

@@ -21,6 +21,14 @@
         android:layout_height="match_parent"
         android:visibility="gone" />
 
+    <!-- Idle screen video — replaces wallpaper + animation on the Insert Coin screen when configured.
+         Sits above the animation layer so it covers the static background; idle UI text floats on top. -->
+    <TextureView
+        android:id="@+id/tv_idle_video"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone" />
+
     <!-- IDLE screen — shown when no session is active -->
     <LinearLayout
         android:id="@+id/screen_idle"
@@ -71,6 +79,7 @@
             android:layout_gravity="center" />
 
         <TextView
+            android:id="@+id/tv_insert_coin"
             android:text="Insert Coin to Start"
             android:textSize="24sp"
             android:textColor="?attr/colorPrimary"

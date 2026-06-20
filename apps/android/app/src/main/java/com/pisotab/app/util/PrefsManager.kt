@@ -171,6 +171,16 @@ class PrefsManager(context: Context) {
         get() = prefs.getBoolean("lock_video_sound", false)
         set(v) = prefs.edit { putBoolean("lock_video_sound", v) }
 
+    /** Show "Insert Coin to Start" text on the idle screen (default on) */
+    var showInsertCoinText: Boolean
+        get() = prefs.getBoolean("show_insert_coin_text", true)
+        set(v) = prefs.edit { putBoolean("show_insert_coin_text", v) }
+
+    /** Force landscape orientation when the idle video is playing */
+    var idleVideoLandscape: Boolean
+        get() = prefs.getBoolean("idle_video_landscape", false)
+        set(v) = prefs.edit { putBoolean("idle_video_landscape", v) }
+
     /** Animated background preset for idle + lock screens: 0=None, 1=CoinRain, 2=Pulse, 3=Stars */
     var animationPreset: Int
         get() = prefs.getInt("animation_preset", 1)  // default = CoinRain on fresh install
