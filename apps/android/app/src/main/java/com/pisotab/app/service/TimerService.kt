@@ -327,14 +327,17 @@ class TimerService : Service() {
             db.sessionDao().updateStatus(activeId, "ended")
             try { api.endSession(activeId) } catch (_: Exception) {}
         }
-        // If onTick is set, MainActivity is alive and already handling the Expired state
-        // transition via onTimeTick(0) → SessionState.Expired → onExpired() → LockScreenActivity.
-        // Starting MainActivity here would stack a new instance ON TOP of LockScreenActivity,
-        // immediately showing the idle screen and hiding the lock screen countdown.
-        // If onTick is null, MainActivity was destroyed (customer pressed Back during session)
-        // and we must launch LockScreenActivity directly since onTimeTick(0) was never called.
+        // If onTick is set, MainActivity is alive and handles the Expired transition itself
+        // via onTimeTick(0) → SessionState.Expired → onExpired().
+        // If onTick is null, MainActivity was destroyed (customer pressed Back) and we must
+        // launch the next screen directly. Only go to LockScreenActivity when deep freeze is
+        // enabled (needs the countdown + wipe UI); otherwise go straight to MainActivity idle.
         if (onTick == null) {
-            startActivity(Intent(this, com.pisotab.app.ui.LockScreenActivity::class.java).apply {
+            val target = if (app.prefs.deepFreezeEnabled)
+                com.pisotab.app.ui.LockScreenActivity::class.java
+            else
+                com.pisotab.app.ui.MainActivity::class.java
+            startActivity(Intent(this, target).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             })
         }
@@ -367,11 +370,15 @@ class TimerService : Service() {
             db.sessionDao().updateStatus(activeId, "ended")
             try { api.endSession(activeId) } catch (_: Exception) {}
         }
-        // Mirror onSessionExpired(): transition to lock screen regardless of how the session ended.
-        // For USB mode, the normal timer loop never reaches onSessionExpired() (it counts up forever),
-        // so this is the only path that shows LockScreenActivity after USB disconnect.
+        // Mirror onSessionExpired(): route to the correct next screen when MainActivity is gone.
+        // USB sessions never reach onSessionExpired() (timer counts up), so this is the only
+        // path that transitions after USB disconnect when MainActivity was destroyed.
         if (onTick == null) {
-            startActivity(Intent(this, com.pisotab.app.ui.LockScreenActivity::class.java).apply {
+            val target = if (app.prefs.deepFreezeEnabled)
+                com.pisotab.app.ui.LockScreenActivity::class.java
+            else
+                com.pisotab.app.ui.MainActivity::class.java
+            startActivity(Intent(this, target).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             })
         } else {

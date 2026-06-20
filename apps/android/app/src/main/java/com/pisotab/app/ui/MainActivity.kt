@@ -48,6 +48,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var ivWallpaper: ImageView
     private lateinit var flAnimationIdle: FrameLayout
     private lateinit var tvIdleVideo: TextureView
+    private lateinit var tvBusinessNameIdle: TextView
+    private lateinit var tvDeviceNameIdle: TextView
+    private lateinit var tvConnectionIdle: TextView
+    private lateinit var tvCoinEmoji: TextView
     private lateinit var tvInsertCoin: TextView
     private lateinit var screenIdle: View
     private lateinit var screenActive: View
@@ -73,6 +77,10 @@ class MainActivity : AppCompatActivity() {
         ivWallpaper          = findViewById(R.id.iv_wallpaper)
         flAnimationIdle      = findViewById(R.id.fl_animation_idle)
         tvIdleVideo          = findViewById(R.id.tv_idle_video)
+        tvBusinessNameIdle   = findViewById(R.id.tv_business_name_idle)
+        tvDeviceNameIdle     = findViewById(R.id.tv_device_name_idle)
+        tvConnectionIdle     = findViewById(R.id.tv_connection_idle)
+        tvCoinEmoji          = findViewById(R.id.tv_coin_emoji)
         tvInsertCoin         = findViewById(R.id.tv_insert_coin)
         screenIdle           = findViewById(R.id.screen_idle)
         applyAnimationPreset()
@@ -91,8 +99,8 @@ class MainActivity : AppCompatActivity() {
         val devName = vm.prefs.deviceName
         findViewById<TextView>(R.id.tv_business_name_launcher).text = bizName
         findViewById<TextView>(R.id.tv_device_name_launcher).text = devName
-        findViewById<TextView>(R.id.tv_business_name_idle).text = bizName
-        findViewById<TextView>(R.id.tv_device_name_idle).text = devName
+        tvBusinessNameIdle.text = bizName
+        tvDeviceNameIdle.text   = devName
 
         // Launcher grid
         launcherAdapter = LauncherAdapter { item ->
@@ -158,7 +166,6 @@ class MainActivity : AppCompatActivity() {
         }
 
         // Wire dashboard socket commands → ViewModel (runs on main thread via lifecycleScope)
-        val tvConnectionIdle = findViewById<TextView>(R.id.tv_connection_idle)
         fun setConnectionStatus(connected: Boolean, error: String?) {
             val text  = if (connected) "● Connected" else "● ${error ?: "Disconnected"}"
             val color = if (connected) android.graphics.Color.parseColor("#22C55E")
@@ -274,7 +281,13 @@ class MainActivity : AppCompatActivity() {
         screenIdle.visibility       = View.VISIBLE
         screenActive.visibility     = View.GONE
         flAnimationIdle.visibility  = if (vm.prefs.animationPreset != AnimationPreset.NONE) View.VISIBLE else View.GONE
-        tvInsertCoin.visibility     = if (vm.prefs.showInsertCoinText) View.VISIBLE else View.GONE
+        // Hide all idle text when a video is configured so it doesn't obstruct the video
+        val idleTextVis = if (vm.prefs.lockScreenVideoUri.isNotEmpty()) View.GONE else View.VISIBLE
+        tvBusinessNameIdle.visibility = idleTextVis
+        tvDeviceNameIdle.visibility   = idleTextVis
+        tvConnectionIdle.visibility   = idleTextVis
+        tvCoinEmoji.visibility        = idleTextVis
+        tvInsertCoin.visibility       = idleTextVis
         applyLicenseOverlay()
         TimerService.isRunning = false
         // Only stop TimerService if the session was intentionally ended by the ViewModel
@@ -355,9 +368,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun onExpired() {
-        startActivity(Intent(this, LockScreenActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        })
+        if (vm.prefs.deepFreezeEnabled) {
+            // Deep freeze needs the Session Expired screen to show the countdown + wipe
+            startActivity(Intent(this, LockScreenActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            })
+        } else {
+            // No deep freeze — go straight to the Insert Coin to Start idle screen
+            showIdle()
+        }
     }
 
     private fun formatTime(secs: Int): String {

@@ -71,6 +71,7 @@
             android:layout_gravity="center" />
 
         <TextView
+            android:id="@+id/tv_coin_emoji"
             android:text="🪙"
             android:textSize="64sp"
             android:layout_marginTop="32dp"

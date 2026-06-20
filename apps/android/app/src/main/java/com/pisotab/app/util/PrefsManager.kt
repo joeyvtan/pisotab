@@ -171,11 +171,6 @@ class PrefsManager(context: Context) {
         get() = prefs.getBoolean("lock_video_sound", false)
         set(v) = prefs.edit { putBoolean("lock_video_sound", v) }
 
-    /** Show "Insert Coin to Start" text on the idle screen (default on) */
-    var showInsertCoinText: Boolean
-        get() = prefs.getBoolean("show_insert_coin_text", true)
-        set(v) = prefs.edit { putBoolean("show_insert_coin_text", v) }
-
     /** Force landscape orientation when the idle video is playing */
     var idleVideoLandscape: Boolean
         get() = prefs.getBoolean("idle_video_landscape", false)
