@@ -32,6 +32,11 @@ class LockScreenActivity : AppCompatActivity() {
     private val autoDismiss = Runnable { finish() }
     private lateinit var ivWallpaper: ImageView
     private lateinit var flAnimLock: FrameLayout
+    // Kept so onDestroy() can check via referential equality whether SyncService still holds
+    // our lambda. MainActivity.onResume() runs before our onDestroy() (Android interleaved
+    // lifecycle), so if it has already registered its own callback we must NOT null it —
+    // that was what silently dropped every subsequent coin insertion after the first session.
+    private var myStartSessionCallback: ((String, Int, Double) -> Unit)? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         ThemeManager.applyTheme(this)
@@ -72,7 +77,7 @@ class LockScreenActivity : AppCompatActivity() {
         // Do NOT call finish() or use FLAG_ACTIVITY_CLEAR_TOP: singleTask handles this, and
         // calling finish() on an activity already cleared by singleTask causes the OS to
         // interpret the double-removal as a full task close on some Android versions.
-        SyncService.onStartSession = { sessionId, durationSecs, amount ->
+        myStartSessionCallback = { sessionId, durationSecs, amount ->
             runOnUiThread {
                 startActivity(Intent(this, MainActivity::class.java).apply {
                     putExtra("session_id", sessionId)
@@ -82,6 +87,7 @@ class LockScreenActivity : AppCompatActivity() {
                 })
             }
         }
+        SyncService.onStartSession = myStartSessionCallback
     }
 
     override fun onResume() {
@@ -248,7 +254,14 @@ class LockScreenActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         handler.removeCallbacksAndMessages(null)
-        SyncService.onStartSession = null
+        // Only null if we are still the registered handler. Android's interleaved lifecycle
+        // runs MainActivity.onResume() BEFORE our onDestroy() when we auto-dismiss or are
+        // cleared by singleTask. If MainActivity has already re-registered its own lambda,
+        // clobbering it here would silently drop every subsequent coin insertion.
+        if (SyncService.onStartSession === myStartSessionCallback) {
+            SyncService.onStartSession = null
+        }
+        myStartSessionCallback = null
         super.onDestroy()
     }
 
