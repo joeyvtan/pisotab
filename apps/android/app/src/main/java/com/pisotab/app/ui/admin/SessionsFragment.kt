@@ -49,7 +49,7 @@ class SessionsFragment : Fragment() {
                     adapter.update(emptyList())
                     return@launch
                 }
-                val response = app.api.getSessions(limit = 100, deviceId = app.prefs.deviceId)
+                val response = app.api.getDeviceSessions(app.prefs.deviceId, 100)
                 if (response.isSuccessful) {
                     adapter.update(response.body() ?: emptyList())
                 }

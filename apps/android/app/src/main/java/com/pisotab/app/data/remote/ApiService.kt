@@ -74,6 +74,12 @@ interface ApiService {
     @GET("api/devices/{id}/stats/today")
     suspend fun getStatsToday(@Path("id") deviceId: String): Response<StatsTodayResponse>
 
+    @GET("api/devices/{id}/sessions")
+    suspend fun getDeviceSessions(
+        @Path("id") deviceId: String,
+        @Query("limit") limit: Int = 100
+    ): Response<List<SessionListItem>>
+
     @PATCH("api/sessions/{id}/amount")
     suspend fun syncUsbAmount(
         @Path("id") sessionId: String,

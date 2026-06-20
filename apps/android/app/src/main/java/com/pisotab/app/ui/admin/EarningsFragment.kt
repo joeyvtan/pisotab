@@ -52,7 +52,7 @@ class EarningsFragment : Fragment() {
                     tvThisMonth.text     = "₱0.00"
                     return@launch
                 }
-                val response = app.api.getSessions(limit = 10000, deviceId = app.prefs.deviceId)
+                val response = app.api.getDeviceSessions(app.prefs.deviceId, 10000)
                 if (!response.isSuccessful) return@launch
                 val sessions = response.body() ?: emptyList()
 

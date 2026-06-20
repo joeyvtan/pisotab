@@ -137,6 +137,22 @@ router.get('/:id/stats/today', async (req, res) => {
   }
 });
 
+// GET /api/devices/:id/sessions — no auth (device-scoped, for tablet sessions/earnings view)
+router.get('/:id/sessions', async (req, res) => {
+  try {
+    const db = getDb();
+    const limit = Math.min(parseInt(req.query.limit) || 100, 10000);
+    const sessions = await db.all(
+      'SELECT * FROM sessions WHERE device_id = ? ORDER BY started_at DESC LIMIT ?',
+      [req.params.id, limit]
+    );
+    res.json(sessions);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // GET /api/devices/:id
 router.get('/:id', requireAuth, async (req, res) => {
   try {
