@@ -54,12 +54,18 @@
         android:hardwareAccelerated="true"
         android:usesCleartextTraffic="true">
 
-        <!-- Main kiosk activity -->
+        <!-- Main kiosk activity.
+             configChanges: handle orientation/size changes without recreating the Activity.
+             Without this, requestedOrientation calls (force landscape for idle video, restore
+             fullSensor when session starts) recreate MainActivity, causing ViewModel to re-emit
+             Idle → startIdleVideo forces landscape again → infinite recreation loop that
+             prevents the active session screen from ever appearing. -->
         <activity
             android:name=".ui.MainActivity"
             android:exported="true"
             android:launchMode="singleTask"
             android:screenOrientation="fullSensor"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
             android:showWhenLocked="true"
             android:turnScreenOn="true"
             android:excludeFromRecents="true">
@@ -69,13 +75,18 @@
             </intent-filter>
         </activity>
 
-        <!-- Lock screen overlay activity -->
+        <!-- Lock screen overlay activity.
+             configChanges: handle orientation/size changes without recreating the Activity.
+             Prevents the Deep Freeze countdown from resetting and the video delay from being
+             cancelled every time the tablet is rotated. The fullscreen FrameLayout adapts
+             naturally; onWindowFocusChanged already reapplies immersive mode after rotation. -->
         <activity
             android:name=".ui.LockScreenActivity"
             android:exported="false"
             android:showWhenLocked="true"
             android:turnScreenOn="true"
             android:screenOrientation="fullSensor"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
             android:theme="@style/Theme.PisoTab.Fullscreen" />
 
         <!-- Setup / config activity (first-run only) -->
