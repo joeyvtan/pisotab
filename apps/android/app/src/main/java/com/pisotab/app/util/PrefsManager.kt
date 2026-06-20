@@ -78,6 +78,15 @@ class PrefsManager(context: Context) {
         get() = prefs.getString("coin_rates", "[]") ?: "[]"
         set(v) = prefs.edit { putString("coin_rates", v) }
 
+    /**
+     * Seconds added to USB session elapsed time before computing earnings.
+     * Use when the external hardware timer disconnects slightly before the full minute,
+     * which would otherwise floor the earnings to zero for the partial minute.
+     */
+    var usbTimerOffsetSecs: Int
+        get() = prefs.getInt("usb_timer_offset_secs", 0)
+        set(v) = prefs.edit { putInt("usb_timer_offset_secs", v) }
+
     // ── Anti-theft ────────────────────────────────────────────────────────────
 
     var alarmOnWifiDisconnect: Boolean

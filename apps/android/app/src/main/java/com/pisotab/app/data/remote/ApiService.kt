@@ -70,6 +70,15 @@ interface ApiService {
         @Path("id") deviceId: String,
         @Body body: DeviceConfigRequest
     ): Response<Unit>
+
+    @GET("api/devices/{id}/stats/today")
+    suspend fun getStatsToday(@Path("id") deviceId: String): Response<StatsTodayResponse>
+
+    @PATCH("api/sessions/{id}/amount")
+    suspend fun syncUsbAmount(
+        @Path("id") sessionId: String,
+        @Body body: UsbAmountSyncRequest
+    ): Response<Unit>
 }
 
 data class DeviceConfigRequest(
@@ -186,4 +195,16 @@ data class AvailableLicenseItem(
     val key: String,
     val plan: String,
     val expires_at: Long?
+)
+
+data class StatsTodayResponse(
+    val sessions_today: Int,
+    val total_mins: Int,
+    val earnings_today: Double,
+    val coins_today: Double
+)
+
+data class UsbAmountSyncRequest(
+    val amount_paid: Double,
+    val duration_mins: Int
 )

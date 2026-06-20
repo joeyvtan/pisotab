@@ -312,6 +312,24 @@ router.post('/:id/add-time', requireAuth, async (req, res) => {
   }
 });
 
+// PATCH /api/sessions/:id/amount — no auth (device syncs final USB session earnings on disconnect)
+router.patch('/:id/amount', async (req, res) => {
+  const { amount_paid, duration_mins } = req.body;
+  if (amount_paid === undefined || duration_mins === undefined) {
+    return res.status(400).json({ error: 'amount_paid and duration_mins required' });
+  }
+  try {
+    await getDb().run(
+      'UPDATE sessions SET amount_paid = ?, duration_mins = ? WHERE id = ?',
+      [amount_paid, duration_mins, req.params.id]
+    );
+    res.json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // PATCH /api/sessions/:id/sync
 router.patch('/:id/sync', async (req, res) => {
   const { time_remaining_secs } = req.body;

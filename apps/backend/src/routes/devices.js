@@ -107,6 +107,36 @@ router.post('/', requireAuth, requireAdmin, async (req, res) => {
   }
 });
 
+// GET /api/devices/:id/stats/today — no auth (device-scoped, for tablet dashboard)
+router.get('/:id/stats/today', async (req, res) => {
+  try {
+    const db = getDb();
+    // Midnight PHT (Asia/Manila, UTC+8) as Unix seconds
+    const phtDateStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
+    const todayStartUnix = Math.floor(new Date(phtDateStr + 'T00:00:00+08:00').getTime() / 1000);
+
+    const stats = await db.get(`
+      SELECT
+        COUNT(*)                                                              AS sessions_today,
+        COALESCE(SUM(duration_mins), 0)                                      AS total_mins,
+        COALESCE(SUM(amount_paid), 0)                                        AS earnings_today,
+        COALESCE(SUM(CASE WHEN payment_method = 'coin' THEN amount_paid ELSE 0 END), 0) AS coins_today
+      FROM sessions
+      WHERE device_id = ? AND started_at >= ?
+    `, [req.params.id, todayStartUnix]);
+
+    res.json({
+      sessions_today: stats?.sessions_today ?? 0,
+      total_mins:     stats?.total_mins     ?? 0,
+      earnings_today: stats?.earnings_today ?? 0,
+      coins_today:    stats?.coins_today    ?? 0,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // GET /api/devices/:id
 router.get('/:id', requireAuth, async (req, res) => {
   try {

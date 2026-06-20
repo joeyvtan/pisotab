@@ -38,6 +38,7 @@ class SettingsFragment : Fragment() {
     private var vSwKiosk: Switch? = null
     private var vEtRatePerMin: EditText? = null
     private var vEtSecsPerCoin: EditText? = null
+    private var vSwShowSessionTimer: Switch? = null
     private var vSwFloatingTimer: Switch? = null
     private var vSwDeepFreeze: Switch? = null
     private var vEtGrace: EditText? = null
@@ -69,9 +70,6 @@ class SettingsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val etBackendUsername = view.findViewById<EditText>(R.id.et_backend_username)
-        val etBackendPassword = view.findViewById<EditText>(R.id.et_backend_password)
-        val etServerUrl      = view.findViewById<EditText>(R.id.et_server_url)
         val etDeviceId       = view.findViewById<EditText>(R.id.et_device_id)
         val etDeviceName     = view.findViewById<EditText>(R.id.et_device_name)
         val rgMode           = view.findViewById<RadioGroup>(R.id.rg_connection_mode)
@@ -79,8 +77,10 @@ class SettingsFragment : Fragment() {
         val rbUsb            = view.findViewById<RadioButton>(R.id.rb_mode_usb)
         val swKiosk          = view.findViewById<Switch>(R.id.sw_kiosk)
         val etRatePerMin     = view.findViewById<EditText>(R.id.et_rate_per_min)
-        val etSecsPerCoin    = view.findViewById<EditText>(R.id.et_secs_per_coin)
+        val etSecsPerCoin       = view.findViewById<EditText>(R.id.et_secs_per_coin)
+        val etUsbTimerOffset    = view.findViewById<EditText>(R.id.et_usb_timer_offset)
         val btnAllowedApps   = view.findViewById<Button>(R.id.btn_allowed_apps)
+        val swShowSessionTimer = view.findViewById<Switch>(R.id.sw_show_session_timer)
         val swFloatingTimer  = view.findViewById<Switch>(R.id.sw_floating_timer)
         val swDeepFreeze     = view.findViewById<Switch>(R.id.sw_deep_freeze)
         val etGrace          = view.findViewById<EditText>(R.id.et_deep_freeze_grace)
@@ -101,15 +101,13 @@ class SettingsFragment : Fragment() {
         // Keep references so refreshUiFromPrefs() can update them from the remote-config callback.
         vRgMode = rgMode; vRbEsp32 = rbEsp32; vRbUsb = rbUsb
         vSwKiosk = swKiosk; vEtRatePerMin = etRatePerMin; vEtSecsPerCoin = etSecsPerCoin
+        vSwShowSessionTimer = swShowSessionTimer
         vSwFloatingTimer = swFloatingTimer; vSwDeepFreeze = swDeepFreeze; vEtGrace = etGrace
         vSwAlarmWifi = swAlarmWifi; vSwAlarmCharger = swAlarmCharger
         vSwAlarmSession = swAlarmSession; vEtAlarmDelay = etAlarmDelay
         vSwChargeProtect = swChargeProtect; vEtChargeStop = etChargeStop; vEtChargeStart = etChargeStart
 
         // Load current values
-        etBackendUsername.setText(prefs.backendUsername)
-        etBackendPassword.setText(prefs.backendPassword)
-        etServerUrl.setText(prefs.serverUrl)
         etDeviceId.setText(prefs.deviceId)
         etDeviceName.setText(prefs.deviceName)
         when (prefs.connectionMode) {
@@ -119,6 +117,8 @@ class SettingsFragment : Fragment() {
         swKiosk.isChecked         = prefs.isKioskModeEnabled
         etRatePerMin.setText(prefs.timerRatePerMinute.toString())
         etSecsPerCoin.setText((prefs.timerSecondsPerCoin / 60).toString())
+        etUsbTimerOffset.setText(prefs.usbTimerOffsetSecs.toString())
+        swShowSessionTimer.isChecked = prefs.showSessionTimer
         swFloatingTimer.isChecked = prefs.floatingTimerEnabled
         swDeepFreeze.isChecked    = prefs.deepFreezeEnabled
         etGrace.setText(prefs.deepFreezeGracePeriodSecs.toString())
@@ -146,6 +146,26 @@ class SettingsFragment : Fragment() {
         swChargeProtect.setOnCheckedChangeListener { _, _ -> applyChargerAlarmLock() }
         rgMode.setOnCheckedChangeListener { _, _ -> applyChargerAlarmLock() }
 
+        // Warn immediately when the user enables Deep Freeze if Device Owner is not set up.
+        // Without Device Owner, clearApplicationUserData() silently fails and no wipe occurs.
+        swDeepFreeze.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) {
+                val dpm = requireContext().getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+                if (!dpm.isDeviceOwnerApp(requireContext().packageName)) {
+                    AlertDialog.Builder(requireContext())
+                        .setTitle("Device Owner Required")
+                        .setMessage(
+                            "Deep Freeze needs PisoTab to be set as Device Owner to wipe app data.\n\n" +
+                            "Run this ADB command once:\n\n" +
+                            "adb shell dpm set-device-owner com.pisotab.app/.receiver.DeviceAdminReceiver\n\n" +
+                            "Without this, the countdown will run but accounts will NOT be cleared."
+                        )
+                        .setPositiveButton("OK", null)
+                        .show()
+                }
+            }
+        }
+
         btnAllowedApps.setOnClickListener {
             findNavController().navigate(R.id.allowedAppsFragment)
         }
@@ -165,21 +185,11 @@ class SettingsFragment : Fragment() {
         btnChangePin.setOnClickListener { showChangePinDialog() }
 
         btnSave.setOnClickListener {
-            val url = etServerUrl.text.toString().trim()
-            val id  = etDeviceId.text.toString().trim()
-            if (url.isEmpty() || id.isEmpty()) {
-                Toast.makeText(requireContext(), "Server URL and Device ID are required", Toast.LENGTH_SHORT).show()
+            val id = etDeviceId.text.toString().trim()
+            if (id.isEmpty()) {
+                Toast.makeText(requireContext(), "Device ID is required", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-            // If credentials changed, clear stored token so AdminActivity re-authenticates
-            val newUsername = etBackendUsername.text.toString().trim()
-            val newPassword = etBackendPassword.text.toString().trim()
-            if (newUsername != prefs.backendUsername || newPassword != prefs.backendPassword) {
-                prefs.backendToken = ""
-            }
-            prefs.backendUsername        = newUsername.ifEmpty { "admin" }
-            prefs.backendPassword        = newPassword.ifEmpty { "admin123" }
-            prefs.serverUrl              = url
             prefs.deviceId               = id
             prefs.deviceName             = etDeviceName.text.toString().trim()
             prefs.connectionMode         = when (rgMode.checkedRadioButtonId) {
@@ -189,6 +199,8 @@ class SettingsFragment : Fragment() {
             prefs.isKioskModeEnabled     = swKiosk.isChecked
             prefs.timerRatePerMinute     = etRatePerMin.text.toString().toFloatOrNull() ?: 1.0f
             prefs.timerSecondsPerCoin    = ((etSecsPerCoin.text.toString().toFloatOrNull() ?: 5f) * 60).toInt()
+            prefs.usbTimerOffsetSecs     = etUsbTimerOffset.text.toString().toIntOrNull()?.coerceAtLeast(0) ?: 0
+            prefs.showSessionTimer       = swShowSessionTimer.isChecked
             prefs.floatingTimerEnabled   = swFloatingTimer.isChecked
             prefs.deepFreezeEnabled      = swDeepFreeze.isChecked
             prefs.deepFreezeGracePeriodSecs = etGrace.text.toString().toIntOrNull() ?: 30
@@ -308,6 +320,7 @@ class SettingsFragment : Fragment() {
         super.onDestroyView()
         vRgMode = null; vRbEsp32 = null; vRbUsb = null
         vSwKiosk = null; vEtRatePerMin = null; vEtSecsPerCoin = null
+        vSwShowSessionTimer = null
         vSwFloatingTimer = null; vSwDeepFreeze = null; vEtGrace = null
         vSwAlarmWifi = null; vSwAlarmCharger = null
         vSwAlarmSession = null; vEtAlarmDelay = null

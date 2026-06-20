@@ -18,6 +18,7 @@ import android.widget.TextView
 import androidx.core.app.NotificationCompat
 import com.pisotab.app.PisoTabApp
 import com.pisotab.app.data.remote.SyncTimeRequest
+import com.pisotab.app.data.remote.UsbAmountSyncRequest
 import com.pisotab.app.ui.MainActivity
 import kotlinx.coroutines.*
 
@@ -48,6 +49,41 @@ class TimerService : Service() {
         // Tracks which session the running timer belongs to — used by MainActivity to
         // detect a stale timer from a previous session and force ACTION_START instead of RESUME.
         var currentSessionId: String = ""
+
+        // Packages that must never trigger the whitelist enforcer redirect.
+        // Includes browsers (Chrome Custom Tabs used for OAuth), Google Play Services
+        // (GMS account picker / Google Sign-In are real Activities that register in
+        // UsageStats), and other system packages that briefly appear during login flows.
+        // Dynamic queryIntentActivities() returns an empty list on Android 11+ without
+        // a matching <queries> entry, so this list is hardcoded.
+        val EXEMPT_PACKAGES = setOf(
+            // Browsers (Chrome Custom Tabs / OAuth)
+            "com.android.chrome",
+            "com.chrome.beta",
+            "com.chrome.dev",
+            "com.chrome.canary",
+            "org.chromium.chrome",
+            "com.google.android.apps.chrome",
+            "org.mozilla.firefox",
+            "org.mozilla.firefox_beta",
+            "com.opera.browser",
+            "com.opera.mini.native",
+            "com.microsoft.emmx",
+            "com.sec.android.app.sbrowser",
+            "com.android.browser",
+            "com.huawei.browser",
+            "com.mi.globalbrowser",
+            "com.brave.browser",
+            // Google auth / account picker (shows as a foreground Activity during sign-in)
+            "com.google.android.gms",
+            "com.google.android.gsf",
+            "com.google.android.googlequicksearchbox",
+            "com.google.android.auth",
+            // Android system UI that briefly appears during transitions / dialogs
+            "com.android.systemui",
+            "com.android.vending",
+            "android"
+        )
     }
 
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
@@ -57,6 +93,11 @@ class TimerService : Service() {
     private var sessionId = ""
     private var isPaused = false
     private var syncCounter = 0
+    // Wall-clock deadline: epoch ms when the session expires (excluding paused time).
+    // Recomputed on start, resume, and add-time so the timer is always anchored to real time.
+    private var deadlineMs = 0L
+    // Remaining secs snapshot taken the moment pause begins — used to restore the deadline on resume.
+    private var pausedRemainingSecs = 0
 
     // Floating overlay
     private var windowManager: WindowManager? = null
@@ -100,11 +141,33 @@ class TimerService : Service() {
                 startUsbTimer()
                 startWhitelistEnforcement()
             }
-            ACTION_PAUSE   -> { isPaused = true;  updateNotification() }
-            ACTION_RESUME  -> { isPaused = false; updateNotification() }
+            ACTION_PAUSE -> {
+                if (!isPaused) {
+                    // Snapshot wall-clock remaining so resume can reanchor the deadline accurately
+                    pausedRemainingSecs = ((deadlineMs - System.currentTimeMillis()) / 1000L)
+                        .toInt().coerceAtLeast(0)
+                    isPaused = true
+                }
+                updateNotification()
+            }
+            ACTION_RESUME -> {
+                if (isPaused) {
+                    // Reanchor deadline from the paused snapshot, discarding time spent paused
+                    deadlineMs = System.currentTimeMillis() + (pausedRemainingSecs * 1000L)
+                    isPaused = false
+                }
+                updateNotification()
+            }
             ACTION_ADD_TIME -> {
                 val extra = intent.getIntExtra(EXTRA_ADD_SECS, 0)
-                timeRemainingSecs += extra
+                if (isPaused) {
+                    pausedRemainingSecs += extra
+                    timeRemainingSecs = pausedRemainingSecs
+                } else {
+                    deadlineMs += extra * 1000L
+                    timeRemainingSecs = ((deadlineMs - System.currentTimeMillis()) / 1000L)
+                        .toInt().coerceAtLeast(0)
+                }
                 currentSecs = timeRemainingSecs
                 onTick?.invoke(timeRemainingSecs)
                 updateNotification()
@@ -116,25 +179,35 @@ class TimerService : Service() {
 
     private fun startTimer() {
         timerJob?.cancel()
+        // Anchor to wall-clock deadline instead of decrementing per delay(1000L).
+        // delay(1000L) is "at least 1000ms" — DB writes + UI work after each delay add
+        // ~5-20ms per cycle. Over a 30-min session that compounds to 5-15 seconds of drift
+        // versus the ESP32 millis()-based hardware timer. Wall-clock anchoring eliminates drift
+        // because remaining = (deadline - now) is always correct regardless of loop overhead.
+        deadlineMs = System.currentTimeMillis() + (timeRemainingSecs * 1000L)
         timerJob = scope.launch {
-            while (timeRemainingSecs > 0) {
-                delay(1000L)
-                if (!isPaused) {
-                    timeRemainingSecs--
-                    currentSecs = timeRemainingSecs
+            while (true) {
+                delay(200L) // short poll — value read from wall clock, never accumulated
+                if (isPaused) continue
+                val remaining = ((deadlineMs - System.currentTimeMillis()) / 1000L)
+                    .toInt().coerceAtLeast(0)
+                // Only act when the second actually changes to avoid redundant DB/UI writes
+                if (remaining != timeRemainingSecs) {
+                    timeRemainingSecs = remaining
+                    currentSecs = remaining
                     syncCounter++
                     // Always use prefs.activeSessionId — for coin sessions the ID changes from
                     // a local placeholder to the server-assigned ID after the API call completes.
-                    // Using prefs ensures the correct DB row is always updated.
                     val activeId = app.prefs.activeSessionId.takeIf { it.isNotEmpty() } ?: sessionId
-                    db.sessionDao().updateTime(activeId, timeRemainingSecs)
-                    onTick?.invoke(timeRemainingSecs)
+                    db.sessionDao().updateTime(activeId, remaining)
+                    onTick?.invoke(remaining)
                     updateFloatingView()
                     if (syncCounter % 10 == 0) {
-                        try { api.syncTime(activeId, SyncTimeRequest(timeRemainingSecs)) } catch (_: Exception) {}
+                        try { api.syncTime(activeId, SyncTimeRequest(remaining)) } catch (_: Exception) {}
                     }
                     updateNotification()
                 }
+                if (remaining <= 0) break
             }
             onSessionExpired()
         }
@@ -178,17 +251,37 @@ class TimerService : Service() {
         val allowed = app.prefs.allowedPackages
         if (allowed.isEmpty()) return  // no whitelist configured — skip
         whitelistJob?.cancel()
+        // Track consecutive detections of the same non-whitelisted package.
+        // Login flows involve transient system UI (GMS account picker, auth dialogs,
+        // Chrome Custom Tabs) that appear as foreground Activities in UsageStats.
+        // Requiring 5 consecutive detections (~8s) gives any auth flow time to complete.
+        // IMPORTANT: null from getForegroundApp() resets the count — a momentary
+        // UsageStats gap must not silently accumulate toward the threshold.
+        var consecutiveCount = 0
+        var lastNonAllowed: String? = null
         whitelistJob = scope.launch {
             while (isActive) {
                 delay(2000L)
-                if (isPaused) continue
-                val foreground = getForegroundApp() ?: continue
-                if (foreground == packageName) continue
-                if (foreground in allowed) continue
-                // Non-whitelisted app in foreground — redirect back to kiosk
-                startActivity(Intent(this@TimerService, MainActivity::class.java).apply {
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
-                })
+                if (isPaused) { consecutiveCount = 0; continue }
+                val foreground = getForegroundApp()
+                if (foreground == null) { consecutiveCount = 0; continue }
+                if (foreground == packageName) { consecutiveCount = 0; continue }
+                if (foreground in allowed) { consecutiveCount = 0; continue }
+                if (foreground in EXEMPT_PACKAGES) { consecutiveCount = 0; continue }
+                // Non-whitelisted, non-exempt — count consecutive detections
+                if (foreground == lastNonAllowed) {
+                    consecutiveCount++
+                } else {
+                    consecutiveCount = 1
+                    lastNonAllowed = foreground
+                }
+                // Redirect only after 5 consecutive checks (~8s) of the same package.
+                if (consecutiveCount >= 5) {
+                    consecutiveCount = 0
+                    startActivity(Intent(this@TimerService, MainActivity::class.java).apply {
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                    })
+                }
             }
         }
     }
@@ -197,10 +290,24 @@ class TimerService : Service() {
         return try {
             val usm = getSystemService(USAGE_STATS_SERVICE) as android.app.usage.UsageStatsManager
             val now = System.currentTimeMillis()
-            val stats = usm.queryUsageStats(
-                android.app.usage.UsageStatsManager.INTERVAL_DAILY, now - 10_000L, now
-            )
-            stats?.maxByOrNull { it.lastTimeUsed }?.packageName
+            // queryEvents() tracks Activity MOVE_TO_FOREGROUND/BACKGROUND lifecycle events.
+            // queryUsageStats() returns keyboard IME package as "last used" while user types
+            // (Samsung/OEM behavior) — causes false enforcer triggers during Facebook login.
+            // IME services are NOT Activities and never generate MOVE_TO_FOREGROUND events,
+            // so queryEvents() is immune to the keyboard interference.
+            val events = usm.queryEvents(now - 3_600_000L, now)
+            var foreground: String? = null
+            val ev = android.app.usage.UsageEvents.Event()
+            while (events.hasNextEvent()) {
+                events.getNextEvent(ev)
+                when (ev.eventType) {
+                    android.app.usage.UsageEvents.Event.MOVE_TO_FOREGROUND ->
+                        foreground = ev.packageName
+                    android.app.usage.UsageEvents.Event.MOVE_TO_BACKGROUND ->
+                        if (foreground == ev.packageName) foreground = null
+                }
+            }
+            foreground
         } catch (_: Exception) { null }
     }
 
@@ -245,8 +352,17 @@ class TimerService : Service() {
         val wasUsb = isUsbMode
         CoroutineScope(Dispatchers.IO).launch {
             if (wasUsb) {
-                val totalAmount = (finalElapsed / 60.0) * ratePerMin
+                // Apply offset to compensate for external hardware timers that cut power
+                // slightly before the full minute boundary, which would otherwise floor
+                // the earned amount to zero (e.g., 58 s elapsed → ₱0 at ₱1/min).
+                val offsetSecs    = app.prefs.usbTimerOffsetSecs
+                val effectiveSecs = finalElapsed + offsetSecs
+                val totalAmount   = (effectiveSecs / 60.0) * ratePerMin
+                val durationMins  = effectiveSecs / 60
                 try { db.sessionDao().updateAmountPaid(activeId, totalAmount) } catch (_: Exception) {}
+                // Sync final earnings to backend — USB sessions start with amount_paid=0
+                // on the server; this call writes the real value before endSession marks it ended.
+                try { api.syncUsbAmount(activeId, UsbAmountSyncRequest(totalAmount, durationMins)) } catch (_: Exception) {}
             }
             db.sessionDao().updateStatus(activeId, "ended")
             try { api.endSession(activeId) } catch (_: Exception) {}

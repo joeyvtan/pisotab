@@ -15,8 +15,6 @@ import com.pisotab.app.PisoTabApp
 import com.pisotab.app.R
 import com.pisotab.app.service.TimerService
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.*
 
 class DashboardFragment : Fragment() {
 
@@ -88,25 +86,18 @@ class DashboardFragment : Fragment() {
         updateBattery()
 
         lifecycleScope.launch {
-
             try {
                 val app = requireActivity().application as PisoTabApp
-                val response = app.api.getSessions(limit = 500)
+                val deviceId = app.prefs.deviceId
+                if (deviceId.isEmpty()) return@launch
+
+                val response = app.api.getStatsToday(deviceId)
                 if (response.isSuccessful) {
-                    val sessions = response.body() ?: emptyList()
-                    val todayStart = getTodayStartMs()
-
-                    val todaySessions = sessions.filter { (it.started_at * 1000) >= todayStart }
-                    val sessionsCount = todaySessions.size
-                    val totalMins     = todaySessions.sumOf { it.duration_mins }
-                    val earnings      = todaySessions.sumOf { it.amount_paid }
-                    val coinSessions  = todaySessions.filter { it.payment_method == "coin" }
-                    val coinValue     = coinSessions.sumOf { it.amount_paid }
-
-                    tvSessionsToday.text = sessionsCount.toString()
-                    tvTimeSold.text      = formatMins(totalMins)
-                    tvEarningsToday.text = "₱%.0f".format(earnings)
-                    tvTotalCoins.text    = "₱%.0f".format(coinValue)
+                    val stats = response.body() ?: return@launch
+                    tvSessionsToday.text = stats.sessions_today.toString()
+                    tvTimeSold.text      = formatMins(stats.total_mins)
+                    tvEarningsToday.text = "₱%.2f".format(stats.earnings_today)
+                    tvTotalCoins.text    = "₱%.2f".format(stats.coins_today)
                 }
             } catch (_: Exception) {
                 tvSessionsToday.text = "—"
@@ -130,15 +121,6 @@ class DashboardFragment : Fragment() {
         val scale  = intent?.getIntExtra(BatteryManager.EXTRA_SCALE, -1) ?: -1
         val pct    = if (level >= 0 && scale > 0) (level * 100 / scale) else -1
         tvBattery.text = if (pct >= 0) "$pct%" else "—%"
-    }
-
-    private fun getTodayStartMs(): Long {
-        val cal = Calendar.getInstance()
-        cal.set(Calendar.HOUR_OF_DAY, 0)
-        cal.set(Calendar.MINUTE, 0)
-        cal.set(Calendar.SECOND, 0)
-        cal.set(Calendar.MILLISECOND, 0)
-        return cal.timeInMillis
     }
 
     private fun formatMins(mins: Int): String {
