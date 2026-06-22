@@ -216,6 +216,10 @@ class TimerService : Service() {
     private fun startUsbTimer() {
         timerJob?.cancel()
         timerJob = scope.launch {
+            // Capture rate once — same setting that governs coin-based sessions.
+            // timerSecondsPerCoin = "seconds of session time per 1 peso".
+            // USB earnings = elapsed / secsPerCoin pesos.
+            val secsPerCoin = app.prefs.timerSecondsPerCoin.coerceAtLeast(1)
             while (true) {
                 delay(1000L)
                 if (!isPaused) {
@@ -225,21 +229,22 @@ class TimerService : Service() {
                     db.sessionDao().updateTime(activeId, timeRemainingSecs)
                     onTick?.invoke(timeRemainingSecs)
                     updateFloatingView()
-                    // Record a coin event every minute for sales monitoring
-                    if (timeRemainingSecs % 60 == 0) {
-                        val rate = app.prefs.timerRatePerMinute.toDouble()
+                    // Record one coin event each time a full secsPerCoin interval elapses.
+                    // coinValue = 1.0 (one peso per coin event) so the dashboard sales total
+                    // correctly reflects the configured rate (e.g. 1 peso per 3 minutes).
+                    if (timeRemainingSecs % secsPerCoin == 0) {
                         val event = com.pisotab.app.data.local.CoinEventEntity(
                             id = java.util.UUID.randomUUID().toString(),
                             deviceId = app.prefs.deviceId,
-                            coinValue = rate,
+                            coinValue = 1.0,
                             pulses = 0,
-                            creditedSecs = 60,
+                            creditedSecs = secsPerCoin,
                             createdAt = System.currentTimeMillis()
                         )
                         db.coinEventDao().insert(event)
                         // Keep amountPaid on the session entity in sync
-                        val elapsedMins = timeRemainingSecs / 60
-                        try { db.sessionDao().updateAmountPaid(activeId, elapsedMins * rate) } catch (_: Exception) {}
+                        val elapsedCoins = timeRemainingSecs / secsPerCoin
+                        try { db.sessionDao().updateAmountPaid(activeId, elapsedCoins.toDouble()) } catch (_: Exception) {}
                     }
                     updateNotification()
                 }
@@ -351,16 +356,18 @@ class TimerService : Service() {
         val activeId = app.prefs.activeSessionId.takeIf { it.isNotEmpty() } ?: sessionId
         app.prefs.activeSessionId = ""
         val finalElapsed = timeRemainingSecs
-        val ratePerMin = app.prefs.timerRatePerMinute.toDouble()
         val wasUsb = isUsbMode
         CoroutineScope(Dispatchers.IO).launch {
             if (wasUsb) {
-                // Apply offset to compensate for external hardware timers that cut power
-                // slightly before the full minute boundary, which would otherwise floor
-                // the earned amount to zero (e.g., 58 s elapsed → ₱0 at ₱1/min).
+                // Use timerSecondsPerCoin as the authoritative rate for USB earnings —
+                // the same setting the user configures as "minutes per coin".
+                // totalAmount = effectiveSecs / secsPerCoin pesos (e.g. 180s / 180 = ₱1 per 3 min).
+                // Apply offset to compensate for hardware timers that cut power slightly before
+                // the full interval boundary (e.g. 178 s elapsed at 180 s/coin → still ₱1).
+                val secsPerCoin   = app.prefs.timerSecondsPerCoin.coerceAtLeast(1)
                 val offsetSecs    = app.prefs.usbTimerOffsetSecs
                 val effectiveSecs = finalElapsed + offsetSecs
-                val totalAmount   = (effectiveSecs / 60.0) * ratePerMin
+                val totalAmount   = effectiveSecs.toDouble() / secsPerCoin
                 val durationMins  = effectiveSecs / 60
                 try { db.sessionDao().updateAmountPaid(activeId, totalAmount) } catch (_: Exception) {}
                 // Sync final earnings to backend — USB sessions start with amount_paid=0
