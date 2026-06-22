@@ -216,10 +216,6 @@ class TimerService : Service() {
     private fun startUsbTimer() {
         timerJob?.cancel()
         timerJob = scope.launch {
-            // Capture rate once — same setting that governs coin-based sessions.
-            // timerSecondsPerCoin = "seconds of session time per 1 peso".
-            // USB earnings = elapsed / secsPerCoin pesos.
-            val secsPerCoin = app.prefs.timerSecondsPerCoin.coerceAtLeast(1)
             while (true) {
                 delay(1000L)
                 if (!isPaused) {
@@ -229,6 +225,10 @@ class TimerService : Service() {
                     db.sessionDao().updateTime(activeId, timeRemainingSecs)
                     onTick?.invoke(timeRemainingSecs)
                     updateFloatingView()
+                    // Read secsPerCoin from prefs on every tick so that a rate change in
+                    // Settings takes effect immediately for the running session — no restart needed.
+                    // timerSecondsPerCoin = "seconds of session time per 1 peso".
+                    val secsPerCoin = app.prefs.timerSecondsPerCoin.coerceAtLeast(1)
                     // Record one coin event each time a full secsPerCoin interval elapses.
                     // coinValue = 1.0 (one peso per coin event) so the dashboard sales total
                     // correctly reflects the configured rate (e.g. 1 peso per 3 minutes).
@@ -242,7 +242,6 @@ class TimerService : Service() {
                             createdAt = System.currentTimeMillis()
                         )
                         db.coinEventDao().insert(event)
-                        // Keep amountPaid on the session entity in sync
                         val elapsedCoins = timeRemainingSecs / secsPerCoin
                         try { db.sessionDao().updateAmountPaid(activeId, elapsedCoins.toDouble()) } catch (_: Exception) {}
                     }

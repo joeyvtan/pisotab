@@ -24,6 +24,8 @@ import com.pisotab.app.R
 import com.pisotab.app.data.remote.DeviceConfigRequest
 import com.pisotab.app.receiver.DeviceAdminReceiver
 import com.pisotab.app.util.RemoteConfigManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 class SettingsFragment : Fragment() {
@@ -240,7 +242,15 @@ class SettingsFragment : Fragment() {
                     charge_stop_pct    = prefs.chargeStopPercent,
                     charge_start_pct   = prefs.chargeStartPercent
                 )
-                viewLifecycleOwner.lifecycleScope.launch {
+                // Use a standalone IO scope — NOT viewLifecycleOwner.lifecycleScope.
+                // viewLifecycleOwner.lifecycleScope is cancelled the moment the fragment view is
+                // destroyed (i.e. when the user closes the admin panel after pressing Save), which
+                // drops the HTTP request mid-flight and leaves device_configs.secs_per_coin
+                // unchanged on the server. The next heartbeat then pushes the stale server value
+                // back via RemoteConfigManager, overwriting the user's just-saved prefs.
+                // A standalone CoroutineScope outlives the fragment and guarantees the PATCH
+                // always reaches the server regardless of navigation timing.
+                CoroutineScope(Dispatchers.IO).launch {
                     try { app.api.updateDeviceConfig(deviceId, req) } catch (_: Exception) {}
                 }
             }
