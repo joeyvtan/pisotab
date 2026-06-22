@@ -58,12 +58,16 @@ async function handleMqttMessage(topic, data) {
 
     // Use device_configs as the authoritative source for coin-to-time conversion.
     // Priority:
-    //   1. coin_rates exact match → admin-configured minutes for that denomination
-    //   2. rate_per_min          → coin_value ÷ rate gives correct time for any denomination
-    //   3. secs_per_coin         → fixed per-pulse fallback (same time regardless of coin value)
-    //   4. rawCreditedSecs       → last resort: use ESP32 firmware value
+    //   1. coin_rates exact match → explicit per-denomination table (e.g. ₱1=5min, ₱5=30min)
+    //   2. secs_per_coin         → "Mins/coin" setting: fixed seconds regardless of denomination
+    //   3. rawCreditedSecs       → last resort: use ESP32 firmware value
+    //
+    // rate_per_min is intentionally excluded here. It defaults to 1.0 in the DB, so
+    // checking it before secs_per_coin would make secs_per_coin permanently unreachable
+    // (a ₱1 coin would always yield (1.0/1.0)*60 = 60s regardless of the "Mins/coin" setting).
+    // rate_per_min is the correct rate for USB timer earnings, not for coin-to-time mapping.
     const deviceCfg = await db.get(
-      'SELECT secs_per_coin, coin_rates, rate_per_min FROM device_configs WHERE device_id = ?',
+      'SELECT secs_per_coin, coin_rates FROM device_configs WHERE device_id = ?',
       [device_id]
     );
 
@@ -73,11 +77,9 @@ async function handleMqttMessage(topic, data) {
       try { rates = JSON.parse(deviceCfg.coin_rates || '[]'); } catch { rates = []; }
       const match = rates.find(r => Math.abs(r.coin - coin_value) < 0.01);
       if (match) {
-        baseSecs = Math.round(match.minutes * 60);                         // 1. coin_rates
-      } else if (deviceCfg.rate_per_min && deviceCfg.rate_per_min > 0) {
-        baseSecs = Math.round((coin_value / deviceCfg.rate_per_min) * 60); // 2. rate_per_min
-      } else if (deviceCfg.secs_per_coin != null) {
-        baseSecs = deviceCfg.secs_per_coin;                                // 3. secs_per_coin
+        baseSecs = Math.round(match.minutes * 60);  // 1. explicit per-denomination rate
+      } else if (deviceCfg.secs_per_coin > 0) {
+        baseSecs = deviceCfg.secs_per_coin;          // 2. "Mins/coin" setting
       }
     }
 
@@ -140,6 +142,7 @@ async function handleMqttMessage(topic, data) {
         duration_mins: durationMins,
         duration_secs: credited_secs,
         amount_paid: coin_value,
+        started_at: now,  // Unix seconds; Android subtracts elapsed to sync with ESP32 LCD
       });
       io?.emit('session:started', { device_id, session_id: sessionId });
       io?.emit(EVENTS.SESSION_UPDATED, { device_id, session_id: sessionId, time_remaining_secs: credited_secs, status: 'active' });

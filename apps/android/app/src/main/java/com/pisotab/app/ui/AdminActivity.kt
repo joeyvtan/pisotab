@@ -87,12 +87,10 @@ class AdminActivity : AppCompatActivity() {
         val app   = application as PisoTabApp
         val prefs = app.prefs
 
-        // Token already stored — rebuild API with it and skip re-login
-        if (prefs.backendToken.isNotEmpty()) {
-            app.initApi()
-            return
-        }
-
+        // Always re-login on every admin panel open to guarantee a fresh JWT.
+        // Previously, a cached token was reused without checking expiry. JWTs expire after 7 days,
+        // so every SettingsFragment PATCH (updateDeviceConfig) would silently fail with 401 once
+        // the token aged out, breaking the App → Dashboard settings sync permanently.
         lifecycleScope.launch {
             try {
                 val response = app.api.login(
@@ -104,10 +102,15 @@ class AdminActivity : AppCompatActivity() {
                     app.initApi()   // rebuild Retrofit with the new token
                     Log.d("AdminActivity", "Authenticated with backend")
                 } else {
+                    // Login failed — keep whatever token is stored and log for diagnosis.
+                    // SettingsFragment will try the PATCH anyway; if the old token is still
+                    // valid the sync succeeds; if expired the PATCH returns 401 (silent).
                     Log.e("AdminActivity", "Login failed: ${response.code()} — check backendUsername/backendPassword in Settings")
+                    if (prefs.backendToken.isNotEmpty()) app.initApi()
                 }
             } catch (e: Exception) {
                 Log.e("AdminActivity", "Login error: ${e.message}")
+                if (prefs.backendToken.isNotEmpty()) app.initApi()
             }
         }
     }
