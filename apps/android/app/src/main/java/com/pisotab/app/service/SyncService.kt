@@ -37,7 +37,7 @@ class SyncService : Service() {
         const val NOTIF_ID   = 2
 
         // Callbacks so MainActivity/ViewModel can react to socket commands
-        var onStartSession: ((sessionId: String, durationMins: Int, amountPaid: Double) -> Unit)? = null
+        var onStartSession: ((sessionId: String, durationSecs: Int, amountPaid: Double) -> Unit)? = null
         var onPauseSession: (() -> Unit)? = null
         var onResumeSession: (() -> Unit)? = null
         var onEndSession: ((sessionId: String) -> Unit)? = null
@@ -87,10 +87,10 @@ class SyncService : Service() {
         SocketManager.disconnect()
 
         // Wire SocketManager callbacks → static callbacks (read by ViewModel)
-        SocketManager.onStartSession = { id, mins, amount ->
+        SocketManager.onStartSession = { id, secs, amount ->
             // Block session start when license is expired
             if (app.prefs.licenseStatus != "trial_expired") {
-                onStartSession?.invoke(id, mins, amount)
+                onStartSession?.invoke(id, secs, amount)
             }
         }
         SocketManager.onPauseSession = { onPauseSession?.invoke() }
@@ -175,7 +175,9 @@ class SyncService : Service() {
                     val timeRemaining = if (sessionId != null) TimerService.currentSecs.takeIf { it > 0 } else null
                     try {
                         val resp = api.heartbeat(deviceId, HeartbeatRequest(null, null, sessionId, timeRemaining))
-                        val pendingConfig = resp.body()?.pending_config
+                        val body = resp.body()
+
+                        val pendingConfig = body?.pending_config
                         if (pendingConfig != null) {
                             // Convert Retrofit data class → JSONObject so RemoteConfigManager can parse it
                             val json = JSONObject().apply {
@@ -195,6 +197,21 @@ class SyncService : Service() {
                             }
                             RemoteConfigManager.applyConfig(json, app.prefs)
                             SocketManager.emitConfigAck(deviceId)
+                        }
+
+                        // Session recovery: if the server returns an active session that this
+                        // device doesn't know about, the cmd:start socket event was lost
+                        // (Render proxy reset, brief socket disconnect, etc.). Start it now
+                        // so the timer begins within one heartbeat cycle (≤30 s) rather than never.
+                        val recoveredSession = body?.active_session
+                        if (recoveredSession != null && app.prefs.activeSessionId.isEmpty()
+                            && app.prefs.licenseStatus != "trial_expired") {
+                            android.util.Log.w("SyncService", "Recovering lost session ${recoveredSession.session_id} from heartbeat")
+                            onStartSession?.invoke(
+                                recoveredSession.session_id,
+                                recoveredSession.time_remaining_secs,
+                                recoveredSession.amount_paid
+                            )
                         }
                     } catch (_: Exception) {}
                 }

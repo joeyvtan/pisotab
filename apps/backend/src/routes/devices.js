@@ -326,7 +326,27 @@ router.post('/:id/heartbeat', async (req, res) => {
       req.io?.to(`device:${req.params.id}`).emit('cmd:apply_config', formatConfig(pendingCfg));
     }
 
-    res.json({ ok: true, pending_config: pendingCfg ? formatConfig(pendingCfg) : null });
+    // Session recovery: if the Android reports no active session but the server has one,
+    // return it so Android can restart the timer. This recovers sessions whose cmd:start
+    // socket event was lost (Render proxy reset, brief reconnect, service restart, etc.).
+    let activeSession = null;
+    if (!session_id) {
+      const row = await db.get(
+        "SELECT id, time_remaining_secs, duration_mins, amount_paid FROM sessions WHERE device_id = ? AND status = 'active' AND time_remaining_secs > 0",
+        [req.params.id]
+      );
+      if (row) {
+        activeSession = {
+          session_id:          row.id,
+          time_remaining_secs: row.time_remaining_secs,
+          duration_mins:       row.duration_mins,
+          amount_paid:         row.amount_paid || 0,
+        };
+        console.log(`[Heartbeat] Recovering session ${row.id} for device ${req.params.id} (cmd:start was lost)`);
+      }
+    }
+
+    res.json({ ok: true, pending_config: pendingCfg ? formatConfig(pendingCfg) : null, active_session: activeSession });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });

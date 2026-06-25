@@ -115,7 +115,15 @@ data class HeartbeatRequest(
 
 data class HeartbeatResponse(
     val ok: Boolean,
-    val pending_config: DeviceConfig?
+    val pending_config: DeviceConfig?,
+    val active_session: ActiveSessionRecovery? = null
+)
+
+data class ActiveSessionRecovery(
+    val session_id: String,
+    val time_remaining_secs: Int,
+    val duration_mins: Int,
+    val amount_paid: Double
 )
 
 data class DeviceConfig(
