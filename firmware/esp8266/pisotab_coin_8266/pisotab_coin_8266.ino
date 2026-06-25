@@ -135,6 +135,7 @@ void loadConfig();
 void saveDeviceId(const String& id);
 #ifdef USE_LCD
 void lcdShowIdle();
+void lcdShowNotConfigured();
 void lcdShowTime(int secs);
 void lcdSetSession(int secs);
 #endif
@@ -155,6 +156,12 @@ void lcdShowIdle() {
   lcd.clear();
   lcd.setCursor(0, 0); lcd.print(" Please Insert  ");
   lcd.setCursor(0, 1); lcd.print("     Coins      ");
+}
+
+void lcdShowNotConfigured() {
+  lcd.clear();
+  lcd.setCursor(0, 0); lcd.print(" NOT CONFIGURED ");
+  lcd.setCursor(0, 1); lcd.print("  Setup via AP  ");
 }
 
 void lcdShowTime(int secs) {
@@ -224,13 +231,38 @@ void setup() {
   Wire.begin(4, 5);  // SDA=D2(GPIO4), SCL=D1(GPIO5) — NodeMCU I2C defaults
   lcd.init();
   lcd.backlight();
-  lcdShowIdle();
+  lcd.clear();
+  lcd.setCursor(0, 0); lcd.print(" PisoTab  8266  ");
+  lcd.setCursor(0, 1); lcd.print("  Starting...   ");
   Serial.println("[LCD] Initialized");
 #endif
 
   loadConfig();
+
+#ifdef USE_LCD
+  // Show "Not Configured" BEFORE setupWiFi() opens the portal so the user
+  // sees instructions on the LCD while the config AP is active.
+  if (deviceId.isEmpty()) lcdShowNotConfigured();
+#endif
+
   setupWiFi();
   setupMQTT();
+
+#ifdef USE_LCD
+  if (deviceId.isEmpty()) {
+    lcdShowNotConfigured();
+  } else if (!WiFi.isConnected()) {
+    lcd.clear();
+    lcd.setCursor(0, 0); lcd.print(" WiFi Not Found ");
+    lcd.setCursor(0, 1); lcd.print("Check WiFi Creds");
+  } else if (!mqtt.connected()) {
+    lcd.clear();
+    lcd.setCursor(0, 0); lcd.print(" Server Offline ");
+    lcd.setCursor(0, 1); lcd.print("  Check MQTT    ");
+  } else {
+    lcdShowIdle();
+  }
+#endif
 
   Serial.println("[PisoTab-8266] Ready. Waiting for coins...");
   digitalWrite(LED_PIN, LED_ON);  // solid ON = ready
@@ -279,6 +311,9 @@ void loop() {
 void processCoinEvent(int pulses) {
   if (deviceId.isEmpty()) {
     Serial.println("[Coin] No Device ID configured — event dropped. Connect to PisoTab-Coin-8266 WiFi to set it.");
+#ifdef USE_LCD
+    lcdShowNotConfigured();
+#endif
     return;
   }
   Serial.printf("[Coin] %d pulse(s) detected\n", pulses);
@@ -293,12 +328,13 @@ void processCoinEvent(int pulses) {
   blinkLED(pulses);
 
 #ifdef USE_LCD
-  // Show acknowledgement immediately; do NOT set lcdTimeRemaining here — the
-  // COIN_MAP values are hardcoded and won't match the admin-configured rates.
-  // The authoritative timer_sync from the backend arrives within ~1 second.
+  // Show coin accepted on line 0 immediately. Line 1 is filled after the MQTT
+  // result so the user can see whether the event actually reached the server.
+  // Do NOT set lcdTimeRemaining here — the admin-configured time comes back
+  // via timer_sync from the backend within ~1 second.
   lcd.clear();
   lcd.setCursor(0, 0); lcd.print(" Coin Accepted! ");
-  lcd.setCursor(0, 1); lcd.print(" Please wait... ");
+  lcd.setCursor(0, 1); lcd.print("                ");
 #endif
 
   StaticJsonDocument<256> doc;
@@ -311,10 +347,22 @@ void processCoinEvent(int pulses) {
 
   if (mqtt.connected()) {
     String topic = "pisotab/coins/" + deviceId;
-    if (!mqtt.publish(topic.c_str(), payload.c_str(), false)) queueEvent(pulses, pesos, seconds);
-    else Serial.println("[MQTT] Coin event published");
+    if (mqtt.publish(topic.c_str(), payload.c_str(), false)) {
+      Serial.println("[MQTT] Coin event published");
+#ifdef USE_LCD
+      lcd.setCursor(0, 1); lcd.print(" Please wait... ");
+#endif
+    } else {
+      queueEvent(pulses, pesos, seconds);
+#ifdef USE_LCD
+      lcd.setCursor(0, 1); lcd.print("  Send Failed!  ");
+#endif
+    }
   } else {
     queueEvent(pulses, pesos, seconds);
+#ifdef USE_LCD
+    lcd.setCursor(0, 1); lcd.print(" No Connection! ");
+#endif
   }
 }
 
