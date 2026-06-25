@@ -324,6 +324,10 @@ router.post('/:id/heartbeat', async (req, res) => {
 
     if (pendingCfg) {
       req.io?.to(`device:${req.params.id}`).emit('cmd:apply_config', formatConfig(pendingCfg));
+      // Mark applied immediately — the HTTP heartbeat response guarantees delivery,
+      // so we don't need to wait for the socket ack:config_applied (which is lost
+      // when the socket is disconnected, causing the config to be pushed every 30s forever).
+      await db.run('UPDATE device_configs SET applied_at = unixepoch() WHERE device_id = ?', [req.params.id]);
     }
 
     // Session recovery: if the Android reports no active session but the server has one,

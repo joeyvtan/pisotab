@@ -88,9 +88,22 @@ class SyncService : Service() {
 
         // Wire SocketManager callbacks → static callbacks (read by ViewModel)
         SocketManager.onStartSession = { id, secs, amount ->
-            // Block session start when license is expired
             if (app.prefs.licenseStatus != "trial_expired") {
-                onStartSession?.invoke(id, secs, amount)
+                val mainCallback = onStartSession
+                if (mainCallback != null) {
+                    mainCallback.invoke(id, secs, amount)
+                } else {
+                    // MainActivity is not alive — launch it with session extras so
+                    // handleSessionIntent() calls vm.startSession() when the activity resumes.
+                    // This mirrors how cmd:end handles the "MainActivity destroyed" case.
+                    startActivity(Intent(applicationContext, com.pisotab.app.ui.MainActivity::class.java).apply {
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                        putExtra("session_id", id)
+                        putExtra("duration_mins", secs / 60)
+                        putExtra("duration_secs", secs)
+                        putExtra("amount_paid", amount)
+                    })
+                }
             }
         }
         SocketManager.onPauseSession = { onPauseSession?.invoke() }
@@ -207,11 +220,22 @@ class SyncService : Service() {
                         if (recoveredSession != null && app.prefs.activeSessionId.isEmpty()
                             && app.prefs.licenseStatus != "trial_expired") {
                             android.util.Log.w("SyncService", "Recovering lost session ${recoveredSession.session_id} from heartbeat")
-                            onStartSession?.invoke(
-                                recoveredSession.session_id,
-                                recoveredSession.time_remaining_secs,
-                                recoveredSession.amount_paid
-                            )
+                            val mainCallback = onStartSession
+                            if (mainCallback != null) {
+                                mainCallback.invoke(
+                                    recoveredSession.session_id,
+                                    recoveredSession.time_remaining_secs,
+                                    recoveredSession.amount_paid
+                                )
+                            } else {
+                                startActivity(Intent(applicationContext, com.pisotab.app.ui.MainActivity::class.java).apply {
+                                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                                    putExtra("session_id", recoveredSession.session_id)
+                                    putExtra("duration_mins", recoveredSession.duration_mins)
+                                    putExtra("duration_secs", recoveredSession.time_remaining_secs)
+                                    putExtra("amount_paid", recoveredSession.amount_paid)
+                                })
+                            }
                         }
                     } catch (_: Exception) {}
                 }
