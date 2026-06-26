@@ -1,0 +1,13 @@
+node_modules/
+dist/
+dist-electron/
+
+# Native binaries — copy manually, do not commit large .exe files
+assets/adb/adb.exe
+assets/adb/AdbWinApi.dll
+assets/adb/AdbWinUsbApi.dll
+assets/esptool/esptool.exe
+assets/apk/*.apk
+
+# Keep firmware binaries (small enough to commit)
+!assets/firmware/*.bin

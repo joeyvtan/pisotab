@@ -1,0 +1,5 @@
+# Place firmware binaries here:
+#   pisotab_coin_esp32.bin
+#   pisotab_coin_esp8266.bin
+# Copy from: ../../firmware/esp32/pisotab_coin_esp32.bin
+#             ../../firmware/esp8266/pisotab_coin_esp8266.bin

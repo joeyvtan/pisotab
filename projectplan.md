@@ -3,6 +3,526 @@
 
 ---
 
+## PHASE 18 — JJT PisoTab Desktop Setup Tool (2026-06-26)
+
+### Problem Statement
+
+Setting up a new JJTPisoTab kiosk today requires a non-technical operator to:
+1. Run `adb shell dpm set-device-owner ...` manually (complex terminal command)
+2. Use a separate Python-based esptool to flash ESP32/ESP8266 firmware
+3. Manually type the server URL + device ID directly on the tablet screen
+4. Keep multiple tools open simultaneously with no unified workflow
+
+**Reference:** KSoft Tool (iPlay/iKaraoke kiosk) solves the same problem for a competitor product — a Windows desktop app that bundles ADB, esptool, an APK installer, and a games downloader into one UI. We build a JJTPisoTab-native version with a cleaner architecture and unique server-integration capabilities they do not have.
+
+---
+
+### Architecture Decision: Electron.js + React + TailwindCSS
+
+| Criteria | Electron (chosen) | .NET WinForms (KSoft approach) |
+|----------|-------------------|-------------------------------|
+| Team knowledge | ✓ Same JS/Node.js stack as backend + dashboard | ✗ Separate C# skillset |
+| UI framework | ✓ React + TailwindCSS — brand-consistent | ✗ WinForms/WPF — different paradigm |
+| ADB integration | ✓ `child_process` wrapping adb.exe | ✓ AdvancedSharpAdbClient |
+| Serial / ESP | ✓ `serialport` npm + esptool.exe child_process | ✓ System.IO.Ports |
+| Backend API | ✓ Native `fetch()` to api.jjtpisotab.com | ✗ Requires HttpClient setup |
+| Cross-platform | ✓ Windows primary, Mac/Linux buildable | ✗ Windows only |
+| Packaging | `electron-builder` → NSIS/portable installer | ClickOnce / manual zip |
+
+**Security note:** The renderer (React) cannot call Node.js APIs directly. All OS operations (ADB, esptool, serial, file I/O) go through the Electron IPC bridge (`preload.js` + `ipcMain`). This is enforced by `contextIsolation: true`.
+
+---
+
+### Folder Structure
+
+New location in monorepo: `tools/setup-tool/`
+
+```
+tools/
+└── setup-tool/
+    ├── package.json                   — Electron + React + Vite + electron-builder
+    ├── electron.config.js             — electron-builder packaging config
+    ├── electron/
+    │   ├── main.js                    — Electron main process; registers IPC handlers
+    │   └── preload.js                 — contextBridge — exposes safe API to renderer
+    ├── src/                           — React renderer (Vite)
+    │   ├── main.jsx                   — Entry point
+    │   ├── App.jsx                    — Layout + sidebar navigation
+    │   ├── pages/
+    │   │   ├── Home.jsx               — Status overview + quick-action cards
+    │   │   ├── DeviceSetup.jsx        — Android ADB setup module
+    │   │   ├── EspFlasher.jsx         — ESP32/ESP8266 firmware flash module
+    │   │   ├── AppManager.jsx         — APK library + ADB install
+    │   │   └── Wizard.jsx             — One-click new device setup wizard
+    │   ├── components/
+    │   │   ├── LogPanel.jsx           — Scrollable real-time log output
+    │   │   ├── ProgressBar.jsx        — Flash progress bar
+    │   │   ├── DeviceCard.jsx         — Connected Android device summary
+    │   │   └── SerialTerminal.jsx     — Post-flash serial monitor
+    │   └── hooks/
+    │       ├── useAdb.js              — ADB state + commands
+    │       ├── useEsp.js              — ESP flash state + commands
+    │       └── useBackend.js          — Backend auth + API calls
+    ├── services/                      — Main process services (Node.js)
+    │   ├── adbService.js              — Wraps adb.exe via child_process
+    │   ├── espService.js              — Wraps esptool.exe via child_process
+    │   ├── serialService.js           — COM port enumeration (serialport)
+    │   └── apiClient.js              — fetch() calls to JJTPisoTab backend
+    └── assets/
+        ├── adb/
+        │   ├── adb.exe
+        │   ├── AdbWinApi.dll
+        │   └── AdbWinUsbApi.dll
+        ├── esptool/
+        │   └── esptool.exe
+        └── firmware/
+            ├── pisotab_coin_esp32.bin     — bundled latest ESP32 firmware
+            └── pisotab_coin_esp8266.bin   — bundled latest ESP8266 firmware
+```
+
+---
+
+### IPC Architecture
+
+```
+┌─────────────────────────────────────────────┐
+│           React Renderer Process             │
+│  useAdb()  useEsp()  useBackend()            │
+│       │         │          │                 │
+│       └─────────┴──────────┘                 │
+│           contextBridge.invoke()             │
+└─────────────────┬───────────────────────────┘
+                  │  ipcRenderer.invoke()
+┌─────────────────▼───────────────────────────┐
+│            preload.js (bridge)               │
+│  window.pisotab.adb()                        │
+│  window.pisotab.esp()                        │
+│  window.pisotab.serial()                     │
+│  window.pisotab.api()                        │
+└─────────────────┬───────────────────────────┘
+                  │  ipcMain.handle()
+┌─────────────────▼───────────────────────────┐
+│           Electron Main Process              │
+│  ├── adbService.js  → spawn(adb.exe ...)     │
+│  ├── espService.js  → spawn(esptool.exe ...) │
+│  ├── serialService.js → serialport.list()    │
+│  └── apiClient.js   → fetch(backend URL)     │
+└─────────────────────────────────────────────┘
+```
+
+Real-time streaming (flash progress, ADB logs) uses `ipcMain.emit()` → `webContents.send()` push pattern, not request-response.
+
+---
+
+### Module 1: Device Setup (ADB)
+
+**Purpose:** Install PisoTab APK + configure Android tablet without touching the screen.
+
+**UI Layout:**
+```
+┌─────────────────────────────────────────────────────────┐
+│  DEVICE SETUP                                           │
+│                                                         │
+│  Connected: Samsung Galaxy Tab A8 — Android 12    ✓     │
+│  ADB:       ● Authorized                               │
+│  [Refresh device]                                       │
+│                                                         │
+│  ── INSTALL APP ───────────────────────────────────── │
+│  Source: ● Bundled v2.1.0  ○ Download Latest  ○ Browse │
+│  Current: v2.0.9 → update available                    │
+│  [Install / Update APK]                                 │
+│                                                         │
+│  ── DEVICE OWNER ──────────────────────────────────── │
+│  Status: ✗ Not set                                      │
+│  [Set Device Owner]  [Check Status]                     │
+│  ⚠ Remove all accounts from the device first           │
+│                                                         │
+│  ── QUICK CONFIG ──────────────────────────────────── │
+│  Server URL:   [https://api.jjtpisotab.com           ] │
+│  Device ID:    [dev_8384ac88cf27                     ] │
+│  Device Name:  [Store Unit 1                         ] │
+│  Admin PIN:    [••••                                 ] │
+│  [Push Config to Tablet]                                │
+│                                                         │
+│  ── POWER / KIOSK ─────────────────────────────────── │
+│  [Auto Boot on Charge]  [Enable Kiosk Mode]            │
+│  [Factory Reset]                                        │
+│                                                         │
+│  ── LOG ───────────────────────────────────────────── │
+│  [19:44:01] Detected: SM-X200 Android 12               │
+│  [19:44:03] Installing pisotab-v2.1.0.apk...           │
+│  [19:44:18] ✓ Install success (1 package)               │
+└─────────────────────────────────────────────────────────┘
+```
+
+**ADB Commands Used:**
+```bash
+# Detect device
+adb devices -l
+
+# Install APK
+adb install -r pisotab.apk
+
+# Set Device Owner
+adb shell dpm set-device-owner com.pisotab.app/.receiver.DeviceAdminReceiver
+
+# Check Device Owner
+adb shell dpm list-owners
+
+# Push config via broadcast (requires BroadcastReceiver in PisoTab app — Phase 18b)
+adb shell am broadcast -a com.pisotab.app.TOOL_CONFIG \
+  --es server_url "https://api.jjtpisotab.com" \
+  --es device_id "dev_xxxx" \
+  --es device_name "Store Unit 1" \
+  --es admin_pin "1234"
+
+# Auto Boot on Charge
+adb shell settings put global stay_on_while_plugged_in 7
+
+# Factory Reset
+adb shell am broadcast -a android.intent.action.MASTER_CLEAR
+```
+
+---
+
+### Module 2: ESP Flasher
+
+**Purpose:** Flash ESP32 or ESP8266 firmware from a COM port. No Arduino IDE or Python needed.
+
+**UI Layout:**
+```
+┌─────────────────────────────────────────────────────────┐
+│  ESP FLASHER                                            │
+│                                                         │
+│  Chip:  [AUTO ▼]    COM Port: [COM3 — CH340 ▼] [↺]     │
+│                                                         │
+│  Firmware Source                                        │
+│  ● Bundled — ESP32 v1.5.0 / ESP8266 v1.5.0            │
+│  ○ Download Latest from server                          │
+│  ○ Browse local .bin file         [Browse]              │
+│                                                         │
+│  Target ESP: [ESP32 ▼]                                  │
+│  File: assets/firmware/pisotab_coin_esp32.bin           │
+│                                                         │
+│  ── FLASH SETTINGS ──────────────────────────────────  │
+│  Baud:  [460800 ▼]   Mode: [dio ▼]   Freq: [40m ▼]    │
+│  Address: 0x0  (fixed — merged binary)                  │
+│                                                         │
+│  [▶ FLASH]  [⬛ STOP]  [🗑 ERASE]  [🔍 DETECT CHIP]    │
+│                                                         │
+│  ████████████████████████░░░░░░ 78% — 406KB / 521KB    │
+│                                                         │
+│  ── LOG ───────────────────────────────────────────── │
+│  esptool.py v4.7.0                                      │
+│  Connecting........_____                                │
+│  Chip is ESP32-D0WDQ6 (revision v1.0)                   │
+│  Uploading stub... Running stub...                      │
+│  Changing baud rate to 460800                           │
+│  Writing at 0x00001000... (3%)                          │
+│  Writing at 0x0003c000... (78%)  ← live streaming       │
+│  Hash of data verified.  ✓                              │
+│                                                         │
+│  ── SERIAL MONITOR ──────────────────────────────────  │
+│  Baud: [115200 ▼]   [Open Serial Monitor]               │
+└─────────────────────────────────────────────────────────┘
+```
+
+**esptool.exe Commands:**
+```bash
+# Detect chip
+esptool.exe --port COM3 chip_id
+
+# Flash ESP32
+esptool.exe --chip esp32 --port COM3 --baud 460800 \
+  --before default_reset --after hard_reset write_flash \
+  --flash_mode dio --flash_freq 40m --flash_size detect \
+  0x0 pisotab_coin_esp32.bin
+
+# Flash ESP8266
+esptool.exe --chip esp8266 --port COM3 --baud 460800 \
+  --before default_reset --after hard_reset write_flash \
+  --flash_mode dio --flash_freq 40m --flash_size detect \
+  0x0 pisotab_coin_esp8266.bin
+
+# Erase flash
+esptool.exe --chip auto --port COM3 erase_flash
+```
+
+**Progress Parsing:** Parse esptool stdout for `Writing at 0x... (N%)` pattern → update ProgressBar in real-time.
+
+**Serial Monitor:** After flash, open a serial port connection (115200 baud) using `serialport` npm package. Display raw output in `SerialTerminal.jsx` — lets the operator see the ESP startup logs (WiFi connected, MQTT connected, device ID) without needing Arduino IDE.
+
+---
+
+### Module 3: App Manager
+
+**Purpose:** Install Android APKs (games, emulators) to the connected tablet via ADB.
+
+**UI Layout:**
+```
+┌─────────────────────────────────────────────────────────┐
+│  APP MANAGER                                            │
+│                                                         │
+│  [Load from Folder]   [Select All]   [Install Selected] │
+│  Folder: C:\Users\adria\Downloads\APKs                  │
+│                                                         │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐   │
+│  │☑ 🎮      │ │☐ 🎮      │ │☑ 🎮      │ │☐ 🎮      │   │
+│  │ Roblox   │ │ ARK      │ │ PPSSPP   │ │ Minecraft│   │
+│  │ 50.9MB   │ │ 2.3GB    │ │ 10.5MB   │ │ 1.9GB    │   │
+│  │✓ Installed│ │[Install] │ │[Install] │ │[Install] │   │
+│  └──────────┘ └──────────┘ └──────────┘ └──────────┘   │
+│                                                         │
+│  [19:51:00] Installing ppsspp.apk... ✓                  │
+└─────────────────────────────────────────────────────────┘
+```
+
+---
+
+### Module 4: One-Click Setup Wizard (JJTPisoTab Exclusive)
+
+**Purpose:** Guided step-by-step setup for a brand-new tablet. Connects to the JJTPisoTab backend to auto-register the device and get its assigned Device ID — eliminating the need to copy-paste IDs manually.
+
+**UI Layout:**
+```
+┌─────────────────────────────────────────────────────────┐
+│  NEW DEVICE SETUP WIZARD                                │
+│                                                         │
+│  Backend: [https://api.jjtpisotab.com]                  │
+│  Username: [admin]   Password: [••••••••]  [Login]      │
+│  ✓ Logged in as: joeytanierga@gmail.com                 │
+│                                                         │
+│  ── WIZARD STEPS ──────────────────────────────────── │
+│  ✓  Step 1: Detect Android device                      │
+│             Samsung Galaxy Tab A8 — Android 12          │
+│  ✓  Step 2: Install PisoTab APK v2.1.0                 │
+│  ✓  Step 3: Set Device Owner                            │
+│  ⏳ Step 4: Enter device details                        │
+│             Device Name: [Store Unit 1     ]            │
+│             Admin PIN:   [1234             ]            │
+│  ○  Step 5: Register device on backend                  │
+│  ○  Step 6: Push full config to tablet via ADB          │
+│  ○  Step 7: Verify device shows online                  │
+│                                                         │
+│  [▶ Run Step 4]        [▶▶ Complete Setup]              │
+│                                                         │
+│  ── RESULT ──────────────────────────────────────────  │
+│  Device ID: dev_8384ac88cf27                            │
+│  Dashboard: ● Online — JJTPisoTab v2.1.0                │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Wizard Step Logic:**
+
+| Step | Action | Success condition |
+|------|--------|------------------|
+| 1. Detect Android | `adb devices -l` | One device returned, authorized |
+| 2. Install APK | `adb install -r pisotab.apk` | Exit code 0, "Success" in stdout |
+| 3. Set Device Owner | `adb shell dpm set-device-owner ...` | "Success" or "already owner" |
+| 4. Enter details | User inputs device name + PIN | Name non-empty, PIN ≥ 4 digits |
+| 5. Register on backend | `POST /api/devices { name }` | 201 response with `id` field |
+| 6. Push config via ADB | `adb shell am broadcast ...` | Exit code 0 |
+| 7. Verify online | `GET /api/devices/:id` polling 10s | `status = 'online'` |
+
+---
+
+### Backend Integration (apiClient.js)
+
+```javascript
+// Auth
+POST /api/auth/login         → get JWT token → store in electron-store
+
+// Device registration  
+POST /api/devices            → { name, android_id } → returns { id }
+
+// Status check (for Wizard Step 7)
+GET  /api/devices/:id        → check status field
+
+// Latest firmware/APK download URLs (for "Download Latest" option)
+GET  /api/downloads/latest/bin  → { url, version, filename }
+GET  /api/downloads/latest/apk  → { url, version, filename }
+```
+
+---
+
+### Phase 18b — Android BroadcastReceiver for Tool Config Push
+
+Requires a small addition to the Android app to receive the ADB config push from the setup tool:
+
+```kotlin
+// New: ToolConfigReceiver.kt
+class ToolConfigReceiver : BroadcastReceiver() {
+    override fun onReceive(context: Context, intent: Intent) {
+        if (intent.action != "com.pisotab.app.TOOL_CONFIG") return
+        val prefs = (context.applicationContext as PisoTabApp).prefs
+        intent.getStringExtra("server_url")?.let { prefs.serverUrl = it }
+        intent.getStringExtra("device_id")?.let  { prefs.deviceId = it }
+        intent.getStringExtra("device_name")?.let { prefs.deviceName = it }
+        intent.getStringExtra("admin_pin")?.let  { prefs.adminPin = it }
+        // Restart SyncService to apply new server URL
+        context.stopService(Intent(context, SyncService::class.java))
+        context.startForegroundService(Intent(context, SyncService::class.java))
+    }
+}
+```
+
+Register in `AndroidManifest.xml` with `android:exported="true"` and `android:permission="com.pisotab.app.TOOL_PERMISSION"` (exported to allow ADB broadcasts, permission-gated to prevent third-party apps from sending fake configs).
+
+---
+
+### Feature Comparison: KSoft vs JJT PisoTab Tool
+
+| Feature | KSoft Tool | JJT PisoTab Tool |
+|---------|-----------|-----------------|
+| Tech stack | .NET WinForms + MaterialSkin | Electron + React + TailwindCSS |
+| ADB device setup | ✓ iPlay/iKaraoke | ✓ JJTPisoTab |
+| ESP firmware flash | ✓ | ✓ |
+| APK installer | ✓ (WebView2 catalog) | ✓ (local folder) |
+| Games downloader | ✓ (PSP/PS2) | ✗ (not relevant) |
+| Backend integration | ✗ | ✓ api.jjtpisotab.com |
+| Auto device registration | ✗ | ✓ |
+| ADB config push (no screen touch) | ✗ | ✓ |
+| Built-in serial monitor | ✗ | ✓ |
+| Firmware auto-download | ✗ | ✓ (from backend) |
+| One-click setup wizard | ✗ | ✓ |
+| Cross-platform | Windows only | Windows primary |
+
+---
+
+### npm Dependencies
+
+| Package | Purpose |
+|---------|---------|
+| `electron` | Desktop shell |
+| `electron-builder` | Package → Windows installer/portable |
+| `vite` + `@vitejs/plugin-react` | Renderer build tool |
+| `react` + `react-dom` | UI framework |
+| `tailwindcss` | Styling |
+| `serialport` | COM port enumeration + serial monitor |
+| `electron-store` | Persist settings (server URL, last port, JWT token) |
+| `node-fetch` or built-in `fetch` | Backend HTTP calls |
+
+Bundled native binaries (not npm — copied into `assets/`):
+- `adb.exe` + `AdbWinApi.dll` + `AdbWinUsbApi.dll` (Android SDK platform-tools)
+- `esptool.exe` (esptool-py compiled release for Windows)
+
+---
+
+### Implementation TODOs
+
+**Phase 18.1 — Project Scaffold** ✅ COMPLETE (2026-06-26)
+- [x] `tools/setup-tool/package.json` — electron + vite + react + tailwindcss + electron-builder
+- [x] `electron/main.js` — Electron app entry, window creation, IPC handler registration
+- [x] `electron/preload.js` — contextBridge with `pisotab.adb()`, `pisotab.esp()`, `pisotab.serial()`, `pisotab.api()`
+- [x] `src/App.jsx` — sidebar layout with 5 nav items (Home, Device Setup, ESP Flasher, App Manager, Wizard)
+- [x] `src/components/LogPanel.jsx` — scrollable real-time log with auto-scroll + clear button
+- [x] `src/components/ProgressBar.jsx` — progress bar with percentage display
+- [x] `vite.config.js` — Vite config for Electron renderer target (base: './', port 5173)
+- [x] `tailwind.config.js` + `postcss.config.js` — TailwindCSS with brand red (#DC2626)
+- [x] `index.html` — Vite entry point with CSP meta tag
+- [x] `electron.config.js` — electron-builder config (embedded in package.json `build` section)
+- [x] `assets/firmware/pisotab_coin_esp32.bin` — copied from `firmware/esp32/`
+- [x] `assets/firmware/pisotab_coin_esp8266.bin` — copied from `firmware/esp8266/`
+- [x] `assets/adb/.gitkeep`, `assets/esptool/.gitkeep`, `assets/apk/.gitkeep` — placeholders with instructions
+- [x] `.gitignore` — excludes node_modules, dist, and large binary assets (adb.exe, esptool.exe)
+- [x] `npm install` + `npm run rebuild` (serialport native rebuild for Electron ABI)
+- [ ] Copy `adb.exe` into `assets/adb/` — **MANUAL STEP**: download Android SDK platform-tools
+- [ ] Copy `esptool.exe` into `assets/esptool/` — **MANUAL STEP**: download from esptool releases
+- [ ] Copy PisoTab APK into `assets/apk/pisotab.apk` — **MANUAL STEP**: build from Android project
+
+**Dev workflow:**
+1. `cd tools/setup-tool`
+2. Terminal 1: `npm run dev` (Vite dev server on port 5173)
+3. Terminal 2: `npm run electron` (Electron loads from http://localhost:5173)
+4. On first install only: `npm run rebuild` (rebuild serialport for Electron ABI)
+
+**Phase 18.2 — ESP Flasher** ✅ COMPLETE (2026-06-26)
+- [x] `services/espService.js` — spawn esptool.exe, stream stdout/stderr back via IPC push (`esp:log`, `esp:progress`, `esp:done`)
+- [x] `services/serialService.js` — COM port enumeration via `serialport`, open/close serial monitor
+- [x] Flash command builder (chip × port × baud × flash_mode × flash_freq × binary path)
+- [x] Detect chip command (`chip_id`) + parse "Chip is ..." output
+- [x] Erase flash command + Stop (kill active process)
+- [x] `src/pages/EspFlasher.jsx` — full UI: port selector, chip selector, firmware source (bundled/browse), flash settings, Flash/Stop/Erase/Detect buttons, real-time log, progress bar, serial monitor
+- [x] Progress bar parses `(N%)` from esptool output → live percentage update
+- [x] Serial monitor opens COM port at configurable baud (115200 default) using `serialport`
+- [x] Bundled firmware selection: ESP32 vs ESP8266 from `assets/firmware/`
+- [ ] Firmware auto-download from backend — deferred to later (not needed for MVP)
+
+**Phase 18.3 — Device Setup (ADB)** ✅ COMPLETE (2026-06-26)
+- [x] `services/adbService.js` — spawn adb.exe, stream stdout back via IPC push (`adb:log`)
+- [x] Detect device: `adb devices -l`, parse model + serial
+- [x] APK install: `adb install -r <path>`, detect "Success" in output
+- [x] Device Owner set: `adb shell dpm set-device-owner com.pisotab.app/.receiver.DeviceAdminReceiver`
+- [x] Device Owner check: `adb shell dpm list-owners`
+- [x] Config push via ADB broadcast: `com.pisotab.app.TOOL_CONFIG` with server_url, device_id, device_name, admin_pin
+- [x] Auto boot on charge: `adb shell settings put global stay_on_while_plugged_in 7`
+- [x] Factory reset command
+- [x] `src/pages/DeviceSetup.jsx` — full UI: device card, install APK, device owner, push config, power/kiosk actions
+
+**Phase 18.4 — Backend Integration** ✅ COMPLETE (2026-06-26)
+- [x] `services/apiClient.js` — login (`POST /api/auth/login`), register device (`POST /api/devices`), get status (`GET /api/devices/:id`)
+- [x] `electron-store` — persists `serverUrl`, `token`, `lastPort`, `lastBaud`, `email`
+- [x] Settings loaded on startup in EspFlasher + DeviceSetup pages
+
+**Phase 18.5 — One-Click Wizard** ✅ COMPLETE (2026-06-26)
+- [x] `src/pages/Wizard.jsx` — 7-step wizard with state machine (pending/running/done/failed per step)
+- [x] Step executor with try/catch per step + result stored in stepData
+- [x] "Complete Setup" button runs all remaining steps sequentially
+- [x] Result panel shows Device ID after registration
+- [x] Device online verification via polling (5× every 3s)
+- [x] Reset button to restart wizard from scratch
+
+**Phase 18.6 — App Manager** ✅ COMPLETE (2026-06-26)
+- [x] `src/pages/AppManager.jsx` — folder picker + APK grid + multi-select + bulk install
+- [x] ADB install with per-APK log output
+- [x] File size display
+
+**Phase 18.7 — Android BroadcastReceiver (Phase 18b)**
+- [ ] `ToolConfigReceiver.kt` — receive tool config push in Android app
+- [ ] Register in `AndroidManifest.xml`
+- [ ] Test end-to-end: tool pushes config → tablet applies without screen touch
+
+**Phase 18.8 — Packaging + Distribution**
+- [ ] Icon file (`assets/icon.ico`) for NSIS installer
+- [ ] Test electron-builder output: `npm run build`
+- [ ] Windows NSIS installer target
+- [ ] Windows portable .exe target
+- [ ] Add to `GET /api/downloads` as a downloadable file type (optional)
+
+**Summary of completed work (Phase 18.1–18.6):**
+Files created: 25 files across `tools/setup-tool/` including Electron main+preload, 4 Node.js services, 5 React pages, 2 shared components, Vite/Tailwind config, package.json, .gitignore, and asset placeholder directories. Firmware binaries automatically copied from `firmware/` into `assets/firmware/`. All npm dependencies installed and serialport rebuilt for Electron ABI.
+
+---
+
+### Design Decisions
+
+| Decision | Rationale |
+|----------|-----------|
+| Electron over .NET | Team knows JS; reuse patterns from backend/dashboard; serialport and child_process are well-supported in Node.js |
+| Bundled native binaries | Zero setup for end user — no Android SDK, no Python, no PATH config required |
+| ESP Flasher built first | Standalone; no ADB or backend login needed; immediately solves the most common pain point |
+| IPC security model | `contextIsolation: true` — renderer cannot bypass OS operations; all privileged calls go through preload bridge |
+| `electron-store` for persistence | Remembers server URL, last COM port, baud rate, login token across sessions |
+| One-click wizard | Reduces 8 manual steps (ADB commands + screen interaction) to a single "Complete Setup" button |
+| Serial monitor built-in | Eliminates Arduino IDE / PuTTY dependency for post-flash ESP diagnostics |
+| Firmware auto-download | Tool always flashes the latest firmware without operator needing to download separately |
+| Config push via ADB broadcast | Eliminates need to touch the tablet screen during setup — full headless provisioning |
+
+---
+
+### Risks & Mitigations
+
+| Risk | Mitigation |
+|------|-----------|
+| ADB device not authorized on first connect | UI shows clear instructions: enable USB debugging → trust this PC on the tablet |
+| ADB driver not installed on Windows PC | Detect adb failure, show link to universal ADB driver package |
+| esptool.exe version mismatch with chip | Pin esptool version in assets; test against both ESP32 and ESP8266 before release |
+| Config push broadcast needs receiver in APK | Phase 18b adds `ToolConfigReceiver.kt` to Android app; document that old APK versions won't respond to push |
+| Backend API token expiry | `electron-store` persists token; auto-refresh on 401 by re-running login with stored credentials |
+| Electron bundle size (~150-200MB) | Provide portable .exe option; NSIS installer with compression; acceptable for a setup tool (not a consumer app) |
+
+---
+
 ## PHASE 17 — ESP8266 (NodeMCU) Firmware Support (2026-05-18)
 
 ### Problem Statement
