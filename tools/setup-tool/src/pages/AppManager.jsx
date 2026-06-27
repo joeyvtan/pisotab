@@ -2,29 +2,43 @@ import { useState, useEffect, useCallback } from 'react';
 import { Download, Smartphone, RefreshCw, CheckCircle, Loader2 } from 'lucide-react';
 import LogPanel from '../components/LogPanel';
 
-function formatMB(bytes) {
-  if (!bytes) return '';
-  if (bytes > 1e9) return `${(bytes / 1e9).toFixed(1)} GB`;
-  return `${(bytes / 1e6).toFixed(0)} MB`;
-}
-
 const CATEGORY_COLORS = {
-  Arcade:     'bg-orange-900 text-orange-300',
-  Racing:     'bg-blue-900 text-blue-300',
-  Simulation: 'bg-green-900 text-green-300',
-  Online:     'bg-purple-900 text-purple-300',
-  Strategy:   'bg-yellow-900 text-yellow-300',
-  Puzzle:     'bg-pink-900 text-pink-300',
-  Casual:     'bg-teal-900 text-teal-300',
-  Music:      'bg-indigo-900 text-indigo-300',
-  Action:     'bg-red-900 text-red-300',
+  Arcade:        'bg-orange-900 text-orange-300',
+  Racing:        'bg-blue-900 text-blue-300',
+  Simulation:    'bg-green-900 text-green-300',
+  Online:        'bg-purple-900 text-purple-300',
+  Strategy:      'bg-yellow-900 text-yellow-300',
+  Puzzle:        'bg-pink-900 text-pink-300',
+  Casual:        'bg-teal-900 text-teal-300',
+  Music:         'bg-indigo-900 text-indigo-300',
+  Action:        'bg-red-900 text-red-300',
+  Social:        'bg-sky-900 text-sky-300',
+  Entertainment: 'bg-violet-900 text-violet-300',
 };
 
-function AppCard({ app, selected, status, progress, onToggle }) {
-  const initial = app.name[0].toUpperCase();
-  const catCls = CATEGORY_COLORS[app.category] || 'bg-gray-800 text-gray-400';
+function AppIcon({ app }) {
+  const [failed, setFailed] = useState(false);
 
-  const isInstalled = status === 'installed';
+  if (app.icon_url && !failed) {
+    return (
+      <img
+        src={app.icon_url}
+        alt=""
+        className="w-10 h-10 rounded-xl object-cover border border-gray-700 shrink-0"
+        onError={() => setFailed(true)}
+      />
+    );
+  }
+  return (
+    <div className="w-10 h-10 rounded-xl bg-gray-800 flex items-center justify-center text-base font-bold text-white border border-gray-700 shrink-0">
+      {app.name[0]}
+    </div>
+  );
+}
+
+function AppCard({ app, selected, status, progress, onToggle }) {
+  const catCls = CATEGORY_COLORS[app.category] || 'bg-gray-800 text-gray-400';
+  const isInstalled  = status === 'installed';
   const isDownloaded = status === 'downloaded';
   const isDownloading = status === 'downloading';
 
@@ -33,17 +47,11 @@ function AppCard({ app, selected, status, progress, onToggle }) {
       onClick={() => !isDownloading && onToggle(app.package)}
       disabled={isDownloading}
       className={`text-left p-3 rounded-lg border transition-colors ${
-        selected
-          ? 'border-red-600 bg-red-950'
-          : 'border-gray-800 bg-gray-900 hover:border-gray-700'
+        selected ? 'border-red-600 bg-red-950' : 'border-gray-800 bg-gray-900 hover:border-gray-700'
       } ${isDownloading ? 'cursor-wait opacity-80' : ''}`}
     >
-      {/* App icon + name row */}
       <div className="flex items-start gap-3">
-        {/* Icon placeholder */}
-        <div className="w-10 h-10 rounded-xl bg-gray-800 flex items-center justify-center text-lg font-bold text-white shrink-0 border border-gray-700">
-          {initial}
-        </div>
+        <AppIcon app={app} />
 
         <div className="min-w-0 flex-1">
           <p className="text-sm font-medium text-white truncate leading-tight">{app.name}</p>
@@ -52,18 +60,14 @@ function AppCard({ app, selected, status, progress, onToggle }) {
               {app.category}
             </span>
             <span className="text-[10px] text-gray-500">{app.type}</span>
-            {app.size_mb && (
-              <span className="text-[10px] text-gray-500">~{app.size_mb} MB</span>
-            )}
+            {app.size_mb && <span className="text-[10px] text-gray-500">~{app.size_mb} MB</span>}
           </div>
         </div>
 
-        {/* Status badge */}
         <div className="shrink-0 mt-0.5">
           {isInstalled && (
             <span className="flex items-center gap-1 text-[10px] font-medium text-green-400">
-              <CheckCircle size={11} />
-              Installed
+              <CheckCircle size={11} /> Installed
             </span>
           )}
           {isDownloaded && !isInstalled && (

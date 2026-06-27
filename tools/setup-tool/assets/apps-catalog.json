@@ -1,5 +1,61 @@
 [
   {
+    "name": "Facebook",
+    "package": "com.facebook.katana",
+    "type": "APK",
+    "category": "Social",
+    "size_mb": 80
+  },
+  {
+    "name": "Messenger",
+    "package": "com.facebook.orca",
+    "type": "APK",
+    "category": "Social",
+    "size_mb": 80
+  },
+  {
+    "name": "WhatsApp",
+    "package": "com.whatsapp",
+    "type": "APK",
+    "category": "Social",
+    "size_mb": 60
+  },
+  {
+    "name": "Instagram",
+    "package": "com.instagram.android",
+    "type": "APK",
+    "category": "Social",
+    "size_mb": 80
+  },
+  {
+    "name": "TikTok",
+    "package": "com.zhiliaoapp.musically",
+    "type": "APK",
+    "category": "Social",
+    "size_mb": 120
+  },
+  {
+    "name": "YouTube",
+    "package": "com.google.android.youtube",
+    "type": "APK",
+    "category": "Entertainment",
+    "size_mb": 40
+  },
+  {
+    "name": "Spotify",
+    "package": "com.spotify.music",
+    "type": "APK",
+    "category": "Music",
+    "size_mb": 65
+  },
+  {
+    "name": "Netflix",
+    "package": "com.netflix.mediaclient",
+    "type": "APK",
+    "category": "Entertainment",
+    "size_mb": 100
+  },
+  {
     "name": "Subway Surfers",
     "package": "com.kiloo.subwaysurf",
     "type": "XAPK",
@@ -9,27 +65,27 @@
   {
     "name": "Temple Run 2",
     "package": "com.imangi.templerun2",
-    "type": "APK",
+    "type": "XAPK",
     "category": "Arcade",
     "size_mb": 80
   },
   {
     "name": "Hill Climb Racing 2",
     "package": "com.fingersoft.hillclimb2",
-    "type": "APK",
+    "type": "XAPK",
     "category": "Racing",
     "size_mb": 150
   },
   {
     "name": "Traffic Rider",
     "package": "com.skgames.trafficrider",
-    "type": "APK",
+    "type": "XAPK",
     "category": "Racing",
     "size_mb": 95
   },
   {
     "name": "Crossy Road",
-    "package": "com.yodo1.crossyroadcastle",
+    "package": "com.yodo1.crossyroad",
     "type": "APK",
     "category": "Arcade",
     "size_mb": 60
@@ -56,6 +112,13 @@
     "size_mb": 45
   },
   {
+    "name": "Fruit Ninja",
+    "package": "com.halfbrick.fruitninjafree",
+    "type": "APK",
+    "category": "Casual",
+    "size_mb": 50
+  },
+  {
     "name": "Car Parking Multiplayer",
     "package": "com.olzhas.carparking.multyplayer",
     "type": "XAPK",
@@ -70,11 +133,25 @@
     "size_mb": 200
   },
   {
+    "name": "Among Us",
+    "package": "com.innersloth.spacemafia",
+    "type": "XAPK",
+    "category": "Online",
+    "size_mb": 100
+  },
+  {
     "name": "Roblox",
     "package": "com.roblox.client",
     "type": "XAPK",
     "category": "Online",
     "size_mb": 140
+  },
+  {
+    "name": "Free Fire",
+    "package": "com.dts.freefireth",
+    "type": "XAPK",
+    "category": "Online",
+    "size_mb": 650
   },
   {
     "name": "Mobile Legends",
@@ -84,11 +161,32 @@
     "size_mb": 350
   },
   {
+    "name": "PUBG Mobile",
+    "package": "com.tencent.ig",
+    "type": "XAPK",
+    "category": "Online",
+    "size_mb": 900
+  },
+  {
     "name": "Clash of Clans",
     "package": "com.supercell.clashofclans",
     "type": "APK",
     "category": "Strategy",
     "size_mb": 160
+  },
+  {
+    "name": "Clash Royale",
+    "package": "com.supercell.clashroyale",
+    "type": "APK",
+    "category": "Strategy",
+    "size_mb": 150
+  },
+  {
+    "name": "Brawl Stars",
+    "package": "com.supercell.brawlstars",
+    "type": "XAPK",
+    "category": "Online",
+    "size_mb": 300
   },
   {
     "name": "Candy Crush Saga",
@@ -98,31 +196,10 @@
     "size_mb": 85
   },
   {
-    "name": "PUBG Mobile",
-    "package": "com.tencent.ig",
-    "type": "XAPK",
-    "category": "Online",
-    "size_mb": 900
-  },
-  {
-    "name": "Brawl Stars",
-    "package": "com.supercell.brawlstars",
-    "type": "APK",
-    "category": "Online",
-    "size_mb": 300
-  },
-  {
     "name": "Stickman Warriors",
     "package": "com.mobirix.stickmanfight",
     "type": "APK",
     "category": "Action",
     "size_mb": 75
-  },
-  {
-    "name": "Fruit Ninja",
-    "package": "com.halfbrick.fruitninjafree",
-    "type": "APK",
-    "category": "Casual",
-    "size_mb": 50
   }
 ]

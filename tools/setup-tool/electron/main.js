@@ -103,6 +103,7 @@ app.whenReady().then(() => {
     return dir;
   }
 
+  // Rejects on non-zero exit (used for ADB commands that must succeed)
   function runAdbSilent(args) {
     return new Promise((resolve, reject) => {
       const proc = spawn(getAssetPath('adb', 'adb.exe'), args, { windowsHide: true });
@@ -114,22 +115,125 @@ app.whenReady().then(() => {
     });
   }
 
+  // Always resolves — used for adb install where we need to inspect failure text
+  function runAdbRaw(args) {
+    return new Promise((resolve) => {
+      const proc = spawn(getAssetPath('adb', 'adb.exe'), args, { windowsHide: true });
+      let out = '';
+      proc.stdout.on('data', d => { out += d; });
+      proc.stderr.on('data', d => { out += d; });
+      proc.on('close', () => resolve(out));
+      proc.on('error', e => resolve(`ERROR: ${e.message}`));
+    });
+  }
+
   function localApkPath(packageName, type) {
     return path.join(getAppsDownloadsDir(), `${packageName}.${type.toLowerCase()}`);
+  }
+
+  // FIX: Use .NET ZipFile (works on .xapk extension — PowerShell Expand-Archive rejects non-.zip)
+  // Writes a temp .ps1 to avoid path-escaping issues in inline PowerShell commands
+  async function extractZip(zipPath, destDir) {
+    const ps1 = path.join(getAppsDownloadsDir(), `extract_${Date.now()}.ps1`);
+    const script = [
+      'Add-Type -Assembly System.IO.Compression.FileSystem',
+      `[System.IO.Compression.ZipFile]::ExtractToDirectory("${zipPath.replace(/\\/g, '\\\\')}", "${destDir.replace(/\\/g, '\\\\')}")`,
+    ].join('\r\n');
+    fs.writeFileSync(ps1, script, 'utf8');
+    return new Promise((resolve, reject) => {
+      exec(`powershell -NoProfile -ExecutionPolicy Bypass -File "${ps1}"`,
+        { windowsHide: true, timeout: 180_000 },
+        (err, _out, stderr) => {
+          try { fs.unlinkSync(ps1); } catch (_) {}
+          err ? reject(new Error(stderr.trim() || err.message)) : resolve();
+        }
+      );
+    });
+  }
+
+  // Extracts XAPK, pushes OBBs, installs main APK
+  async function installAsXapk(filePath, packageName, send) {
+    const extractDir = path.join(getAppsDownloadsDir(), `${packageName}_ext`);
+    if (fs.existsSync(extractDir)) fs.rmSync(extractDir, { recursive: true, force: true });
+
+    send('Extracting archive...\n');
+    await extractZip(filePath, extractDir);
+
+    const apkFiles = fs.readdirSync(extractDir).filter(f => f.endsWith('.apk'));
+    if (!apkFiles.length) throw new Error('No APK found inside archive');
+
+    const mainApk = apkFiles.find(f => f === `${packageName}.apk`) || apkFiles[0];
+    const apkPath = path.join(extractDir, mainApk);
+
+    // Push OBB expansion files if present
+    const obbDir = path.join(extractDir, 'Android', 'obb', packageName);
+    if (fs.existsSync(obbDir)) {
+      for (const obbFile of fs.readdirSync(obbDir)) {
+        send(`Pushing OBB: ${obbFile}...\n`);
+        await runAdbSilent(['push', path.join(obbDir, obbFile), `/sdcard/Android/obb/${packageName}/${obbFile}`]);
+      }
+    }
+
+    send(`Installing ${mainApk}...\n`);
+    const out = await runAdbRaw(['install', '-r', apkPath]);
+    if (out.includes('Success')) { send('✓ Installed successfully\n'); return { success: true }; }
+    send(`✗ ${out.trim()}\n`);
+    return { success: false, error: out.trim() };
+  }
+
+  // Fetch app icon from Google Play Store (og:image meta tag), cached to disk
+  const iconCachePath = path.join(app.getPath('userData'), 'app-icons-cache.json');
+  let iconCache = {};
+  try { iconCache = JSON.parse(fs.readFileSync(iconCachePath, 'utf8')); } catch (_) {}
+
+  async function fetchGooglePlayIcon(packageName) {
+    try {
+      const resp = await fetch(
+        `https://play.google.com/store/apps/details?id=${packageName}`,
+        {
+          signal: AbortSignal.timeout(6000),
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+            'Accept-Language': 'en-US,en;q=0.9',
+          },
+        }
+      );
+      if (!resp.ok) return null;
+      const html = await resp.text();
+      const match = html.match(/<meta[^>]+property="og:image"[^>]+content="([^"]+)"/);
+      return match?.[1] || null;
+    } catch {
+      return null;
+    }
   }
 
   let activeDownloadPkg = null;
 
   ipcMain.handle('apps:load-catalog', async () => {
+    // Load catalog from server (admin-controlled) or fall back to bundled copy
+    let apps = [];
     try {
       const serverUrl = store.get('serverUrl', 'http://localhost:4000');
       const resp = await fetch(`${serverUrl}/api/apps-catalog`, { signal: AbortSignal.timeout(5000) });
-      if (resp.ok) return await resp.json();
+      if (resp.ok) apps = await resp.json();
     } catch (_) {}
-    try {
-      return JSON.parse(fs.readFileSync(getAssetPath('apps-catalog.json'), 'utf8'));
-    } catch (_) {}
-    return [];
+    if (!apps.length) {
+      try { apps = JSON.parse(fs.readFileSync(getAssetPath('apps-catalog.json'), 'utf8')); } catch (_) {}
+    }
+
+    // Enrich with icons: check cache first, fetch missing ones in parallel
+    const missing = apps.filter(a => !iconCache[a.package]);
+    if (missing.length > 0) {
+      await Promise.allSettled(
+        missing.map(async a => {
+          const url = await fetchGooglePlayIcon(a.package);
+          if (url) iconCache[a.package] = url;
+        })
+      );
+      try { fs.writeFileSync(iconCachePath, JSON.stringify(iconCache)); } catch (_) {}
+    }
+
+    return apps.map(a => ({ ...a, icon_url: iconCache[a.package] || null }));
   });
 
   ipcMain.handle('apps:list-downloaded', () => {
@@ -220,43 +324,25 @@ app.whenReady().then(() => {
     const filePath = localApkPath(packageName, type);
 
     if (!fs.existsSync(filePath)) return { success: false, error: 'File not downloaded' };
-
     send(`Installing ${path.basename(filePath)}...\n`);
 
     try {
-      let apkPath = filePath;
-
+      // XAPK: always extract first
       if (type.toUpperCase() === 'XAPK') {
-        const extractDir = path.join(getAppsDownloadsDir(), `${packageName}_ext`);
-        if (fs.existsSync(extractDir)) fs.rmSync(extractDir, { recursive: true, force: true });
-
-        send('Extracting XAPK...\n');
-        await new Promise((resolve, reject) => {
-          exec(
-            `powershell -NoProfile -Command "Expand-Archive -Path '${filePath}' -DestinationPath '${extractDir}' -Force"`,
-            { windowsHide: true },
-            (err, _out, stderr) => err ? reject(new Error(stderr || err.message)) : resolve()
-          );
-        });
-
-        const apkFiles = fs.readdirSync(extractDir).filter(f => f.endsWith('.apk'));
-        if (apkFiles.length === 0) throw new Error('No APK found inside XAPK');
-        apkPath = path.join(extractDir, apkFiles.find(f => f === `${packageName}.apk`) || apkFiles[0]);
-
-        const obbDir = path.join(extractDir, 'Android', 'obb', packageName);
-        if (fs.existsSync(obbDir)) {
-          for (const obbFile of fs.readdirSync(obbDir)) {
-            send(`Pushing OBB: ${obbFile}...\n`);
-            await runAdbSilent(['push', path.join(obbDir, obbFile), `/sdcard/Android/obb/${packageName}/${obbFile}`]);
-          }
-        }
+        return await installAsXapk(filePath, packageName, send);
       }
 
-      const out = await runAdbSilent(['install', '-r', apkPath]);
-      if (out.includes('Success')) {
-        send('✓ Installed successfully\n');
-        return { success: true };
+      // APK: try direct install
+      const out = await runAdbRaw(['install', '-r', filePath]);
+      if (out.includes('Success')) { send('✓ Installed successfully\n'); return { success: true }; }
+
+      // FIX: APKPure sometimes serves XAPK even when APK is requested.
+      // If we get a manifest parse error, the file is actually an XAPK → extract and retry.
+      if (out.includes('INSTALL_PARSE_FAILED') || out.includes('INSTALL_FAILED_UNEXPECTED_EXCEPTION') || out.includes('AndroidManifest.xml')) {
+        send('Direct install failed — file appears to be XAPK, extracting...\n');
+        return await installAsXapk(filePath, packageName, send);
       }
+
       send(`✗ ${out.trim()}\n`);
       return { success: false, error: out.trim() };
     } catch (err) {
