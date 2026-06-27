@@ -148,18 +148,17 @@ function setupAdbHandlers(ipcMain, mainWindow, getAssetPath) {
         return { success: false, error: 'Broadcast not completed' };
       }
 
-      // adb install -r kills the app process, so SyncService is not running after install.
-      // The broadcast above ran ToolConfigReceiver (which updated SharedPreferences on disk)
-      // in a temporary spawned process that is now dead. Start SyncService explicitly so
-      // it reads the updated device_id from prefs and begins sending heartbeats immediately.
-      // ADB commands are synchronous — the broadcast fully completed before this line runs,
-      // so prefs are guaranteed to be written before SyncService reads them.
+      // ToolConfigReceiver (triggered by the broadcast above) starts SyncService internally
+      // using the same-package context — identical to the BootReceiver pattern.
+      // Additionally, launch MainActivity so the kiosk app is visible and running.
+      // SyncService.android:exported=false so it cannot be started from ADB shell directly;
+      // MainActivity is exported=true and starts SyncService in its onCreate().
       try {
-        await runAdb(['shell', 'am', 'start-foreground-service',
-          '-n', 'com.pisotab.app/.service.SyncService']);
-        send('adb:log', 'SyncService started — first heartbeat will fire immediately\n');
+        await runAdb(['shell', 'am', 'start',
+          '-n', 'com.pisotab.app/.ui.MainActivity']);
+        send('adb:log', 'Kiosk app launched — SyncService will start and send first heartbeat\n');
       } catch (_) {
-        send('adb:log', 'Note: could not start SyncService explicitly (may already be running)\n');
+        send('adb:log', 'Note: could not launch MainActivity (app may already be in foreground)\n');
       }
 
       return { success: true };

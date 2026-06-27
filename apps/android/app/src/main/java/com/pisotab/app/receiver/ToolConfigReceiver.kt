@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import com.pisotab.app.PisoTabApp
+import com.pisotab.app.service.SyncService
 import com.pisotab.app.util.PrefsManager
 
 /**
@@ -19,12 +20,15 @@ import com.pisotab.app.util.PrefsManager
  *
  * Only non-empty values overwrite existing prefs, so partial updates are safe.
  *
- * No SyncService restart is needed: SyncService.startHeartbeat() reads
- * app.prefs.deviceId fresh on every 30-second iteration. The next tick
- * after this receiver fires will automatically use the new device_id.
+ * After updating prefs, SyncService is started (same pattern as BootReceiver).
+ * This works even when the app was killed by "adb install -r": Android spawns a
+ * process for the receiver (PisoTabApp.onCreate runs), so startForegroundService
+ * can be called with the same-package context — non-exported services are allowed.
+ * If SyncService is already running, startForegroundService calls onStartCommand()
+ * (not overridden), which is a safe no-op.
  *
- * If server_url changes, PisoTabApp.initApi() is called to rebuild the
- * Retrofit client with the new base URL before the next heartbeat.
+ * If server_url changes, PisoTabApp.initApi() rebuilds the Retrofit client with
+ * the new base URL before the first heartbeat fires.
  */
 class ToolConfigReceiver : BroadcastReceiver() {
 
@@ -51,9 +55,8 @@ class ToolConfigReceiver : BroadcastReceiver() {
             Log.i(TAG, "admin_pin updated")
         }
 
-        // If the server URL changed, reinitialize the Retrofit client so the next
-        // heartbeat hits the new server. The heartbeat loop reads device_id from prefs
-        // on every tick, so no service restart is needed for device_id changes.
+        // If the server URL changed, reinitialize the Retrofit client so the
+        // next heartbeat hits the correct server.
         if (prefs.serverUrl != oldServerUrl) {
             try {
                 PisoTabApp.instance.initApi()
@@ -63,7 +66,16 @@ class ToolConfigReceiver : BroadcastReceiver() {
             }
         }
 
-        Log.i(TAG, "Config applied — next heartbeat will use device_id=${prefs.deviceId}")
+        // Start SyncService so it sends heartbeats with the new device_id.
+        // Same pattern as BootReceiver — works even if the app process was killed
+        // by "adb install -r", because this receiver runs in the app's own process
+        // context and can start non-exported services within the same package.
+        try {
+            context.startForegroundService(Intent(context, SyncService::class.java))
+            Log.i(TAG, "SyncService started — first heartbeat will fire with device_id=${prefs.deviceId}")
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not start SyncService: ${e.message}")
+        }
     }
 
     companion object {
