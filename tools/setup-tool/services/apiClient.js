@@ -6,7 +6,8 @@ function setupApiHandlers(ipcMain) {
     const res = await fetch(`${serverUrl}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
+      // Backend auth route reads req.body.username (not email)
+      body: JSON.stringify({ username: email, password }),
     });
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));

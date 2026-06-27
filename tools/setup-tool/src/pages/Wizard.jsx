@@ -175,8 +175,9 @@ export default function Wizard() {
               placeholder="https://api.jjtpisotab.com" />
           </div>
           <div className="col-span-2 space-y-1">
-            <label className="text-xs text-gray-500">Email</label>
-            <input value={email} onChange={e => setEmail(e.target.value)} type="email"
+            <label className="text-xs text-gray-500">Username</label>
+            <input value={email} onChange={e => setEmail(e.target.value)} type="text"
+              placeholder="your username"
               className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-red-500 selectable" />
           </div>
           <div className="space-y-1">
