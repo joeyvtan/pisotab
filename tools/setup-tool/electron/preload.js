@@ -66,6 +66,8 @@ contextBridge.exposeInMainWorld('pisotab', {
     offDownloadProgress: ()  => ipcRenderer.removeAllListeners('apps:download-progress'),
     onInstallLog:  (cb) => ipcRenderer.on('apps:install-log',  (_, msg) => cb(msg)),
     offInstallLog: ()   => ipcRenderer.removeAllListeners('apps:install-log'),
+    onIconUpdate:  (cb) => ipcRenderer.on('apps:icon-update',  (_, data) => cb(data)),
+    offIconUpdate: ()   => ipcRenderer.removeAllListeners('apps:icon-update'),
   },
 
 });

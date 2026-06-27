@@ -170,14 +170,14 @@
   {
     "name": "Clash of Clans",
     "package": "com.supercell.clashofclans",
-    "type": "APK",
+    "type": "XAPK",
     "category": "Strategy",
     "size_mb": 160
   },
   {
     "name": "Clash Royale",
     "package": "com.supercell.clashroyale",
-    "type": "APK",
+    "type": "XAPK",
     "category": "Strategy",
     "size_mb": 150
   },

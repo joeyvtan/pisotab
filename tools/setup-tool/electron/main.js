@@ -153,7 +153,24 @@ app.whenReady().then(() => {
     });
   }
 
-  // Extracts XAPK, pushes OBBs, installs main APK
+  // FIX: Recursive APK finder — readdirSync only reads root; XAPKs often put APKs in subfolders.
+  // Skips Android/ because that subtree only contains .obb expansion files, never .apk files.
+  function findApkFiles(dir) {
+    const results = [];
+    try {
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory() && entry.name !== 'Android') {
+          results.push(...findApkFiles(full));
+        } else if (!entry.isDirectory() && entry.name.endsWith('.apk')) {
+          results.push(full);
+        }
+      }
+    } catch (_) {}
+    return results;
+  }
+
+  // Extracts XAPK, pushes OBBs, installs APK(s)
   async function installAsXapk(filePath, packageName, send) {
     const extractDir = path.join(getAppsDownloadsDir(), `${packageName}_ext`);
     if (fs.existsSync(extractDir)) fs.rmSync(extractDir, { recursive: true, force: true });
@@ -161,11 +178,9 @@ app.whenReady().then(() => {
     send('Extracting archive...\n');
     await extractZip(filePath, extractDir);
 
-    const apkFiles = fs.readdirSync(extractDir).filter(f => f.endsWith('.apk'));
+    // FIX: recursive search — handles XAPKs where APKs are inside subdirectories
+    const apkFiles = findApkFiles(extractDir);
     if (!apkFiles.length) throw new Error('No APK found inside archive');
-
-    const mainApk = apkFiles.find(f => f === `${packageName}.apk`) || apkFiles[0];
-    const apkPath = path.join(extractDir, mainApk);
 
     // Push OBB expansion files if present
     const obbDir = path.join(extractDir, 'Android', 'obb', packageName);
@@ -176,38 +191,85 @@ app.whenReady().then(() => {
       }
     }
 
-    send(`Installing ${mainApk}...\n`);
-    const out = await runAdbRaw(['install', '-r', apkPath]);
+    // FIX: split APK apps (e.g. Clash of Clans) ship base.apk + config.*.apk splits.
+    // Installing only base.apk → INSTALL_FAILED_MISSING_SPLIT.
+    // Use adb install-multiple to install all splits as one atomic operation.
+    let installArgs;
+    if (apkFiles.length > 1) {
+      send(`Installing ${apkFiles.length} split APKs...\n`);
+      installArgs = ['install-multiple', '-r', ...apkFiles];
+    } else {
+      send(`Installing ${path.basename(apkFiles[0])}...\n`);
+      installArgs = ['install', '-r', apkFiles[0]];
+    }
+
+    const out = await runAdbRaw(installArgs);
     if (out.includes('Success')) { send('✓ Installed successfully\n'); return { success: true }; }
     send(`✗ ${out.trim()}\n`);
     return { success: false, error: out.trim() };
   }
 
-  // Fetch app icon from Google Play Store (og:image meta tag), cached to disk
+  // App icon cache — persisted to disk so icons survive restarts
   const iconCachePath = path.join(app.getPath('userData'), 'app-icons-cache.json');
   let iconCache = {};
   try { iconCache = JSON.parse(fs.readFileSync(iconCachePath, 'utf8')); } catch (_) {}
 
-  async function fetchGooglePlayIcon(packageName) {
-    try {
-      const resp = await fetch(
-        `https://play.google.com/store/apps/details?id=${packageName}`,
-        {
-          signal: AbortSignal.timeout(6000),
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
-            'Accept-Language': 'en-US,en;q=0.9',
-          },
-        }
-      );
-      if (!resp.ok) return null;
-      const html = await resp.text();
-      // Try both attribute orderings: property before content, or content before property
-      const match = html.match(/<meta[^>]+property="og:image"[^>]+content="([^"]+)"/)
-                 || html.match(/<meta[^>]+content="([^"]+)"[^>]+property="og:image"/);
-      return match?.[1] || null;
-    } catch {
-      return null;
+  // FIX: simple fetch() is blocked by Google's bot detection.
+  // Use a hidden BrowserWindow instead — real Chromium renders the page fully,
+  // then executeJavaScript extracts the icon URL from the live DOM.
+  function fetchIconViaPlayStore(packageName) {
+    return new Promise((resolve) => {
+      let win = new BrowserWindow({
+        show: false,
+        webPreferences: { contextIsolation: true, sandbox: true },
+      });
+
+      let settled = false;
+      const finish = (url) => {
+        if (settled) return;
+        settled = true;
+        if (win && !win.isDestroyed()) win.destroy();
+        win = null;
+        resolve(url && url.startsWith('http') ? url : null);
+      };
+
+      // 12-second timeout — Play Store loads fast but some regions are slower
+      const timer = setTimeout(() => finish(null), 12_000);
+
+      win.webContents.on('did-finish-load', async () => {
+        clearTimeout(timer);
+        try {
+          const url = await win.webContents.executeJavaScript(`
+            (function() {
+              const og = document.querySelector('meta[property="og:image"]');
+              if (og) return og.getAttribute('content');
+              const tw = document.querySelector('meta[name="twitter:image"]');
+              if (tw) return tw.getAttribute('content');
+              // Fallback: first googleusercontent image on the page (the app icon)
+              const img = document.querySelector('img[src*="googleusercontent.com"]');
+              return img ? img.src : null;
+            })()
+          `);
+          finish(url);
+        } catch { finish(null); }
+      });
+
+      win.webContents.on('did-fail-load', () => { clearTimeout(timer); finish(null); });
+      win.loadURL(`https://play.google.com/store/apps/details?id=${packageName}&hl=en`);
+    });
+  }
+
+  // Background icon fetcher: runs AFTER catalog is returned so it never delays loading.
+  // Sends apps:icon-update events to renderer as each icon is found.
+  async function fetchIconsInBackground(packages) {
+    for (const pkg of packages) {
+      if (iconCache[pkg]) continue; // already cached between start and now
+      const url = await fetchIconViaPlayStore(pkg);
+      if (url) {
+        iconCache[pkg] = url;
+        try { fs.writeFileSync(iconCachePath, JSON.stringify(iconCache)); } catch (_) {}
+        mainWindow?.webContents?.send('apps:icon-update', { package: pkg, icon_url: url });
+      }
     }
   }
 
@@ -225,17 +287,10 @@ app.whenReady().then(() => {
       try { apps = JSON.parse(fs.readFileSync(getAssetPath('apps-catalog.json'), 'utf8')); } catch (_) {}
     }
 
-    // Enrich with icons: check cache first, fetch missing ones in parallel
-    const missing = apps.filter(a => !iconCache[a.package]);
-    if (missing.length > 0) {
-      await Promise.allSettled(
-        missing.map(async a => {
-          const url = await fetchGooglePlayIcon(a.package);
-          if (url) iconCache[a.package] = url;
-        })
-      );
-      try { fs.writeFileSync(iconCachePath, JSON.stringify(iconCache)); } catch (_) {}
-    }
+    // Return catalog immediately with whatever is already cached (fast path).
+    // Missing icons are fetched in the background and pushed via apps:icon-update events.
+    const missing = apps.filter(a => !iconCache[a.package]).map(a => a.package);
+    if (missing.length > 0) fetchIconsInBackground(missing); // fire-and-forget
 
     return apps.map(a => ({ ...a, icon_url: iconCache[a.package] || null }));
   });
@@ -340,10 +395,15 @@ app.whenReady().then(() => {
       const out = await runAdbRaw(['install', '-r', filePath]);
       if (out.includes('Success')) { send('✓ Installed successfully\n'); return { success: true }; }
 
-      // FIX: APKPure sometimes serves XAPK even when APK is requested.
-      // If we get a manifest parse error, the file is actually an XAPK → extract and retry.
-      if (out.includes('INSTALL_PARSE_FAILED') || out.includes('INSTALL_FAILED_UNEXPECTED_EXCEPTION') || out.includes('AndroidManifest.xml')) {
-        send('Direct install failed — file appears to be XAPK, extracting...\n');
+      // APKPure sometimes serves multi-split XAPK even when APK is requested.
+      // Detect by: parse failure (XAPK served as .apk), or missing splits (base.apk without configs).
+      const needsXapkExtract =
+        out.includes('INSTALL_PARSE_FAILED') ||
+        out.includes('INSTALL_FAILED_UNEXPECTED_EXCEPTION') ||
+        out.includes('INSTALL_FAILED_MISSING_SPLIT') ||
+        out.includes('AndroidManifest.xml');
+      if (needsXapkExtract) {
+        send('Direct install failed — attempting XAPK extraction...\n');
         return await installAsXapk(filePath, packageName, send);
       }
 

@@ -99,16 +99,21 @@ export default function AppManager() {
     setLogs(prev => [...prev, `[${ts}] ${String(msg).trimEnd()}`]);
   }, []);
 
-  // Listen for download progress and install log events
+  // Listen for download progress, install logs, and background icon updates
   useEffect(() => {
     window.pisotab.apps.onDownloadProgress(({ packageName, received, total }) => {
       const pct = total > 0 ? Math.round((received / total) * 100) : 0;
       setProgress(prev => ({ ...prev, [packageName]: pct }));
     });
     window.pisotab.apps.onInstallLog((msg) => addLog(msg));
+    // Icons arrive progressively as background fetching completes
+    window.pisotab.apps.onIconUpdate(({ package: pkg, icon_url }) => {
+      setCatalog(prev => prev.map(a => a.package === pkg ? { ...a, icon_url } : a));
+    });
     return () => {
       window.pisotab.apps.offDownloadProgress();
       window.pisotab.apps.offInstallLog();
+      window.pisotab.apps.offIconUpdate();
     };
   }, [addLog]);
 
