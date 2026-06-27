@@ -26,6 +26,7 @@ export default function Wizard() {
   const [email,       setEmail]       = useState('');
   const [password,    setPassword]    = useState('');
   const [token,       setToken]       = useState('');
+  const tokenRef = useRef('');                        // mirrors token — readable synchronously between steps
   const [deviceName,  setDeviceName]  = useState('');
   const [adminPin,    setAdminPin]    = useState('');
   const [running,     setRunning]     = useState(false);
@@ -72,9 +73,10 @@ export default function Wizard() {
           break;
         }
         case 'register': {
-          if (!token) {
+          if (!tokenRef.current) {
             addLog('Logging in to backend...');
             const auth = await window.pisotab.api.login(serverUrl, email, password);
+            tokenRef.current = auth.token;
             setToken(auth.token);
             addLog(`✓ Logged in as ${auth.user?.email || email}`);
             const device = await window.pisotab.api.registerDevice(serverUrl, auth.token, deviceName);
@@ -82,7 +84,7 @@ export default function Wizard() {
             setStepData({ ...stepDataRef.current });
             addLog(`✓ Device registered: ${device.id}`);
           } else {
-            const device = await window.pisotab.api.registerDevice(serverUrl, token, deviceName);
+            const device = await window.pisotab.api.registerDevice(serverUrl, tokenRef.current, deviceName);
             stepDataRef.current = { ...stepDataRef.current, register: device };
             setStepData({ ...stepDataRef.current });
             addLog(`✓ Device registered: ${device.id}`);
@@ -110,7 +112,7 @@ export default function Wizard() {
           for (let i = 0; i < 20; i++) {
             await new Promise(r => setTimeout(r, 3000));
             try {
-              const dev = await window.pisotab.api.getDeviceStatus(serverUrl, token, deviceId);
+              const dev = await window.pisotab.api.getDeviceStatus(serverUrl, tokenRef.current, deviceId);
               if (dev.status === 'online' || dev.last_seen) {
                 online = true;
                 break;
@@ -161,8 +163,9 @@ export default function Wizard() {
     setStepState(initialStepState());
     stepDataRef.current = {};
     setStepData({});
-    setLogs([]);
+    tokenRef.current = '';
     setToken('');
+    setLogs([]);
   }
 
   return (
