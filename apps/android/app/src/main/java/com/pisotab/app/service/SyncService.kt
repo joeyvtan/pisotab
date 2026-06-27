@@ -180,6 +180,7 @@ class SyncService : Service() {
         scope.launch {
             while (true) {
                 val deviceId = app.prefs.deviceId
+                android.util.Log.i("SyncService", "Heartbeat tick — deviceId=${deviceId.ifEmpty { "(empty)" }}")
                 if (deviceId.isNotEmpty()) {
                     // Include live session state so the server DB stays accurate when
                     // Socket.IO is disconnected (e.g. device on a flaky connection).
@@ -187,6 +188,7 @@ class SyncService : Service() {
                     val timeRemaining = if (sessionId != null) TimerService.currentSecs.takeIf { it > 0 } else null
                     try {
                         val resp = api.heartbeat(deviceId, HeartbeatRequest(null, null, sessionId, timeRemaining))
+                        android.util.Log.i("SyncService", "Heartbeat OK — device=$deviceId status=${resp.code()}")
                         val body = resp.body()
 
                         val pendingConfig = body?.pending_config
@@ -236,7 +238,9 @@ class SyncService : Service() {
                                 })
                             }
                         }
-                    } catch (_: Exception) {}
+                    } catch (e: Exception) {
+                        android.util.Log.w("SyncService", "Heartbeat FAILED — device=$deviceId error=${e.message}")
+                    }
                 }
                 // Reconnect socket if dropped
                 if (!SocketManager.isConnected()) {

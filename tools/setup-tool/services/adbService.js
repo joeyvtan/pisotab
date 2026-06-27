@@ -134,8 +134,13 @@ function setupAdbHandlers(ipcMain, mainWindow, getAssetPath) {
   });
 
   ipcMain.handle('adb:push-config', async (_, config) => {
+    // -n explicitly targets the component so Android delivers the broadcast even
+    // when the app is in the "stopped" state (set by adb install -r on some devices).
+    // Implicit broadcasts (-a only) are suppressed for stopped apps unless the sender
+    // adds FLAG_INCLUDE_STOPPED_PACKAGES, which `am broadcast` does NOT add by default.
     const broadcastArgs = [
       'shell', 'am', 'broadcast',
+      '-n', 'com.pisotab.app/.receiver.ToolConfigReceiver',
       '-a', 'com.pisotab.app.TOOL_CONFIG',
       '--es', 'server_url',  config.serverUrl  || '',
       '--es', 'device_id',   config.deviceId   || '',
@@ -143,6 +148,9 @@ function setupAdbHandlers(ipcMain, mainWindow, getAssetPath) {
       '--es', 'admin_pin',   config.adminPin   || '',
     ];
     try {
+      // Clear the logcat ring buffer so we only see fresh entries from this run.
+      await runAdb(['shell', 'logcat', '-c']).catch(() => {});
+
       const broadcastOut = await runAdb(broadcastArgs);
       send('adb:log', `Broadcast result: ${broadcastOut.trim()}\n`);
       if (!broadcastOut.includes('Broadcast completed')) {
@@ -171,18 +179,27 @@ function setupAdbHandlers(ipcMain, mainWindow, getAssetPath) {
         send('adb:log', `App process PID: ${pidOut.trim() || 'NOT RUNNING'}\n`);
       }
 
-      // Read logcat to confirm ToolConfigReceiver actually wrote the device_id and
-      // SyncService started with it. -d dumps the current ring buffer (no hang),
-      // -s filters to only our tags.
+      // Read prefs via run-as (works on debug APKs — uses the app's own UID).
+      const prefsViaRunAs = await runAdb([
+        'shell', 'run-as', 'com.pisotab.app',
+        'cat', 'shared_prefs/pisotab_prefs.xml',
+      ]).catch(() => '');
+      const deviceIdInPrefs = (prefsViaRunAs.match(/name="device_id"[^>]*>([^<]+)</) || [])[1] || '(not found)';
+      send('adb:log', `device_id in prefs: ${deviceIdInPrefs}\n`);
+
+      // Capture fresh logcat (buffer was cleared before broadcast).
+      // Include SyncService at Info level so we see heartbeat attempts.
       const logcatOut = await runAdb([
         'shell', 'logcat', '-d', '-s',
-        'ToolConfigReceiver:I', 'SyncService:W',
+        'ToolConfigReceiver:V', 'SyncService:I',
       ]).catch(() => '');
       if (logcatOut.trim()) {
-        send('adb:log', `Logcat (ToolConfigReceiver/SyncService):\n${logcatOut.slice(-600)}\n`);
+        send('adb:log', `App log:\n${logcatOut.slice(-800)}\n`);
+      } else {
+        send('adb:log', `App log: (empty — ToolConfigReceiver may not have run)\n`);
       }
 
-      return { success: true, syncRunning };
+      return { success: true, syncRunning, deviceIdInPrefs };
     } catch (err) {
       return { success: false, error: err.message };
     }
