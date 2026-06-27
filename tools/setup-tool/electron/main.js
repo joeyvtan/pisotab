@@ -132,12 +132,14 @@ app.whenReady().then(() => {
   }
 
   // FIX: Use .NET ZipFile (works on .xapk extension — PowerShell Expand-Archive rejects non-.zip)
-  // Writes a temp .ps1 to avoid path-escaping issues in inline PowerShell commands
+  // Uses single-quoted PS strings so backslashes in Windows paths are NOT doubled.
+  // Writes a temp .ps1 to avoid any inline-command escaping issues.
   async function extractZip(zipPath, destDir) {
     const ps1 = path.join(getAppsDownloadsDir(), `extract_${Date.now()}.ps1`);
     const script = [
       'Add-Type -Assembly System.IO.Compression.FileSystem',
-      `[System.IO.Compression.ZipFile]::ExtractToDirectory("${zipPath.replace(/\\/g, '\\\\')}", "${destDir.replace(/\\/g, '\\\\')}")`,
+      // Single-quoted PS strings: no variable substitution, no backslash escaping
+      `[System.IO.Compression.ZipFile]::ExtractToDirectory('${zipPath}', '${destDir}')`,
     ].join('\r\n');
     fs.writeFileSync(ps1, script, 'utf8');
     return new Promise((resolve, reject) => {
@@ -200,7 +202,9 @@ app.whenReady().then(() => {
       );
       if (!resp.ok) return null;
       const html = await resp.text();
-      const match = html.match(/<meta[^>]+property="og:image"[^>]+content="([^"]+)"/);
+      // Try both attribute orderings: property before content, or content before property
+      const match = html.match(/<meta[^>]+property="og:image"[^>]+content="([^"]+)"/)
+                 || html.match(/<meta[^>]+content="([^"]+)"[^>]+property="og:image"/);
       return match?.[1] || null;
     } catch {
       return null;
