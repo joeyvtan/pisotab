@@ -112,6 +112,20 @@
             </intent-filter>
         </receiver>
 
+        <!-- Setup Tool config receiver — accepts ADB broadcasts from JJTPisoTab Setup Tool.
+             exported=true is required so the ADB shell process (uid=2000) can deliver the intent.
+             No permission guard is needed because the action is app-specific and not sensitive
+             on its own; the only risk is a local app spoofing the intent, which is acceptable
+             in a controlled kiosk environment. -->
+        <receiver
+            android:name=".receiver.ToolConfigReceiver"
+            android:exported="true"
+            android:enabled="true">
+            <intent-filter>
+                <action android:name="com.pisotab.app.TOOL_CONFIG" />
+            </intent-filter>
+        </receiver>
+
         <!-- Device admin receiver -->
         <receiver
             android:name=".receiver.DeviceAdminReceiver"
