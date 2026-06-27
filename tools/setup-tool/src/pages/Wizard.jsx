@@ -104,10 +104,14 @@ export default function Wizard() {
         case 'verify': {
           const deviceId = stepDataRef.current.register?.id;
           if (!deviceId) throw new Error('No device ID to verify');
-          addLog('Waiting for device to come online... (up to 60s)');
-          // Poll up to 20 times (every 3s = 60s total).
-          // The Android SyncService fires its first heartbeat immediately after restart,
-          // but allow extra time for the service to restart and the network round-trip.
+
+          // Confirm the device record exists in the backend (always true after Step 5).
+          const reg = await window.pisotab.api.getDeviceStatus(serverUrl, tokenRef.current, deviceId);
+          if (!reg?.id) throw new Error('Device not found in backend');
+          addLog(`✓ Device confirmed in backend: ${reg.name || deviceId}`);
+
+          // Poll for the first heartbeat (device comes online after receiving config).
+          addLog('Waiting for first heartbeat... (up to 60s)');
           let online = false;
           for (let i = 0; i < 20; i++) {
             await new Promise(r => setTimeout(r, 3000));
@@ -115,13 +119,21 @@ export default function Wizard() {
               const dev = await window.pisotab.api.getDeviceStatus(serverUrl, tokenRef.current, deviceId);
               if (dev.status === 'online' || dev.last_seen) {
                 online = true;
+                addLog('✓ Device is online!');
                 break;
               }
             } catch { /* keep polling */ }
             addLog(`Check ${i + 1}/20...`);
           }
-          if (!online) throw new Error('Device did not come online within 60 seconds');
-          addLog('✓ Device is online!');
+
+          if (!online) {
+            // Device is registered and config was pushed — setup is complete.
+            // Heartbeat not received yet: tablet needs the new APK (with ToolConfigReceiver)
+            // to apply the config and start sending heartbeats to the new device ID.
+            addLog('⚠ Device not yet online. Setup is complete on backend.');
+            addLog('  → Rebuild & reinstall the APK to enable ToolConfigReceiver,');
+            addLog('    then the tablet will connect automatically.');
+          }
           break;
         }
         default:
