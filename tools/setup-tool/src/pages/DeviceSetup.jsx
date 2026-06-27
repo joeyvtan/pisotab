@@ -31,7 +31,17 @@ export default function DeviceSetup() {
     setLoading(true);
     const result = await window.pisotab.adb.detectDevice();
     setDevice(result.connected ? result : null);
-    if (!result.connected) addLog('No authorized device found. Enable USB debugging and trust this PC.');
+    if (!result.connected) {
+      if (result.unauthorized) {
+        addLog('Device found but not authorized — check the "Trust this computer?" dialog on the tablet.');
+      } else if (result.error) {
+        addLog(`Error: ${result.error}`);
+      } else {
+        addLog('No device found. Connect via USB and enable USB debugging.');
+      }
+    } else {
+      addLog(`✓ Connected: ${result.model} (${result.serial})`);
+    }
     setLoading(false);
   }
 

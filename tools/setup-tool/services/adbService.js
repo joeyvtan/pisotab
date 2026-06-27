@@ -42,10 +42,22 @@ function setupAdbHandlers(ipcMain, mainWindow, getAssetPath) {
   ipcMain.handle('adb:detect', async () => {
     try {
       const out = await runAdb(['devices', '-l']);
-      const lines = out.trim().split('\n').slice(1).filter(l => l.includes('\tdevice'));
-      if (lines.length === 0) return { connected: false };
-      const line = lines[0];
-      const serial  = line.split(/\s+/)[0];
+      // Split on \r\n or \n (Windows ADB uses CRLF), skip the header line
+      const lines = out.split(/\r?\n/).slice(1).filter(l => l.trim() !== '');
+
+      // Match lines where the state column is exactly "device" (authorized + connected).
+      // adb devices -l uses SPACES (not tabs) for column alignment in long format,
+      // so we use \s+ to match one or more of either. The word boundary prevents
+      // matching "device:itel-P11002L" (a property key on the same line).
+      const deviceLines = lines.filter(l => /^\S+\s+device(\s|$)/.test(l));
+
+      if (deviceLines.length === 0) {
+        const unauthorized = lines.some(l => /^\S+\s+unauthorized(\s|$)/.test(l));
+        return { connected: false, unauthorized };
+      }
+
+      const line    = deviceLines[0];
+      const serial  = line.trim().split(/\s+/)[0];
       const model   = (line.match(/model:(\S+)/) || [])[1]?.replace(/_/g, ' ') || 'Unknown';
       const product = (line.match(/product:(\S+)/) || [])[1] || '';
       return { connected: true, serial, model, product };
@@ -87,10 +99,9 @@ function setupAdbHandlers(ipcMain, mainWindow, getAssetPath) {
 
   ipcMain.handle('adb:get-version', async () => {
     try {
-      const out = await runAdb([
-        'shell', 'dumpsys', 'package', 'com.pisotab.app', '|', 'grep', 'versionName',
-      ]);
-      const match = out.match(/versionName=(.+)/);
+      // Get full dumpsys output and parse in Node — pipe operators don't work in spawn
+      const out = await runAdb(['shell', 'dumpsys', 'package', 'com.pisotab.app']);
+      const match = out.match(/versionName=([^\r\n\s]+)/);
       return { version: match?.[1]?.trim() || null };
     } catch {
       return { version: null };
