@@ -122,6 +122,17 @@ function setupAdbHandlers(ipcMain, mainWindow, getAssetPath) {
     }
   });
 
+  ipcMain.handle('adb:check-receiver', async () => {
+    try {
+      // Parse pm dump in Node — pipe/grep operators can't be passed as spawn args
+      const out = await runAdb(['shell', 'pm', 'dump', 'com.pisotab.app']);
+      const hasReceiver = out.includes('ToolConfigReceiver');
+      return { present: hasReceiver };
+    } catch (err) {
+      return { present: false, error: err.message };
+    }
+  });
+
   ipcMain.handle('adb:push-config', async (_, config) => {
     const args = [
       'shell', 'am', 'broadcast',

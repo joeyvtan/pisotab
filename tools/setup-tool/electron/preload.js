@@ -10,6 +10,7 @@ contextBridge.exposeInMainWorld('pisotab', {
     installApk:      (path)   => ipcRenderer.invoke('adb:install', path),
     setDeviceOwner:  ()       => ipcRenderer.invoke('adb:set-owner'),
     checkDeviceOwner:()       => ipcRenderer.invoke('adb:check-owner'),
+    checkReceiver:   ()       => ipcRenderer.invoke('adb:check-receiver'),
     pushConfig:      (config) => ipcRenderer.invoke('adb:push-config', config),
     autoBootOnCharge:()       => ipcRenderer.invoke('adb:auto-boot'),
     factoryReset:    ()       => ipcRenderer.invoke('adb:factory-reset'),

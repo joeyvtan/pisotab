@@ -94,11 +94,27 @@ export default function Wizard() {
         case 'config': {
           const deviceId = stepDataRef.current.register?.id;
           if (!deviceId) throw new Error('No device ID from registration step');
+
+          // Verify ToolConfigReceiver is present in the installed APK.
+          // If missing, the broadcast will be delivered to 0 receivers and the
+          // device will never update its device_id or send heartbeats to the new ID.
+          addLog('Checking ToolConfigReceiver in installed APK...');
+          const rxCheck = await window.pisotab.adb.checkReceiver();
+          if (!rxCheck.present) {
+            throw new Error(
+              'ToolConfigReceiver not found in the installed APK. ' +
+              'Rebuild the APK from the latest commit (includes receiver in AndroidManifest.xml) ' +
+              'and reinstall, then run the wizard again.'
+            );
+          }
+          addLog('✓ ToolConfigReceiver confirmed in installed APK');
+
           window.pisotab.adb.onLog(addLog);
           const result = await window.pisotab.adb.pushConfig({ serverUrl, deviceId, deviceName, adminPin });
           window.pisotab.adb.offLog();
           if (!result.success) throw new Error(result.error || 'Config push failed');
           addLog(`✓ Config pushed (device ID: ${deviceId})`);
+          addLog('  → Next heartbeat (≤30s) will use the new device ID automatically.');
           break;
         }
         case 'verify': {

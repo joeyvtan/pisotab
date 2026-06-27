@@ -4,7 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
-import com.pisotab.app.service.SyncService
+import com.pisotab.app.PisoTabApp
 import com.pisotab.app.util.PrefsManager
 
 /**
@@ -18,8 +18,13 @@ import com.pisotab.app.util.PrefsManager
  *       --es admin_pin  "1234"
  *
  * Only non-empty values overwrite existing prefs, so partial updates are safe.
- * After writing prefs, SyncService is restarted so the new server_url/device_id
- * take effect immediately without a manual reboot.
+ *
+ * No SyncService restart is needed: SyncService.startHeartbeat() reads
+ * app.prefs.deviceId fresh on every 30-second iteration. The next tick
+ * after this receiver fires will automatically use the new device_id.
+ *
+ * If server_url changes, PisoTabApp.initApi() is called to rebuild the
+ * Retrofit client with the new base URL before the next heartbeat.
  */
 class ToolConfigReceiver : BroadcastReceiver() {
 
@@ -27,6 +32,7 @@ class ToolConfigReceiver : BroadcastReceiver() {
         if (intent.action != "com.pisotab.app.TOOL_CONFIG") return
 
         val prefs = PrefsManager(context)
+        val oldServerUrl = prefs.serverUrl
 
         intent.getStringExtra("server_url")?.takeIf { it.isNotBlank() }?.let {
             prefs.serverUrl = it
@@ -45,18 +51,19 @@ class ToolConfigReceiver : BroadcastReceiver() {
             Log.i(TAG, "admin_pin updated")
         }
 
-        // Restart SyncService so the new server_url and device_id take effect now.
-        restartSyncService(context)
-    }
-
-    private fun restartSyncService(context: Context) {
-        try {
-            context.stopService(Intent(context, SyncService::class.java))
-            context.startForegroundService(Intent(context, SyncService::class.java))
-            Log.i(TAG, "SyncService restarted with new config")
-        } catch (e: Exception) {
-            Log.w(TAG, "Could not restart SyncService: ${e.message}")
+        // If the server URL changed, reinitialize the Retrofit client so the next
+        // heartbeat hits the new server. The heartbeat loop reads device_id from prefs
+        // on every tick, so no service restart is needed for device_id changes.
+        if (prefs.serverUrl != oldServerUrl) {
+            try {
+                PisoTabApp.instance.initApi()
+                Log.i(TAG, "API client reinitialized for new server URL: ${prefs.serverUrl}")
+            } catch (e: Exception) {
+                Log.w(TAG, "Could not reinitialize API: ${e.message}")
+            }
         }
+
+        Log.i(TAG, "Config applied — next heartbeat will use device_id=${prefs.deviceId}")
     }
 
     companion object {
