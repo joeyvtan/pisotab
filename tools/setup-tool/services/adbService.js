@@ -134,7 +134,7 @@ function setupAdbHandlers(ipcMain, mainWindow, getAssetPath) {
   });
 
   ipcMain.handle('adb:push-config', async (_, config) => {
-    const args = [
+    const broadcastArgs = [
       'shell', 'am', 'broadcast',
       '-a', 'com.pisotab.app.TOOL_CONFIG',
       '--es', 'server_url',  config.serverUrl  || '',
@@ -143,25 +143,44 @@ function setupAdbHandlers(ipcMain, mainWindow, getAssetPath) {
       '--es', 'admin_pin',   config.adminPin   || '',
     ];
     try {
-      const out = await runAdb(args);
-      if (!out.includes('Broadcast completed')) {
+      const broadcastOut = await runAdb(broadcastArgs);
+      send('adb:log', `Broadcast result: ${broadcastOut.trim()}\n`);
+      if (!broadcastOut.includes('Broadcast completed')) {
         return { success: false, error: 'Broadcast not completed' };
       }
 
-      // ToolConfigReceiver (triggered by the broadcast above) starts SyncService internally
-      // using the same-package context — identical to the BootReceiver pattern.
-      // Additionally, launch MainActivity so the kiosk app is visible and running.
-      // SyncService.android:exported=false so it cannot be started from ADB shell directly;
-      // MainActivity is exported=true and starts SyncService in its onCreate().
-      try {
-        await runAdb(['shell', 'am', 'start',
-          '-n', 'com.pisotab.app/.ui.MainActivity']);
-        send('adb:log', 'Kiosk app launched — SyncService will start and send first heartbeat\n');
-      } catch (_) {
-        send('adb:log', 'Note: could not launch MainActivity (app may already be in foreground)\n');
+      // Launch the app — MainActivity is exported so ADB shell can start it.
+      // MainActivity.onCreate() calls startForegroundService(SyncService).
+      // SyncService.android:exported=false means we cannot start it directly from ADB shell.
+      const startOut = await runAdb(['shell', 'am', 'start',
+        '-n', 'com.pisotab.app/.ui.MainActivity']).catch(e => `ERROR: ${e.message}`);
+      send('adb:log', `am start: ${String(startOut).trim()}\n`);
+
+      // Wait 4s for the app to initialize, then verify SyncService is actually running.
+      await new Promise(r => setTimeout(r, 4000));
+      const svcOut = await runAdb(['shell', 'dumpsys', 'activity', 'services',
+        'com.pisotab.app']).catch(() => '');
+      const syncRunning = svcOut.includes('SyncService');
+      send('adb:log', `SyncService running: ${syncRunning}\n`);
+
+      if (!syncRunning) {
+        // SyncService is not up — log the service dump for diagnosis
+        send('adb:log', `[DIAG] Service dump:\n${svcOut.slice(0, 400)}\n`);
+        // Check if the app process is alive at all
+        const pidOut = await runAdb(['shell', 'pidof', 'com.pisotab.app']).catch(() => '');
+        send('adb:log', `App process PID: ${pidOut.trim() || 'NOT RUNNING'}\n`);
       }
 
-      return { success: true };
+      // Verify ToolConfigReceiver actually wrote the new device_id to prefs by reading
+      // the shared_prefs file via the Device Owner shell content resolver.
+      const prefsOut = await runAdb([
+        'shell', 'cat',
+        '/data/data/com.pisotab.app/shared_prefs/pisotab_prefs.xml',
+      ]).catch(() => '');
+      const deviceIdInPrefs = (prefsOut.match(/name="device_id"[^>]*>([^<]+)</) || [])[1] || '(not found)';
+      send('adb:log', `device_id in prefs: ${deviceIdInPrefs}\n`);
+
+      return { success: true, syncRunning, deviceIdInPrefs };
     } catch (err) {
       return { success: false, error: err.message };
     }
