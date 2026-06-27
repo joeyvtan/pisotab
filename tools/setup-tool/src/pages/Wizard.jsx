@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { CheckCircle, Circle, Loader, XCircle } from 'lucide-react';
 import LogPanel from '../components/LogPanel';
 
@@ -20,6 +20,7 @@ function initialStepState() {
 export default function Wizard() {
   const [stepState,   setStepState]   = useState(initialStepState);
   const [stepData,    setStepData]    = useState({}); // { detect: {...}, register: { id } }
+  const stepDataRef = useRef({});                    // mirrors stepData — readable synchronously between steps
   const [logs,        setLogs]        = useState([]);
   const [serverUrl,   setServerUrl]   = useState('https://api.jjtpisotab.com');
   const [email,       setEmail]       = useState('');
@@ -72,23 +73,24 @@ export default function Wizard() {
         }
         case 'register': {
           if (!token) {
-            // Login first
             addLog('Logging in to backend...');
             const auth = await window.pisotab.api.login(serverUrl, email, password);
             setToken(auth.token);
             addLog(`✓ Logged in as ${auth.user?.email || email}`);
             const device = await window.pisotab.api.registerDevice(serverUrl, auth.token, deviceName);
-            setStepData(prev => ({ ...prev, register: device }));
+            stepDataRef.current = { ...stepDataRef.current, register: device };
+            setStepData({ ...stepDataRef.current });
             addLog(`✓ Device registered: ${device.id}`);
           } else {
             const device = await window.pisotab.api.registerDevice(serverUrl, token, deviceName);
-            setStepData(prev => ({ ...prev, register: device }));
+            stepDataRef.current = { ...stepDataRef.current, register: device };
+            setStepData({ ...stepDataRef.current });
             addLog(`✓ Device registered: ${device.id}`);
           }
           break;
         }
         case 'config': {
-          const deviceId = stepData.register?.id;
+          const deviceId = stepDataRef.current.register?.id;
           if (!deviceId) throw new Error('No device ID from registration step');
           window.pisotab.adb.onLog(addLog);
           const result = await window.pisotab.adb.pushConfig({ serverUrl, deviceId, deviceName, adminPin });
@@ -98,7 +100,7 @@ export default function Wizard() {
           break;
         }
         case 'verify': {
-          const deviceId = stepData.register?.id;
+          const deviceId = stepDataRef.current.register?.id;
           if (!deviceId) throw new Error('No device ID to verify');
           addLog('Waiting for device to come online...');
           // Poll up to 5 times (every 3s)
@@ -155,6 +157,7 @@ export default function Wizard() {
 
   function reset() {
     setStepState(initialStepState());
+    stepDataRef.current = {};
     setStepData({});
     setLogs([]);
     setToken('');
