@@ -61,7 +61,7 @@ export default function Wizard() {
           const result = await window.pisotab.adb.setDeviceOwner();
           window.pisotab.adb.offLog();
           if (!result.success) throw new Error(result.error || 'Set Device Owner failed. Remove all Google accounts first.');
-          addLog('✓ Device Owner set');
+          addLog(result.alreadySet ? '✓ Device Owner already set (skipped)' : '✓ Device Owner set');
           break;
         }
         case 'details': {

@@ -78,11 +78,25 @@ function setupAdbHandlers(ipcMain, mainWindow, getAssetPath) {
 
   ipcMain.handle('adb:set-owner', async () => {
     try {
+      // Check first — calling set-device-owner when already set throws a Java exception
+      // and adb shell still exits 0, so we must detect it ourselves before attempting.
+      const checkOut = await runAdb(['shell', 'dpm', 'list-owners']);
+      if (checkOut.includes('com.pisotab.app')) {
+        send('adb:log', 'Device Owner already set to com.pisotab.app\n');
+        return { success: true, alreadySet: true };
+      }
+
       const out = await runAdb([
         'shell', 'dpm', 'set-device-owner',
         'com.pisotab.app/.receiver.DeviceAdminReceiver',
       ]);
-      return { success: out.toLowerCase().includes('success') };
+      const succeeded = out.toLowerCase().includes('success');
+      if (!succeeded) {
+        // Extract the meaningful error line from the output (skip the Java stack trace)
+        const firstLine = out.split(/\r?\n/).find(l => l.trim() && !l.startsWith('\t') && !l.startsWith('at '));
+        return { success: false, error: firstLine?.trim() || 'Set Device Owner failed' };
+      }
+      return { success: true };
     } catch (err) {
       return { success: false, error: err.message };
     }
