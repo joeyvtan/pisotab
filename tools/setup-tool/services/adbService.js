@@ -171,16 +171,18 @@ function setupAdbHandlers(ipcMain, mainWindow, getAssetPath) {
         send('adb:log', `App process PID: ${pidOut.trim() || 'NOT RUNNING'}\n`);
       }
 
-      // Verify ToolConfigReceiver actually wrote the new device_id to prefs by reading
-      // the shared_prefs file via the Device Owner shell content resolver.
-      const prefsOut = await runAdb([
-        'shell', 'cat',
-        '/data/data/com.pisotab.app/shared_prefs/pisotab_prefs.xml',
+      // Read logcat to confirm ToolConfigReceiver actually wrote the device_id and
+      // SyncService started with it. -d dumps the current ring buffer (no hang),
+      // -s filters to only our tags.
+      const logcatOut = await runAdb([
+        'shell', 'logcat', '-d', '-s',
+        'ToolConfigReceiver:I', 'SyncService:W',
       ]).catch(() => '');
-      const deviceIdInPrefs = (prefsOut.match(/name="device_id"[^>]*>([^<]+)</) || [])[1] || '(not found)';
-      send('adb:log', `device_id in prefs: ${deviceIdInPrefs}\n`);
+      if (logcatOut.trim()) {
+        send('adb:log', `Logcat (ToolConfigReceiver/SyncService):\n${logcatOut.slice(-600)}\n`);
+      }
 
-      return { success: true, syncRunning, deviceIdInPrefs };
+      return { success: true, syncRunning };
     } catch (err) {
       return { success: false, error: err.message };
     }

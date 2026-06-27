@@ -29,11 +29,14 @@ class PrefsManager(context: Context) {
 
     var serverUrl: String
         get() = prefs.getString("server_url", "https://api.jjtpisotab.com") ?: "https://api.jjtpisotab.com"
-        set(v) = prefs.edit { putString("server_url", v) }
+        // commit=true (synchronous) — SyncService may start in a fresh process immediately after
+        // ToolConfigReceiver writes this; async apply() risks the new process reading stale disk data.
+        set(v) = prefs.edit(commit = true) { putString("server_url", v) }
 
     var deviceId: String
         get() = prefs.getString("device_id", "") ?: ""
-        set(v) = prefs.edit { putString("device_id", v) }
+        // commit=true (synchronous) — same reason as serverUrl above.
+        set(v) = prefs.edit(commit = true) { putString("device_id", v) }
 
     var deviceName: String
         get() = prefs.getString("device_name", "Phone 01") ?: "Phone 01"
