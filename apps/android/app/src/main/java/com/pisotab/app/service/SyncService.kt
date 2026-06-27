@@ -179,7 +179,6 @@ class SyncService : Service() {
     private fun startHeartbeat() {
         scope.launch {
             while (true) {
-                delay(30_000L)
                 val deviceId = app.prefs.deviceId
                 if (deviceId.isNotEmpty()) {
                     // Include live session state so the server DB stays accurate when
@@ -258,6 +257,8 @@ class SyncService : Service() {
                         }
                     } catch (_: Exception) {}
                 }
+
+                delay(30_000L)
             }
         }
     }

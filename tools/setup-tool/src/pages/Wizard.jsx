@@ -102,10 +102,12 @@ export default function Wizard() {
         case 'verify': {
           const deviceId = stepDataRef.current.register?.id;
           if (!deviceId) throw new Error('No device ID to verify');
-          addLog('Waiting for device to come online...');
-          // Poll up to 5 times (every 3s)
+          addLog('Waiting for device to come online... (up to 60s)');
+          // Poll up to 20 times (every 3s = 60s total).
+          // The Android SyncService fires its first heartbeat immediately after restart,
+          // but allow extra time for the service to restart and the network round-trip.
           let online = false;
-          for (let i = 0; i < 5; i++) {
+          for (let i = 0; i < 20; i++) {
             await new Promise(r => setTimeout(r, 3000));
             try {
               const dev = await window.pisotab.api.getDeviceStatus(serverUrl, token, deviceId);
@@ -114,9 +116,9 @@ export default function Wizard() {
                 break;
               }
             } catch { /* keep polling */ }
-            addLog(`Check ${i + 1}/5...`);
+            addLog(`Check ${i + 1}/20...`);
           }
-          if (!online) throw new Error('Device did not come online within 15 seconds');
+          if (!online) throw new Error('Device did not come online within 60 seconds');
           addLog('✓ Device is online!');
           break;
         }
