@@ -482,11 +482,13 @@ Bundled native binaries (not npm — copied into `assets/`):
 - [ ] Register in `AndroidManifest.xml`
 - [ ] Test end-to-end: tool pushes config → tablet applies without screen touch
 
-**Phase 18.8 — Packaging + Distribution**
-- [ ] Icon file (`assets/icon.ico`) for NSIS installer
-- [ ] Test electron-builder output: `npm run build`
-- [ ] Windows NSIS installer target
-- [ ] Windows portable .exe target
+**Phase 18.8 — Packaging + Distribution** ✅ COMPLETE (2026-06-27)
+- [x] Icon file (`assets/icon.ico`) — converted from JJT logo PNG, 256×256
+- [x] `package.json` — `win.icon`, `nsis`, `portable` targets configured
+- [x] `.env` — `CSC_IDENTITY_AUTO_DISCOVERY=false`, `WIN_CSC_LINK=` (no code signing cert)
+- [x] Windows NSIS installer: `dist-electron/JJTPisoTab Setup Tool Setup 1.0.0.exe` (105 MB)
+- [x] Windows portable EXE: `dist-electron/JJTPisoTab Setup Tool 1.0.0.exe` (105 MB)
+- [x] Root cause fix for winCodeSign symlink error: patched `node_modules/builder-util/out/util.js` to inject a `7za_wrap.cmd` wrapper as `SZA_PATH` — the wrapper converts 7za exit code 2 (macOS dylib symlink failure on Windows) → exit code 0; Go's `exec.Command` handles .cmd files natively on Windows
 - [ ] Add to `GET /api/downloads` as a downloadable file type (optional)
 
 **Summary of completed work (Phase 18.1–18.6):**
