@@ -56,4 +56,16 @@ contextBridge.exposeInMainWorld('pisotab', {
     getBundledApkPath:   ()        => ipcRenderer.invoke('fs:apk-path'),
   },
 
+  apps: {
+    loadCatalog:      ()           => ipcRenderer.invoke('apps:load-catalog'),
+    listDownloaded:   ()           => ipcRenderer.invoke('apps:list-downloaded'),
+    checkInstalled:   ()           => ipcRenderer.invoke('apps:check-installed'),
+    downloadApk:      (opts)       => ipcRenderer.invoke('apps:download-apk', opts),
+    installApp:       (opts)       => ipcRenderer.invoke('apps:install-app', opts),
+    onDownloadProgress: (cb) => ipcRenderer.on('apps:download-progress', (_, data) => cb(data)),
+    offDownloadProgress: ()  => ipcRenderer.removeAllListeners('apps:download-progress'),
+    onInstallLog:  (cb) => ipcRenderer.on('apps:install-log',  (_, msg) => cb(msg)),
+    offInstallLog: ()   => ipcRenderer.removeAllListeners('apps:install-log'),
+  },
+
 });

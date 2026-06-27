@@ -222,6 +222,7 @@ async function main() {
   app.use('/api/devices',          require('./routes/deviceConfigs'));
   app.use('/api/support',          require('./routes/support'));
   app.use('/api/notifications',    require('./routes/notifications'));
+  app.use('/api/apps-catalog',     require('./routes/appsCatalog'));
 
   app.get('/health', (_req, res) => res.json({ ok: true, uptime: process.uptime() }));
 

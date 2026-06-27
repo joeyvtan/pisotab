@@ -491,6 +491,18 @@ Bundled native binaries (not npm — copied into `assets/`):
 - [x] Root cause fix for winCodeSign symlink error: patched `node_modules/builder-util/out/util.js` to inject a `7za_wrap.cmd` wrapper as `SZA_PATH` — the wrapper converts 7za exit code 2 (macOS dylib symlink failure on Windows) → exit code 0; Go's `exec.Command` handles .cmd files natively on Windows
 - [ ] Add to `GET /api/downloads` as a downloadable file type (optional)
 
+**Phase 18.9 — App Manager Upgrade (Catalog + APKPure Download)** ✅ COMPLETE (2026-06-27)
+- [x] `apps/backend/data/apps-catalog.json` — admin-editable catalog (18 curated kiosk games)
+- [x] `apps/backend/src/routes/appsCatalog.js` — `GET /api/apps-catalog` (no auth, admin edits JSON)
+- [x] Backend `index.js` — registered route at `/api/apps-catalog`
+- [x] `tools/setup-tool/assets/apps-catalog.json` — bundled fallback catalog (works offline / no backend)
+- [x] `main.js` — 5 new IPC handlers: `apps:load-catalog`, `apps:list-downloaded`, `apps:check-installed`, `apps:download-apk`, `apps:install-app`
+- [x] Download mechanism: hidden Electron BrowserWindow → APKPure URL (`d.apkpure.com/b/{APK|XAPK}/{package}?version=latest`) → `session.will-download` event → saved to `userData/app-downloads/`
+- [x] XAPK extraction: PowerShell `Expand-Archive` → find inner APK → push OBB if present → `adb install`
+- [x] `preload.js` — exposed `window.pisotab.apps` namespace with 7 methods
+- [x] `AppManager.jsx` — full KSoft-style rewrite: Load Apps button → grid with status badges (Installed/Downloaded/Available) → Download (sequential) → Install to connected tablet; multi-tablet support by re-connecting different tablet and clicking Install again
+- Design: Download once to PC → install to N tablets without re-downloading
+
 **Summary of completed work (Phase 18.1–18.6):**
 Files created: 25 files across `tools/setup-tool/` including Electron main+preload, 4 Node.js services, 5 React pages, 2 shared components, Vite/Tailwind config, package.json, .gitignore, and asset placeholder directories. Firmware binaries automatically copied from `firmware/` into `assets/firmware/`. All npm dependencies installed and serialport rebuilt for Electron ABI.
 

@@ -1,121 +1,318 @@
-import { useState } from 'react';
-import { FolderOpen, Package, HardDrive } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Download, Smartphone, RefreshCw, CheckCircle, Loader2 } from 'lucide-react';
 import LogPanel from '../components/LogPanel';
 
-function formatSize(bytes) {
+function formatMB(bytes) {
+  if (!bytes) return '';
   if (bytes > 1e9) return `${(bytes / 1e9).toFixed(1)} GB`;
-  if (bytes > 1e6) return `${(bytes / 1e6).toFixed(1)} MB`;
-  return `${(bytes / 1e3).toFixed(0)} KB`;
+  return `${(bytes / 1e6).toFixed(0)} MB`;
+}
+
+const CATEGORY_COLORS = {
+  Arcade:     'bg-orange-900 text-orange-300',
+  Racing:     'bg-blue-900 text-blue-300',
+  Simulation: 'bg-green-900 text-green-300',
+  Online:     'bg-purple-900 text-purple-300',
+  Strategy:   'bg-yellow-900 text-yellow-300',
+  Puzzle:     'bg-pink-900 text-pink-300',
+  Casual:     'bg-teal-900 text-teal-300',
+  Music:      'bg-indigo-900 text-indigo-300',
+  Action:     'bg-red-900 text-red-300',
+};
+
+function AppCard({ app, selected, status, progress, onToggle }) {
+  const initial = app.name[0].toUpperCase();
+  const catCls = CATEGORY_COLORS[app.category] || 'bg-gray-800 text-gray-400';
+
+  const isInstalled = status === 'installed';
+  const isDownloaded = status === 'downloaded';
+  const isDownloading = status === 'downloading';
+
+  return (
+    <button
+      onClick={() => !isDownloading && onToggle(app.package)}
+      disabled={isDownloading}
+      className={`text-left p-3 rounded-lg border transition-colors ${
+        selected
+          ? 'border-red-600 bg-red-950'
+          : 'border-gray-800 bg-gray-900 hover:border-gray-700'
+      } ${isDownloading ? 'cursor-wait opacity-80' : ''}`}
+    >
+      {/* App icon + name row */}
+      <div className="flex items-start gap-3">
+        {/* Icon placeholder */}
+        <div className="w-10 h-10 rounded-xl bg-gray-800 flex items-center justify-center text-lg font-bold text-white shrink-0 border border-gray-700">
+          {initial}
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium text-white truncate leading-tight">{app.name}</p>
+          <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+            <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${catCls}`}>
+              {app.category}
+            </span>
+            <span className="text-[10px] text-gray-500">{app.type}</span>
+            {app.size_mb && (
+              <span className="text-[10px] text-gray-500">~{app.size_mb} MB</span>
+            )}
+          </div>
+        </div>
+
+        {/* Status badge */}
+        <div className="shrink-0 mt-0.5">
+          {isInstalled && (
+            <span className="flex items-center gap-1 text-[10px] font-medium text-green-400">
+              <CheckCircle size={11} />
+              Installed
+            </span>
+          )}
+          {isDownloaded && !isInstalled && (
+            <span className="text-[10px] font-medium text-blue-400">Downloaded</span>
+          )}
+          {isDownloading && (
+            <span className="flex items-center gap-1 text-[10px] font-medium text-yellow-400">
+              <Loader2 size={11} className="animate-spin" />
+              {progress > 0 ? `${progress}%` : '…'}
+            </span>
+          )}
+        </div>
+      </div>
+    </button>
+  );
 }
 
 export default function AppManager() {
-  const [folder,   setFolder]   = useState('');
-  const [apks,     setApks]     = useState([]);
-  const [selected, setSelected] = useState(new Set());
-  const [logs,     setLogs]     = useState([]);
-  const [loading,  setLoading]  = useState(false);
+  const [catalog,   setCatalog]   = useState([]);
+  const [selected,  setSelected]  = useState(new Set());
+  const [statuses,  setStatuses]  = useState({});   // package → 'installed'|'downloaded'|''
+  const [progress,  setProgress]  = useState({});   // package → 0-100
+  const [logs,      setLogs]      = useState([]);
+  const [loading,   setLoading]   = useState(false);
+  const [loaded,    setLoaded]    = useState(false);
 
-  const addLog = (msg) => {
+  const addLog = useCallback((msg) => {
     const ts = new Date().toLocaleTimeString();
-    setLogs(prev => [...prev, `[${ts}] ${String(msg).trim()}`]);
-  };
+    setLogs(prev => [...prev, `[${ts}] ${String(msg).trimEnd()}`]);
+  }, []);
 
-  async function browseFolder() {
-    const dir = await window.pisotab.fs.selectFolder();
-    if (!dir) return;
-    setFolder(dir);
-    const list = await window.pisotab.fs.listApks(dir);
-    setApks(list);
-    setSelected(new Set());
-    addLog(`Found ${list.length} APK${list.length !== 1 ? 's' : ''} in ${dir}`);
+  // Listen for download progress and install log events
+  useEffect(() => {
+    window.pisotab.apps.onDownloadProgress(({ packageName, received, total }) => {
+      const pct = total > 0 ? Math.round((received / total) * 100) : 0;
+      setProgress(prev => ({ ...prev, [packageName]: pct }));
+    });
+    window.pisotab.apps.onInstallLog((msg) => addLog(msg));
+    return () => {
+      window.pisotab.apps.offDownloadProgress();
+      window.pisotab.apps.offInstallLog();
+    };
+  }, [addLog]);
+
+  async function refreshStatuses(apps) {
+    const list = apps || catalog;
+    if (list.length === 0) return;
+
+    const [downloaded, installed] = await Promise.all([
+      window.pisotab.apps.listDownloaded(),
+      window.pisotab.apps.checkInstalled(),
+    ]);
+
+    const downloadedSet = new Set(downloaded.map(f => f.filename.replace(/\.(apk|xapk)$/i, '')));
+    const installedSet  = new Set(installed);
+
+    setStatuses(prev => {
+      const next = { ...prev };
+      for (const app of list) {
+        if (next[app.package] === 'downloading') continue; // don't overwrite in-progress
+        if (installedSet.has(app.package))   next[app.package] = 'installed';
+        else if (downloadedSet.has(app.package)) next[app.package] = 'downloaded';
+        else                                 next[app.package] = '';
+      }
+      return next;
+    });
   }
 
-  function toggleSelect(path) {
+  async function loadApps() {
+    setLoading(true);
+    addLog('Loading app catalog...');
+    try {
+      const apps = await window.pisotab.apps.loadCatalog();
+      setCatalog(apps);
+      setLoaded(true);
+      addLog(`Loaded ${apps.length} apps from catalog.`);
+      await refreshStatuses(apps);
+      addLog('Status check complete.');
+    } catch (err) {
+      addLog(`Error: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function toggleSelect(pkg) {
     setSelected(prev => {
       const next = new Set(prev);
-      next.has(path) ? next.delete(path) : next.add(path);
+      next.has(pkg) ? next.delete(pkg) : next.add(pkg);
       return next;
     });
   }
 
   function selectAll() {
-    setSelected(new Set(apks.map(a => a.path)));
+    setSelected(new Set(catalog.map(a => a.package)));
   }
 
-  async function installSelected() {
-    const toInstall = apks.filter(a => selected.has(a.path));
-    if (toInstall.length === 0) { addLog('No APKs selected.'); return; }
-    setLoading(true);
-    window.pisotab.adb.onLog((msg) => addLog(msg));
-    for (const apk of toInstall) {
-      addLog(`Installing ${apk.name}...`);
-      const result = await window.pisotab.adb.installApk(apk.path);
-      addLog(result.success ? `✓ ${apk.name} installed` : `✗ ${apk.name} failed: ${result.error}`);
-    }
-    window.pisotab.adb.offLog();
-    setLoading(false);
+  function clearSelection() {
+    setSelected(new Set());
   }
+
+  // Download selected apps one by one (sequential to avoid bandwidth overload)
+  async function downloadSelected() {
+    const toDownload = catalog.filter(a =>
+      selected.has(a.package) && statuses[a.package] !== 'downloaded' && statuses[a.package] !== 'installed'
+    );
+    if (toDownload.length === 0) { addLog('All selected apps are already downloaded or installed.'); return; }
+
+    for (const app of toDownload) {
+      setStatuses(prev => ({ ...prev, [app.package]: 'downloading' }));
+      setProgress(prev => ({ ...prev, [app.package]: 0 }));
+      addLog(`Downloading ${app.name} (${app.type})...`);
+
+      const result = await window.pisotab.apps.downloadApk({ packageName: app.package, type: app.type });
+
+      if (result.success) {
+        addLog(result.cached ? `${app.name} already cached.` : `✓ ${app.name} downloaded.`);
+        setStatuses(prev => ({ ...prev, [app.package]: 'downloaded' }));
+      } else {
+        addLog(`✗ ${app.name}: ${result.error}`);
+        setStatuses(prev => ({ ...prev, [app.package]: '' }));
+      }
+      setProgress(prev => ({ ...prev, [app.package]: 0 }));
+    }
+  }
+
+  // Install selected downloaded/installed-eligible apps
+  async function installSelected() {
+    const toInstall = catalog.filter(a =>
+      selected.has(a.package) &&
+      (statuses[a.package] === 'downloaded' || statuses[a.package] === 'installed')
+    );
+    if (toInstall.length === 0) { addLog('No downloaded apps selected. Download first.'); return; }
+
+    for (const app of toInstall) {
+      addLog(`Installing ${app.name}...`);
+      const result = await window.pisotab.apps.installApp({ packageName: app.package, type: app.type });
+      if (result.success) {
+        setStatuses(prev => ({ ...prev, [app.package]: 'installed' }));
+      }
+    }
+    addLog('Install batch complete.');
+  }
+
+  const downloadCount = [...selected].filter(pkg => {
+    const s = statuses[pkg];
+    return s !== 'downloaded' && s !== 'installed' && s !== 'downloading';
+  }).length;
+
+  const installCount = [...selected].filter(pkg =>
+    statuses[pkg] === 'downloaded' || statuses[pkg] === 'installed'
+  ).length;
+
+  const isDownloading = Object.values(statuses).some(s => s === 'downloading');
 
   return (
-    <div className="p-6 space-y-5 max-w-3xl">
-      <h2 className="text-lg font-semibold text-white">App Manager</h2>
-
-      {/* Folder picker */}
-      <div className="flex items-center gap-3">
-        <button onClick={browseFolder}
-          className="flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded text-sm text-gray-300 transition-colors">
-          <FolderOpen size={15} />
-          Load APKs from Folder
-        </button>
-        {folder && <p className="text-xs text-gray-500 truncate flex-1">{folder}</p>}
+    <div className="p-6 space-y-5 max-w-4xl">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-white">App Manager</h2>
+        {loaded && (
+          <button
+            onClick={() => refreshStatuses()}
+            disabled={loading}
+            className="flex items-center gap-1.5 text-xs px-2.5 py-1 bg-gray-800 hover:bg-gray-700 rounded text-gray-400 transition-colors"
+          >
+            <RefreshCw size={11} className={loading ? 'animate-spin' : ''} />
+            Refresh Status
+          </button>
+        )}
       </div>
 
-      {/* APK grid */}
-      {apks.length > 0 && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <p className="text-xs text-gray-400">{apks.length} APK{apks.length !== 1 ? 's' : ''} found</p>
-            <div className="flex gap-2">
-              <button onClick={selectAll}
-                className="text-xs px-2 py-1 bg-gray-800 hover:bg-gray-700 rounded text-gray-300">
-                Select All
-              </button>
-              <button onClick={installSelected} disabled={loading || selected.size === 0}
-                className="flex items-center gap-1.5 text-xs px-3 py-1 bg-red-600 hover:bg-red-700 disabled:opacity-50 rounded text-white transition-colors">
-                Install Selected ({selected.size})
-              </button>
-            </div>
+      {/* Load button (shown before catalog is loaded) */}
+      {!loaded && (
+        <div className="flex flex-col items-start gap-2">
+          <button
+            onClick={loadApps}
+            disabled={loading}
+            className="flex items-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-700 disabled:opacity-60 rounded text-sm text-white font-medium transition-colors"
+          >
+            {loading
+              ? <Loader2 size={15} className="animate-spin" />
+              : <Download size={15} />
+            }
+            {loading ? 'Loading...' : 'Load Apps'}
+          </button>
+          <p className="text-xs text-gray-500">
+            Fetches the app catalog from the server. Works on any PC.
+          </p>
+        </div>
+      )}
+
+      {/* App grid */}
+      {loaded && catalog.length > 0 && (
+        <div className="space-y-4">
+          {/* Action bar */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs text-gray-500 mr-1">{catalog.length} apps</span>
+            <button onClick={selectAll}
+              className="text-xs px-2.5 py-1 bg-gray-800 hover:bg-gray-700 rounded text-gray-300 transition-colors">
+              Select All
+            </button>
+            <button onClick={clearSelection}
+              className="text-xs px-2.5 py-1 bg-gray-800 hover:bg-gray-700 rounded text-gray-300 transition-colors">
+              Clear
+            </button>
+            <div className="flex-1" />
+            <button
+              onClick={downloadSelected}
+              disabled={isDownloading || downloadCount === 0}
+              className="flex items-center gap-1.5 text-xs px-3 py-1.5 bg-blue-700 hover:bg-blue-600 disabled:opacity-50 rounded text-white transition-colors font-medium"
+            >
+              <Download size={12} />
+              Download ({downloadCount})
+            </button>
+            <button
+              onClick={installSelected}
+              disabled={isDownloading || installCount === 0}
+              className="flex items-center gap-1.5 text-xs px-3 py-1.5 bg-red-600 hover:bg-red-700 disabled:opacity-50 rounded text-white transition-colors font-medium"
+            >
+              <Smartphone size={12} />
+              Install ({installCount})
+            </button>
           </div>
 
+          {/* Grid */}
           <div className="grid grid-cols-2 gap-3">
-            {apks.map((apk) => (
-              <button
-                key={apk.path}
-                onClick={() => toggleSelect(apk.path)}
-                className={`text-left p-3 rounded-lg border transition-colors ${
-                  selected.has(apk.path)
-                    ? 'border-red-600 bg-red-950'
-                    : 'border-gray-800 bg-gray-900 hover:border-gray-700'
-                }`}
-              >
-                <div className="flex items-start gap-2">
-                  <Package size={20} className="text-gray-500 mt-0.5 shrink-0" />
-                  <div className="min-w-0">
-                    <p className="text-sm text-white font-medium truncate">{apk.name}</p>
-                    <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
-                      <HardDrive size={10} />
-                      {formatSize(apk.size)}
-                    </p>
-                  </div>
-                </div>
-              </button>
+            {catalog.map((app) => (
+              <AppCard
+                key={app.package}
+                app={app}
+                selected={selected.has(app.package)}
+                status={statuses[app.package] || ''}
+                progress={progress[app.package] || 0}
+                onToggle={toggleSelect}
+              />
             ))}
+          </div>
+
+          {/* Legend */}
+          <div className="flex items-center gap-4 text-[10px] text-gray-600 pt-1">
+            <span className="flex items-center gap-1"><CheckCircle size={10} className="text-green-600" /> Installed on tablet</span>
+            <span className="text-blue-600">Blue = Downloaded on PC</span>
+            <span className="text-gray-500">Download once → Install to many tablets</span>
           </div>
         </div>
       )}
 
-      {apks.length === 0 && folder && (
-        <p className="text-sm text-gray-600">No APK files found in this folder.</p>
+      {loaded && catalog.length === 0 && (
+        <p className="text-sm text-gray-500">No apps in catalog. Add entries to apps-catalog.json on the server.</p>
       )}
 
       <LogPanel logs={logs} onClear={() => setLogs([])} maxHeight="180px" />

@@ -1,0 +1,128 @@
+[
+  {
+    "name": "Subway Surfers",
+    "package": "com.kiloo.subwaysurf",
+    "type": "XAPK",
+    "category": "Arcade",
+    "size_mb": 120
+  },
+  {
+    "name": "Temple Run 2",
+    "package": "com.imangi.templerun2",
+    "type": "APK",
+    "category": "Arcade",
+    "size_mb": 80
+  },
+  {
+    "name": "Hill Climb Racing 2",
+    "package": "com.fingersoft.hillclimb2",
+    "type": "APK",
+    "category": "Racing",
+    "size_mb": 150
+  },
+  {
+    "name": "Traffic Rider",
+    "package": "com.skgames.trafficrider",
+    "type": "APK",
+    "category": "Racing",
+    "size_mb": 95
+  },
+  {
+    "name": "Crossy Road",
+    "package": "com.yodo1.crossyroadcastle",
+    "type": "APK",
+    "category": "Arcade",
+    "size_mb": 60
+  },
+  {
+    "name": "Pou",
+    "package": "me.pou.app",
+    "type": "APK",
+    "category": "Casual",
+    "size_mb": 30
+  },
+  {
+    "name": "Piano Tiles 2",
+    "package": "com.umonistudio.tile",
+    "type": "APK",
+    "category": "Music",
+    "size_mb": 55
+  },
+  {
+    "name": "Vector",
+    "package": "com.nekki.vector",
+    "type": "APK",
+    "category": "Arcade",
+    "size_mb": 45
+  },
+  {
+    "name": "Car Parking Multiplayer",
+    "package": "com.olzhas.carparking.multyplayer",
+    "type": "XAPK",
+    "category": "Simulation",
+    "size_mb": 500
+  },
+  {
+    "name": "Bus Simulator Indonesia",
+    "package": "com.maleo.bussimulatorid",
+    "type": "XAPK",
+    "category": "Simulation",
+    "size_mb": 200
+  },
+  {
+    "name": "Roblox",
+    "package": "com.roblox.client",
+    "type": "XAPK",
+    "category": "Online",
+    "size_mb": 140
+  },
+  {
+    "name": "Mobile Legends",
+    "package": "com.mobile.legends",
+    "type": "XAPK",
+    "category": "Online",
+    "size_mb": 350
+  },
+  {
+    "name": "Clash of Clans",
+    "package": "com.supercell.clashofclans",
+    "type": "APK",
+    "category": "Strategy",
+    "size_mb": 160
+  },
+  {
+    "name": "Candy Crush Saga",
+    "package": "com.king.candycrushsaga",
+    "type": "APK",
+    "category": "Puzzle",
+    "size_mb": 85
+  },
+  {
+    "name": "PUBG Mobile",
+    "package": "com.tencent.ig",
+    "type": "XAPK",
+    "category": "Online",
+    "size_mb": 900
+  },
+  {
+    "name": "Brawl Stars",
+    "package": "com.supercell.brawlstars",
+    "type": "APK",
+    "category": "Online",
+    "size_mb": 300
+  },
+  {
+    "name": "Stickman Warriors",
+    "package": "com.mobirix.stickmanfight",
+    "type": "APK",
+    "category": "Action",
+    "size_mb": 75
+  },
+  {
+    "name": "Fruit Ninja",
+    "package": "com.halfbrick.fruitninjafree",
+    "type": "APK",
+    "category": "Casual",
+    "size_mb": 50
+  }
+]
