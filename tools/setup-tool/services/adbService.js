@@ -144,7 +144,25 @@ function setupAdbHandlers(ipcMain, mainWindow, getAssetPath) {
     ];
     try {
       const out = await runAdb(args);
-      return { success: out.includes('Broadcast completed') };
+      if (!out.includes('Broadcast completed')) {
+        return { success: false, error: 'Broadcast not completed' };
+      }
+
+      // adb install -r kills the app process, so SyncService is not running after install.
+      // The broadcast above ran ToolConfigReceiver (which updated SharedPreferences on disk)
+      // in a temporary spawned process that is now dead. Start SyncService explicitly so
+      // it reads the updated device_id from prefs and begins sending heartbeats immediately.
+      // ADB commands are synchronous — the broadcast fully completed before this line runs,
+      // so prefs are guaranteed to be written before SyncService reads them.
+      try {
+        await runAdb(['shell', 'am', 'start-foreground-service',
+          '-n', 'com.pisotab.app/.service.SyncService']);
+        send('adb:log', 'SyncService started — first heartbeat will fire immediately\n');
+      } catch (_) {
+        send('adb:log', 'Note: could not start SyncService explicitly (may already be running)\n');
+      }
+
+      return { success: true };
     } catch (err) {
       return { success: false, error: err.message };
     }
