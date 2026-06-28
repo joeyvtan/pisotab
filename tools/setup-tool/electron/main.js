@@ -1,5 +1,5 @@
 const { app, BrowserWindow, ipcMain, dialog } = require('electron');
-const { spawn, exec } = require('child_process');
+const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 
@@ -131,29 +131,76 @@ app.whenReady().then(() => {
     return path.join(getAppsDownloadsDir(), `${packageName}.${type.toLowerCase()}`);
   }
 
-  // FIX: Use .NET ZipFile (works on .xapk extension — PowerShell Expand-Archive rejects non-.zip)
-  // Uses single-quoted PS strings so backslashes in Windows paths are NOT doubled.
-  // Writes a temp .ps1 to avoid any inline-command escaping issues.
+  // Uses bundled 7za.exe for extraction — handles any ZIP variant, any extension, any structure.
+  // ZipFile.ExtractToDirectory (old approach) silently failed on DEFLATE64 and some XAPK formats.
+  function get7zaPath() {
+    return getAssetPath('tools', '7za.exe');
+  }
+
   async function extractZip(zipPath, destDir) {
-    const ps1 = path.join(getAppsDownloadsDir(), `extract_${Date.now()}.ps1`);
-    const script = [
-      'Add-Type -Assembly System.IO.Compression.FileSystem',
-      // Single-quoted PS strings: no variable substitution, no backslash escaping
-      `[System.IO.Compression.ZipFile]::ExtractToDirectory('${zipPath}', '${destDir}')`,
-    ].join('\r\n');
-    fs.writeFileSync(ps1, script, 'utf8');
     return new Promise((resolve, reject) => {
-      exec(`powershell -NoProfile -ExecutionPolicy Bypass -File "${ps1}"`,
-        { windowsHide: true, timeout: 180_000 },
-        (err, _out, stderr) => {
-          try { fs.unlinkSync(ps1); } catch (_) {}
-          err ? reject(new Error(stderr.trim() || err.message)) : resolve();
-        }
-      );
+      // -x = extract with full paths, -y = yes to all, -aoa = overwrite all
+      const proc = spawn(get7zaPath(), ['x', zipPath, `-o${destDir}`, '-y', '-aoa'], { windowsHide: true });
+      let out = '';
+      proc.stdout.on('data', d => { out += d; });
+      proc.stderr.on('data', d => { out += d; });
+      proc.on('close', code => {
+        // 7za: 0=OK, 1=Warning (non-fatal), 2+=error
+        if (code === 0 || code === 1) resolve();
+        else reject(new Error(`Extraction failed (code ${code}): ${out.slice(-300).trim()}`));
+      });
+      proc.on('error', e => reject(e));
     });
   }
 
-  // FIX: Recursive APK finder — readdirSync only reads root; XAPKs often put APKs in subfolders.
+  // Returns true if the archive (ZIP/XAPK/APK) contains any .apk entries inside.
+  // Used to distinguish a real XAPK-as-APK from a plain APK that failed install for other reasons.
+  async function archiveContainsApk(filePath) {
+    return new Promise((resolve) => {
+      const proc = spawn(get7zaPath(), ['l', '-slt', filePath], { windowsHide: true });
+      let out = '';
+      proc.stdout.on('data', d => { out += d; });
+      proc.on('close', () => resolve(/Path = .+\.apk/i.test(out)));
+      proc.on('error', () => resolve(false));
+    });
+  }
+
+  // Extracts icon.png/icon.webp from a downloaded APK or XAPK archive.
+  // APKPure XAPKs always include icon.png at archive root.
+  // Returns a base64 data URL, or null if not found.
+  async function extractIconFromArchive(filePath, packageName) {
+    const iconDir = path.join(app.getPath('userData'), 'app-icons');
+    if (!fs.existsSync(iconDir)) fs.mkdirSync(iconDir, { recursive: true });
+
+    const cached = path.join(iconDir, `${packageName}.png`);
+    if (fs.existsSync(cached)) {
+      try { return `data:image/png;base64,${fs.readFileSync(cached).toString('base64')}`; } catch (_) {}
+    }
+
+    const tmpDir = path.join(iconDir, `_tmp_${packageName}`);
+    return new Promise((resolve) => {
+      const proc = spawn(get7zaPath(), ['e', filePath, 'icon.png', 'icon.webp', `-o${tmpDir}`, '-y', '-aoa'], { windowsHide: true });
+      proc.on('close', () => {
+        try {
+          for (const name of ['icon.png', 'icon.webp']) {
+            const src = path.join(tmpDir, name);
+            if (fs.existsSync(src)) {
+              fs.copyFileSync(src, cached);
+              try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch (_) {}
+              const mime = name.endsWith('.webp') ? 'image/webp' : 'image/png';
+              resolve(`data:${mime};base64,${fs.readFileSync(cached).toString('base64')}`);
+              return;
+            }
+          }
+        } catch (_) {}
+        try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch (_) {}
+        resolve(null);
+      });
+      proc.on('error', () => resolve(null));
+    });
+  }
+
+  // Recursive APK finder — case-insensitive to handle .APK variants in some XAPK archives.
   // Skips Android/ because that subtree only contains .obb expansion files, never .apk files.
   function findApkFiles(dir) {
     const results = [];
@@ -162,7 +209,7 @@ app.whenReady().then(() => {
         const full = path.join(dir, entry.name);
         if (entry.isDirectory() && entry.name !== 'Android') {
           results.push(...findApkFiles(full));
-        } else if (!entry.isDirectory() && entry.name.endsWith('.apk')) {
+        } else if (!entry.isDirectory() && entry.name.toLowerCase().endsWith('.apk')) {
           results.push(full);
         }
       }
@@ -214,9 +261,8 @@ app.whenReady().then(() => {
   let iconCache = {};
   try { iconCache = JSON.parse(fs.readFileSync(iconCachePath, 'utf8')); } catch (_) {}
 
-  // FIX: simple fetch() is blocked by Google's bot detection.
-  // Use a hidden BrowserWindow instead — real Chromium renders the page fully,
-  // then executeJavaScript extracts the icon URL from the live DOM.
+  // Fetches app icon from Google Play using a hidden BrowserWindow.
+  // Checks the URL after each load so consent/redirect pages don't produce null.
   function fetchIconViaPlayStore(packageName) {
     return new Promise((resolve) => {
       let win = new BrowserWindow({
@@ -233,19 +279,21 @@ app.whenReady().then(() => {
         resolve(url && url.startsWith('http') ? url : null);
       };
 
-      // 12-second timeout — Play Store loads fast but some regions are slower
-      const timer = setTimeout(() => finish(null), 12_000);
+      const timer = setTimeout(() => finish(null), 20_000);
 
       win.webContents.on('did-finish-load', async () => {
-        clearTimeout(timer);
         try {
+          // Only extract from the actual Play Store app detail page, not consent/redirect pages
+          const currentUrl = win.webContents.getURL();
+          if (!currentUrl.includes('play.google.com/store/apps/details')) return;
+
+          clearTimeout(timer);
           const url = await win.webContents.executeJavaScript(`
             (function() {
               const og = document.querySelector('meta[property="og:image"]');
               if (og) return og.getAttribute('content');
               const tw = document.querySelector('meta[name="twitter:image"]');
               if (tw) return tw.getAttribute('content');
-              // Fallback: first googleusercontent image on the page (the app icon)
               const img = document.querySelector('img[src*="googleusercontent.com"]');
               return img ? img.src : null;
             })()
@@ -261,10 +309,22 @@ app.whenReady().then(() => {
 
   // Background icon fetcher: runs AFTER catalog is returned so it never delays loading.
   // Sends apps:icon-update events to renderer as each icon is found.
+  // Tries local archive extraction first (offline), falls back to Google Play.
   async function fetchIconsInBackground(packages) {
+    const downloadsDir = getAppsDownloadsDir();
     for (const pkg of packages) {
-      if (iconCache[pkg]) continue; // already cached between start and now
-      const url = await fetchIconViaPlayStore(pkg);
+      if (iconCache[pkg]) continue;
+      // Try extracting icon from local downloaded archive first (reliable, no internet needed)
+      let url = null;
+      for (const ext of ['xapk', 'apk']) {
+        const filePath = path.join(downloadsDir, `${pkg}.${ext}`);
+        if (fs.existsSync(filePath)) {
+          url = await extractIconFromArchive(filePath, pkg);
+          if (url) break;
+        }
+      }
+      // Fall back to Play Store if not downloaded or archive had no icon
+      if (!url) url = await fetchIconViaPlayStore(pkg);
       if (url) {
         iconCache[pkg] = url;
         try { fs.writeFileSync(iconCachePath, JSON.stringify(iconCache)); } catch (_) {}
@@ -357,9 +417,18 @@ app.whenReady().then(() => {
               total: item.getTotalBytes(),
             });
           });
-          item.once('done', (_e, state) => {
+          item.once('done', async (_e, state) => {
             cleanup();
             if (state === 'completed') {
+              // Extract icon from the downloaded archive so it shows immediately
+              if (!iconCache[packageName]) {
+                const iconUrl = await extractIconFromArchive(savePath, packageName);
+                if (iconUrl) {
+                  iconCache[packageName] = iconUrl;
+                  try { fs.writeFileSync(iconCachePath, JSON.stringify(iconCache)); } catch (_) {}
+                  mainWindow?.webContents?.send('apps:icon-update', { package: packageName, icon_url: iconUrl });
+                }
+              }
               resolve({ success: true, path: savePath });
             } else {
               try { fs.unlinkSync(savePath); } catch (_) {}
@@ -395,16 +464,21 @@ app.whenReady().then(() => {
       const out = await runAdbRaw(['install', '-r', filePath]);
       if (out.includes('Success')) { send('✓ Installed successfully\n'); return { success: true }; }
 
-      // APKPure sometimes serves multi-split XAPK even when APK is requested.
-      // Detect by: parse failure (XAPK served as .apk), or missing splits (base.apk without configs).
-      const needsXapkExtract =
+      // APKPure sometimes serves a multi-split XAPK even when APK is requested.
+      // Guard: before extracting, confirm the file actually contains inner .apk entries.
+      // A real APK that fails install for unrelated reasons (compatibility, etc.) has no inner APKs
+      // and must NOT be extracted — we'd find only classes.dex, res/, etc. inside.
+      const mightBeXapk =
         out.includes('INSTALL_PARSE_FAILED') ||
         out.includes('INSTALL_FAILED_UNEXPECTED_EXCEPTION') ||
         out.includes('INSTALL_FAILED_MISSING_SPLIT') ||
         out.includes('AndroidManifest.xml');
-      if (needsXapkExtract) {
-        send('Direct install failed — attempting XAPK extraction...\n');
-        return await installAsXapk(filePath, packageName, send);
+      if (mightBeXapk) {
+        const hasInnerApks = await archiveContainsApk(filePath);
+        if (hasInnerApks) {
+          send('Archive contains splits — extracting as XAPK...\n');
+          return await installAsXapk(filePath, packageName, send);
+        }
       }
 
       send(`✗ ${out.trim()}\n`);
