@@ -2,56 +2,56 @@
   {
     "name": "Facebook",
     "package": "com.facebook.katana",
-    "type": "APK",
+    "type": "XAPK",
     "category": "Social",
     "size_mb": 80
   },
   {
     "name": "Messenger",
     "package": "com.facebook.orca",
-    "type": "APK",
+    "type": "XAPK",
     "category": "Social",
     "size_mb": 80
   },
   {
     "name": "WhatsApp",
     "package": "com.whatsapp",
-    "type": "APK",
+    "type": "XAPK",
     "category": "Social",
     "size_mb": 60
   },
   {
     "name": "Instagram",
     "package": "com.instagram.android",
-    "type": "APK",
+    "type": "XAPK",
     "category": "Social",
     "size_mb": 80
   },
   {
     "name": "TikTok",
     "package": "com.zhiliaoapp.musically",
-    "type": "APK",
+    "type": "XAPK",
     "category": "Social",
     "size_mb": 120
   },
   {
     "name": "YouTube",
     "package": "com.google.android.youtube",
-    "type": "APK",
+    "type": "XAPK",
     "category": "Entertainment",
     "size_mb": 40
   },
   {
     "name": "Spotify",
     "package": "com.spotify.music",
-    "type": "APK",
+    "type": "XAPK",
     "category": "Music",
     "size_mb": 65
   },
   {
     "name": "Netflix",
     "package": "com.netflix.mediaclient",
-    "type": "APK",
+    "type": "XAPK",
     "category": "Entertainment",
     "size_mb": 100
   },
@@ -86,7 +86,7 @@
   {
     "name": "Crossy Road",
     "package": "com.yodo1.crossyroad",
-    "type": "APK",
+    "type": "XAPK",
     "category": "Arcade",
     "size_mb": 60
   },
@@ -194,6 +194,13 @@
     "type": "APK",
     "category": "Puzzle",
     "size_mb": 85
+  },
+    {
+    "name": "Delta Force",
+    "package": "com.proxima.dfm",
+    "type": "XAPK",
+    "category": "Action",
+    "size_mb": 1200
   },
   {
     "name": "Stickman Warriors",

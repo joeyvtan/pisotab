@@ -256,15 +256,48 @@ app.whenReady().then(() => {
     return { success: false, error: out.trim() };
   }
 
-  // App icon cache — persisted to disk so icons survive restarts
+  // App icon cache — persisted to disk so icons survive restarts.
+  // On startup: discard any cached HTTP URLs. Google's CDN rejects requests from Electron's renderer
+  // (wrong Referer). Only data: URLs are kept — they always work regardless of network.
   const iconCachePath = path.join(app.getPath('userData'), 'app-icons-cache.json');
   let iconCache = {};
-  try { iconCache = JSON.parse(fs.readFileSync(iconCachePath, 'utf8')); } catch (_) {}
+  try {
+    const loaded = JSON.parse(fs.readFileSync(iconCachePath, 'utf8'));
+    for (const [pkg, url] of Object.entries(loaded)) {
+      if (url && url.startsWith('data:')) iconCache[pkg] = url;
+    }
+  } catch (_) {}
 
-  // Fetches app icon from Google Play using a hidden BrowserWindow.
-  // Checks the URL after each load so consent/redirect pages don't produce null.
-  function fetchIconViaPlayStore(packageName) {
+  // Downloads an image URL in the main process and returns a base64 data URL.
+  // Must run in main process — no CORS/Referer restrictions here vs. the renderer.
+  function fetchImageAsDataUrl(imageUrl) {
+    if (!imageUrl) return Promise.resolve(null);
     return new Promise((resolve) => {
+      const https = require('https');
+      const http = require('http');
+      const transport = imageUrl.startsWith('https') ? https : http;
+      try {
+        const req = transport.get(imageUrl, {
+          timeout: 10_000,
+          headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
+        }, (res) => {
+          const mime = (res.headers['content-type'] || 'image/png').split(';')[0].trim();
+          const chunks = [];
+          res.on('data', d => chunks.push(d));
+          res.on('end', () => resolve(`data:${mime};base64,${Buffer.concat(chunks).toString('base64')}`));
+          res.on('error', () => resolve(null));
+        });
+        req.on('error', () => resolve(null));
+        req.on('timeout', () => { try { req.destroy(); } catch (_) {} resolve(null); });
+      } catch { resolve(null); }
+    });
+  }
+
+  // Fetches the app icon URL from Google Play via hidden BrowserWindow, then downloads
+  // the image bytes in the main process and returns a base64 data URL.
+  // Using data URL avoids Google CDN Referer restrictions in the Electron renderer.
+  async function fetchIconViaPlayStore(packageName) {
+    const iconUrl = await new Promise((resolve) => {
       let win = new BrowserWindow({
         show: false,
         webPreferences: { contextIsolation: true, sandbox: true },
@@ -283,10 +316,9 @@ app.whenReady().then(() => {
 
       win.webContents.on('did-finish-load', async () => {
         try {
-          // Only extract from the actual Play Store app detail page, not consent/redirect pages
+          // Skip consent/redirect pages — only extract from the actual Play Store app page
           const currentUrl = win.webContents.getURL();
           if (!currentUrl.includes('play.google.com/store/apps/details')) return;
-
           clearTimeout(timer);
           const url = await win.webContents.executeJavaScript(`
             (function() {
@@ -305,6 +337,9 @@ app.whenReady().then(() => {
       win.webContents.on('did-fail-load', () => { clearTimeout(timer); finish(null); });
       win.loadURL(`https://play.google.com/store/apps/details?id=${packageName}&hl=en`);
     });
+
+    // Download the image in main process and return as data URL (works in renderer with no CORS)
+    return fetchImageAsDataUrl(iconUrl);
   }
 
   // Background icon fetcher: runs AFTER catalog is returned so it never delays loading.
@@ -449,9 +484,19 @@ app.whenReady().then(() => {
 
   ipcMain.handle('apps:install-app', async (_, { packageName, type }) => {
     const send = (msg) => mainWindow?.webContents?.send('apps:install-log', msg);
-    const filePath = localApkPath(packageName, type);
+    let filePath = localApkPath(packageName, type);
 
-    if (!fs.existsSync(filePath)) return { success: false, error: 'File not downloaded' };
+    if (!fs.existsSync(filePath)) {
+      // Catalog type may have changed (e.g. APK→XAPK). Check for a stale wrong-type file.
+      const altExt = type.toLowerCase() === 'xapk' ? 'apk' : 'xapk';
+      const altPath = path.join(getAppsDownloadsDir(), `${packageName}.${altExt}`);
+      if (fs.existsSync(altPath)) {
+        send(`⚠ Stale ${altExt.toUpperCase()} file found. Deleting — please re-download as ${type}.\n`);
+        try { fs.unlinkSync(altPath); } catch (_) {}
+        return { success: false, error: `Old file deleted. Re-download as ${type} then try again.` };
+      }
+      return { success: false, error: 'File not downloaded' };
+    }
     send(`Installing ${path.basename(filePath)}...\n`);
 
     try {
