@@ -491,6 +491,19 @@ Bundled native binaries (not npm — copied into `assets/`):
 - [x] Root cause fix for winCodeSign symlink error: patched `node_modules/builder-util/out/util.js` to inject a `7za_wrap.cmd` wrapper as `SZA_PATH` — the wrapper converts 7za exit code 2 (macOS dylib symlink failure on Windows) → exit code 0; Go's `exec.Command` handles .cmd files natively on Windows
 - [ ] Add to `GET /api/downloads` as a downloadable file type (optional)
 
+**Phase 18.10 — App Manager & Coin Bug Fixes (2026-06-29)**
+
+**PENDING — App Manager issues (deferred):**
+- [ ] App icons not showing in App Manager grid — previously attempted fix (fetch icon via Play Store + base64 data URL); still not working consistently. Needs deeper investigation.
+- [ ] Some downloaded apps still cannot install — may be related to split APK handling or stale download cache. Needs device-level testing with updated EXE.
+
+**FIXED — Coin pulse/denomination bug:**
+- [x] Root cause: `mqttBridge.js` used `secs_per_coin` as a flat fixed value per coin event (any denomination). A ₱5, ₱10, or ₱20 coin all gave the same seconds as a ₱1 coin.
+- [x] Fix: multiply `secs_per_coin × coin_value` so time scales with denomination. `secs_per_coin` is seconds-per-peso, not seconds-per-coin-event.
+- File changed: `apps/backend/src/services/mqttBridge.js` line 82
+
+---
+
 **Phase 18.9 — App Manager Upgrade (Catalog + APKPure Download)** ✅ COMPLETE (2026-06-27)
 - [x] `apps/backend/data/apps-catalog.json` — admin-editable catalog (18 curated kiosk games)
 - [x] `apps/backend/src/routes/appsCatalog.js` — `GET /api/apps-catalog` (no auth, admin edits JSON)

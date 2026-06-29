@@ -79,7 +79,7 @@ async function handleMqttMessage(topic, data) {
       if (match) {
         baseSecs = Math.round(match.minutes * 60);  // 1. explicit per-denomination rate
       } else if (deviceCfg.secs_per_coin > 0) {
-        baseSecs = deviceCfg.secs_per_coin;          // 2. "Mins/coin" setting
+        baseSecs = Math.round(deviceCfg.secs_per_coin * coin_value);  // 2. "Secs/peso" × denomination
       }
     }
 
