@@ -98,13 +98,6 @@
     "size_mb": 30
   },
   {
-    "name": "Piano Tiles 2",
-    "package": "com.umonistudio.tile",
-    "type": "APK",
-    "category": "Music",
-    "size_mb": 55
-  },
-  {
     "name": "Vector",
     "package": "com.nekki.vector",
     "type": "APK",

@@ -200,16 +200,17 @@ app.whenReady().then(() => {
     });
   }
 
-  // Recursive APK finder — case-insensitive to handle .APK variants in some XAPK archives.
-  // Skips Android/ because that subtree only contains .obb expansion files, never .apk files.
+  // Recursive APK finder — searches the entire extracted directory tree.
+  // OBB files use the .obb extension, so filtering by .apk is sufficient;
+  // skipping Android/ was too aggressive and broke XAPKs that place APKs there.
   function findApkFiles(dir) {
     const results = [];
     try {
       for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
         const full = path.join(dir, entry.name);
-        if (entry.isDirectory() && entry.name !== 'Android') {
+        if (entry.isDirectory()) {
           results.push(...findApkFiles(full));
-        } else if (!entry.isDirectory() && entry.name.toLowerCase().endsWith('.apk')) {
+        } else if (entry.name.toLowerCase().endsWith('.apk')) {
           results.push(full);
         }
       }
@@ -223,11 +224,24 @@ app.whenReady().then(() => {
     if (fs.existsSync(extractDir)) fs.rmSync(extractDir, { recursive: true, force: true });
 
     send('Extracting archive...\n');
-    await extractZip(filePath, extractDir);
+    try {
+      await extractZip(filePath, extractDir);
+    } catch (err) {
+      // Corrupted archive (partial download, disk error). Delete it so the UI
+      // shows the correct "Available" status and the user can re-download cleanly.
+      try { fs.unlinkSync(filePath); } catch (_) {}
+      try { fs.rmSync(extractDir, { recursive: true, force: true }); } catch (_) {}
+      throw new Error(`${err.message}\n⚠ Corrupted file deleted — please re-download.`);
+    }
 
     // FIX: recursive search — handles XAPKs where APKs are inside subdirectories
     const apkFiles = findApkFiles(extractDir);
-    if (!apkFiles.length) throw new Error('No APK found inside archive');
+    if (!apkFiles.length) {
+      // No APK inside — wrong file format or bad download. Delete and let user retry.
+      try { fs.unlinkSync(filePath); } catch (_) {}
+      try { fs.rmSync(extractDir, { recursive: true, force: true }); } catch (_) {}
+      throw new Error('No APK found inside archive — file deleted. Please re-download.');
+    }
 
     // Push OBB expansion files if present
     const obbDir = path.join(extractDir, 'Android', 'obb', packageName);
@@ -270,6 +284,8 @@ app.whenReady().then(() => {
 
   // Downloads an image URL in the main process and returns a base64 data URL.
   // Must run in main process — no CORS/Referer restrictions here vs. the renderer.
+  // Returns null for non-image responses (HTML error pages, 404s, etc.) so they
+  // are never written to the icon cache.
   function fetchImageAsDataUrl(imageUrl) {
     if (!imageUrl) return Promise.resolve(null);
     return new Promise((resolve) => {
@@ -281,7 +297,9 @@ app.whenReady().then(() => {
           timeout: 10_000,
           headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
         }, (res) => {
-          const mime = (res.headers['content-type'] || 'image/png').split(';')[0].trim();
+          const mime = (res.headers['content-type'] || '').split(';')[0].trim();
+          // Reject non-image responses — APKPure/Google CDN sometimes serves HTML error pages
+          if (!mime.startsWith('image/')) { res.resume(); resolve(null); return; }
           const chunks = [];
           res.on('data', d => chunks.push(d));
           res.on('end', () => resolve(`data:${mime};base64,${Buffer.concat(chunks).toString('base64')}`));
@@ -344,13 +362,18 @@ app.whenReady().then(() => {
 
   // Background icon fetcher: runs AFTER catalog is returned so it never delays loading.
   // Sends apps:icon-update events to renderer as each icon is found.
-  // Tries local archive extraction first (offline), falls back to Google Play.
+  // Strategy (in order):
+  //   1. Local archive extraction — offline, instant, most reliable for downloaded files
+  //   2. APKPure CDN icon URL — fast HTTP request, no browser scraping needed
+  //   3. Google Play scraping — slowest fallback; fails on GDPR consent pages
   async function fetchIconsInBackground(packages) {
     const downloadsDir = getAppsDownloadsDir();
     for (const pkg of packages) {
       if (iconCache[pkg]) continue;
-      // Try extracting icon from local downloaded archive first (reliable, no internet needed)
+
       let url = null;
+
+      // 1. Local archive extraction (works offline, no internet required)
       for (const ext of ['xapk', 'apk']) {
         const filePath = path.join(downloadsDir, `${pkg}.${ext}`);
         if (fs.existsSync(filePath)) {
@@ -358,8 +381,13 @@ app.whenReady().then(() => {
           if (url) break;
         }
       }
-      // Fall back to Play Store if not downloaded or archive had no icon
+
+      // 2. APKPure CDN — direct image fetch, no scraping, no consent page issue
+      if (!url) url = await fetchImageAsDataUrl(`https://image.apkpure.net/apk/${pkg}/icon`);
+
+      // 3. Google Play scraping — fallback only; may fail behind GDPR consent pages
       if (!url) url = await fetchIconViaPlayStore(pkg);
+
       if (url) {
         iconCache[pkg] = url;
         try { fs.writeFileSync(iconCachePath, JSON.stringify(iconCache)); } catch (_) {}
@@ -368,7 +396,9 @@ app.whenReady().then(() => {
     }
   }
 
-  let activeDownloadPkg = null;
+  // Per-package download lock — allows concurrent downloads of different packages
+  // while preventing duplicate downloads of the same package.
+  const activeDownloadPkgs = new Set();
 
   ipcMain.handle('apps:load-catalog', async () => {
     // Load catalog from server (admin-controlled) or fall back to bundled copy
@@ -408,12 +438,12 @@ app.whenReady().then(() => {
   });
 
   ipcMain.handle('apps:download-apk', async (_, { packageName, type }) => {
-    if (activeDownloadPkg) return { success: false, error: `Already downloading ${activeDownloadPkg}` };
+    if (activeDownloadPkgs.has(packageName)) return { success: false, error: `Already downloading ${packageName}` };
 
     const savePath = localApkPath(packageName, type);
     if (fs.existsSync(savePath)) return { success: true, path: savePath, cached: true };
 
-    activeDownloadPkg = packageName;
+    activeDownloadPkgs.add(packageName);
     const url = `https://d.apkpure.com/b/${type}/${packageName}?version=latest`;
 
     try {
@@ -425,6 +455,10 @@ app.whenReady().then(() => {
           webPreferences: { contextIsolation: true, sandbox: true },
         });
 
+        // Capture ID as a plain number before the window could be destroyed.
+        // Comparing IDs routes each will-download event to the correct handler
+        // when multiple packages download concurrently on the same session.
+        const hiddenWinId = hiddenWin.webContents.id;
         let settled = false;
 
         const cleanup = () => {
@@ -441,6 +475,8 @@ app.whenReady().then(() => {
         }, 60_000);
 
         function onWillDownload(_e, item) {
+          // Ignore downloads triggered by other windows sharing the same session.
+          if (item.getWebContents()?.id !== hiddenWinId) return;
           if (settled) return;
           settled = true;
           clearTimeout(timeout);
@@ -478,7 +514,7 @@ app.whenReady().then(() => {
         hiddenWin.loadURL(url);
       });
     } finally {
-      activeDownloadPkg = null;
+      activeDownloadPkgs.delete(packageName);
     }
   });
 
