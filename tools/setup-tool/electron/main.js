@@ -237,10 +237,34 @@ app.whenReady().then(() => {
     // FIX: recursive search — handles XAPKs where APKs are inside subdirectories
     const apkFiles = findApkFiles(extractDir);
     if (!apkFiles.length) {
-      // No APK inside — wrong file format or bad download. Delete and let user retry.
+      // Log exactly what was extracted so we can diagnose the archive structure.
+      const found = [];
+      function listExtracted(d, depth) {
+        if (depth > 3 || found.length >= 20) return;
+        try {
+          for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+            found.push(path.relative(extractDir, path.join(d, e.name)) + (e.isDirectory() ? '/' : ''));
+            if (e.isDirectory()) listExtracted(path.join(d, e.name), depth + 1);
+          }
+        } catch (_) {}
+      }
+      listExtracted(extractDir, 0);
+      send(`Archive contents: ${found.length ? found.slice(0, 20).join(', ') : '(empty)'}\n`);
+
+      // Fallback: APKPure sometimes serves a plain APK even through the XAPK download URL.
+      // If the "XAPK" is actually a plain APK, direct install will succeed.
+      send('No inner APKs found — trying direct install...\n');
+      const directOut = await runAdbRaw(['install', '-r', filePath]);
+      if (directOut.includes('Success')) {
+        send('✓ Installed successfully\n');
+        try { fs.rmSync(extractDir, { recursive: true, force: true }); } catch (_) {}
+        return { success: true };
+      }
+
+      // Still failed — delete so user can re-download.
       try { fs.unlinkSync(filePath); } catch (_) {}
       try { fs.rmSync(extractDir, { recursive: true, force: true }); } catch (_) {}
-      throw new Error('No APK found inside archive — file deleted. Please re-download.');
+      throw new Error(`No APK found inside archive — direct install also failed: ${directOut.trim()}\nFile deleted. Please re-download.`);
     }
 
     // Push OBB expansion files if present
@@ -455,10 +479,6 @@ app.whenReady().then(() => {
           webPreferences: { contextIsolation: true, sandbox: true },
         });
 
-        // Capture ID as a plain number before the window could be destroyed.
-        // Comparing IDs routes each will-download event to the correct handler
-        // when multiple packages download concurrently on the same session.
-        const hiddenWinId = hiddenWin.webContents.id;
         let settled = false;
 
         const cleanup = () => {
@@ -475,8 +495,6 @@ app.whenReady().then(() => {
         }, 60_000);
 
         function onWillDownload(_e, item) {
-          // Ignore downloads triggered by other windows sharing the same session.
-          if (item.getWebContents()?.id !== hiddenWinId) return;
           if (settled) return;
           settled = true;
           clearTimeout(timeout);
