@@ -82,6 +82,7 @@ class SettingsFragment : Fragment() {
         val etSecsPerCoin       = view.findViewById<EditText>(R.id.et_secs_per_coin)
         val etUsbTimerOffset    = view.findViewById<EditText>(R.id.et_usb_timer_offset)
         val btnAllowedApps   = view.findViewById<Button>(R.id.btn_allowed_apps)
+        val etScreenSleep      = view.findViewById<EditText>(R.id.et_screen_sleep)
         val swShowSessionTimer = view.findViewById<Switch>(R.id.sw_show_session_timer)
         val swFloatingTimer  = view.findViewById<Switch>(R.id.sw_floating_timer)
         val swDeepFreeze     = view.findViewById<Switch>(R.id.sw_deep_freeze)
@@ -120,6 +121,7 @@ class SettingsFragment : Fragment() {
         etRatePerMin.setText(prefs.timerRatePerMinute.toString())
         etSecsPerCoin.setText((prefs.timerSecondsPerCoin / 60).toString())
         etUsbTimerOffset.setText(prefs.usbTimerOffsetSecs.toString())
+        etScreenSleep.setText(prefs.screenSleepSecs.toString())
         swShowSessionTimer.isChecked = prefs.showSessionTimer
         swFloatingTimer.isChecked = prefs.floatingTimerEnabled
         swDeepFreeze.isChecked    = prefs.deepFreezeEnabled
@@ -202,6 +204,7 @@ class SettingsFragment : Fragment() {
             prefs.timerRatePerMinute     = etRatePerMin.text.toString().toFloatOrNull() ?: 1.0f
             prefs.timerSecondsPerCoin    = ((etSecsPerCoin.text.toString().toFloatOrNull() ?: 5f) * 60).toInt()
             prefs.usbTimerOffsetSecs     = etUsbTimerOffset.text.toString().toIntOrNull()?.coerceAtLeast(0) ?: 0
+            prefs.screenSleepSecs        = etScreenSleep.text.toString().toIntOrNull()?.coerceAtLeast(0) ?: 0
             prefs.showSessionTimer       = swShowSessionTimer.isChecked
             prefs.floatingTimerEnabled   = swFloatingTimer.isChecked
             prefs.deepFreezeEnabled      = swDeepFreeze.isChecked

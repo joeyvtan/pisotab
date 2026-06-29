@@ -127,6 +127,13 @@ class PrefsManager(context: Context) {
         get() = prefs.getBoolean("show_session_timer", true)
         set(v) = prefs.edit { putBoolean("show_session_timer", v) }
 
+    // ── Screen Sleep ──────────────────────────────────────────────────────────
+
+    /** Seconds of idle (no session) before the screen sleeps. 0 = never sleep. */
+    var screenSleepSecs: Int
+        get() = prefs.getInt("screen_sleep_secs", 0)
+        set(v) = prefs.edit { putInt("screen_sleep_secs", v) }
+
     // ── Appearance ────────────────────────────────────────────────────────────
 
     /** Business name shown in sidebar header and lock screen */

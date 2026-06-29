@@ -1,5 +1,6 @@
 package com.pisotab.app.ui
 
+import android.content.Context
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
@@ -9,6 +10,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.PowerManager
 import android.view.KeyEvent
 import android.view.Surface
 import android.view.TextureView
@@ -68,12 +70,19 @@ class MainActivity : AppCompatActivity() {
     private var idleVideoActive = false
     private val idleHandler = Handler(Looper.getMainLooper())
 
+    private lateinit var sleepOverlay: View
+    private val sleepHandler = Handler(Looper.getMainLooper())
+    private var isSleeping = false
+    private var screenWakeLock: PowerManager.WakeLock? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         ThemeManager.applyTheme(this)
         super.onCreate(savedInstanceState)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         setContentView(R.layout.activity_main)
 
+        sleepOverlay         = findViewById(R.id.sleep_overlay)
+        sleepOverlay.setOnClickListener { wakeFromSleep() }
         ivWallpaper          = findViewById(R.id.iv_wallpaper)
         flAnimationIdle      = findViewById(R.id.fl_animation_idle)
         tvIdleVideo          = findViewById(R.id.tv_idle_video)
@@ -261,6 +270,51 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // ── Screen sleep ──────────────────────────────────────────────────────────
+
+    private fun scheduleSleepTimer() {
+        val secs = vm.prefs.screenSleepSecs
+        if (secs <= 0) return
+        sleepHandler.removeCallbacksAndMessages(null)
+        sleepHandler.postDelayed({ enterSleep() }, secs * 1000L)
+    }
+
+    private fun cancelSleepTimer() {
+        sleepHandler.removeCallbacksAndMessages(null)
+    }
+
+    private fun enterSleep() {
+        if (isSleeping) return
+        isSleeping = true
+        sleepOverlay.visibility = View.VISIBLE
+        // Allow Android's own display timeout to turn the panel off while sleeping.
+        window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+    }
+
+    private fun wakeFromSleep() {
+        if (!isSleeping) return
+        isSleeping = false
+        sleepOverlay.visibility = View.GONE
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        scheduleSleepTimer()
+    }
+
+    /** Turns the screen on immediately (called when a coin/session arrives while sleeping). */
+    @Suppress("DEPRECATION")
+    private fun wakeupScreen() {
+        if (!isSleeping) return
+        val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
+        val wl = pm.newWakeLock(
+            PowerManager.SCREEN_BRIGHT_WAKE_LOCK or PowerManager.ACQUIRE_CAUSES_WAKEUP,
+            "pisotab:session_wakeup"
+        )
+        wl.acquire(3000L)
+        screenWakeLock = wl
+        wakeFromSleep()
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+
     private fun startOrStopAlarm(sessionActive: Boolean) {
         try {
             val sessionOnly = vm.prefs.alarmOnlyDuringSession
@@ -299,9 +353,12 @@ class MainActivity : AppCompatActivity() {
             startService(Intent(this, TimerService::class.java).apply { action = TimerService.ACTION_END })
         }
         startIdleVideo()
+        scheduleSleepTimer()
     }
 
     private fun showActive(secs: Int) {
+        cancelSleepTimer()
+        wakeupScreen()
         stopIdleVideo()
         screenIdle.visibility      = View.GONE
         flAnimationIdle.visibility = View.GONE
@@ -330,6 +387,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showPaused(secs: Int) {
+        cancelSleepTimer()
         stopIdleVideo()
         screenIdle.visibility      = View.GONE
         flAnimationIdle.visibility = View.GONE
@@ -404,6 +462,14 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
+    override fun onUserInteraction() {
+        super.onUserInteraction()
+        // Reset sleep countdown on every touch, but only while idle (not during active session).
+        if (!isSleeping && vm.sessionState.value is SessionState.Idle) {
+            scheduleSleepTimer()
+        }
+    }
+
     override fun onResume() {
         super.onResume()
         if (!idleVideoActive) WallpaperManager.applyToImageView(ivWallpaper, this, false)
@@ -436,6 +502,13 @@ class MainActivity : AppCompatActivity() {
         } else {
             alarmBanner.visibility = android.view.View.GONE
         }
+        // Restart sleep timer if coming back from admin panel while still idle.
+        if (vm.sessionState.value is SessionState.Idle) scheduleSleepTimer()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        cancelSleepTimer()
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -460,6 +533,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        sleepHandler.removeCallbacksAndMessages(null)
+        screenWakeLock?.let { if (it.isHeld) it.release() }
+        screenWakeLock = null
         idleHandler.removeCallbacksAndMessages(null)
         idleMediaPlayer?.release()
         idleMediaPlayer = null

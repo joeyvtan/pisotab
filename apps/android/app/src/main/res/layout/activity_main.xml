@@ -259,4 +259,15 @@
     </LinearLayout>
 
 
+    <!-- Sleep overlay — full-screen black screen shown when screen sleep timer fires.
+         Tap anywhere to wake. Sits on top of everything so no kiosk content is visible. -->
+    <View
+        android:id="@+id/sleep_overlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#000000"
+        android:visibility="gone"
+        android:clickable="true"
+        android:focusable="true" />
+
 </FrameLayout>
