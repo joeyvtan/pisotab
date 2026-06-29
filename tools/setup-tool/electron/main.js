@@ -237,7 +237,7 @@ app.whenReady().then(() => {
     // FIX: recursive search — handles XAPKs where APKs are inside subdirectories
     const apkFiles = findApkFiles(extractDir);
     if (!apkFiles.length) {
-      // Log exactly what was extracted so we can diagnose the archive structure.
+      // Log extracted contents for diagnosis.
       const found = [];
       function listExtracted(d, depth) {
         if (depth > 3 || found.length >= 20) return;
@@ -251,20 +251,26 @@ app.whenReady().then(() => {
       listExtracted(extractDir, 0);
       send(`Archive contents: ${found.length ? found.slice(0, 20).join(', ') : '(empty)'}\n`);
 
-      // Fallback: APKPure sometimes serves a plain APK even through the XAPK download URL.
-      // If the "XAPK" is actually a plain APK, direct install will succeed.
-      send('No inner APKs found — trying direct install...\n');
-      const directOut = await runAdbRaw(['install', '-r', filePath]);
-      if (directOut.includes('Success')) {
-        send('✓ Installed successfully\n');
-        try { fs.rmSync(extractDir, { recursive: true, force: true }); } catch (_) {}
-        return { success: true };
+      // APKPure sometimes serves a plain APK through the XAPK download URL.
+      // A plain APK extracted as a ZIP always has AndroidManifest.xml at its root.
+      const isPlainApk = fs.existsSync(path.join(extractDir, 'AndroidManifest.xml'));
+      try { fs.rmSync(extractDir, { recursive: true, force: true }); } catch (_) {}
+
+      if (isPlainApk) {
+        // Rename .xapk → .apk so ADB accepts it, then install directly.
+        // The renamed file is kept on disk so future installs skip re-download.
+        const apkPath = filePath.replace(/\.xapk$/i, '.apk');
+        fs.renameSync(filePath, apkPath);
+        send('Plain APK detected — installing directly...\n');
+        const out = await runAdbRaw(['install', '-r', apkPath]);
+        if (out.includes('Success')) { send('✓ Installed successfully\n'); return { success: true }; }
+        send(`✗ ${out.trim()}\n`);
+        return { success: false, error: out.trim() };
       }
 
-      // Still failed — delete so user can re-download.
+      // Truly no APK content — corrupted or unsupported format. Delete so user can re-download cleanly.
       try { fs.unlinkSync(filePath); } catch (_) {}
-      try { fs.rmSync(extractDir, { recursive: true, force: true }); } catch (_) {}
-      throw new Error(`No APK found inside archive — direct install also failed: ${directOut.trim()}\nFile deleted. Please re-download.`);
+      throw new Error('No APK found inside archive — file deleted. Please re-download.');
     }
 
     // Push OBB expansion files if present
@@ -467,6 +473,12 @@ app.whenReady().then(() => {
     const savePath = localApkPath(packageName, type);
     if (fs.existsSync(savePath)) return { success: true, path: savePath, cached: true };
 
+    // A previous install may have detected the XAPK was a plain APK and renamed it to .apk.
+    if (type.toLowerCase() === 'xapk') {
+      const renamedApkPath = path.join(getAppsDownloadsDir(), `${packageName}.apk`);
+      if (fs.existsSync(renamedApkPath)) return { success: true, path: renamedApkPath, cached: true };
+    }
+
     activeDownloadPkgs.add(packageName);
     const url = `https://d.apkpure.com/b/${type}/${packageName}?version=latest`;
 
@@ -499,14 +511,18 @@ app.whenReady().then(() => {
           settled = true;
           clearTimeout(timeout);
           item.setSavePath(savePath);
-          item.on('updated', () => {
-            mainWindow?.webContents?.send('apps:download-progress', {
-              packageName,
-              received: item.getReceivedBytes(),
-              total: item.getTotalBytes(),
-            });
-          });
+          const onUpdated = () => {
+            try {
+              mainWindow?.webContents?.send('apps:download-progress', {
+                packageName,
+                received: item.getReceivedBytes(),
+                total: item.getTotalBytes(),
+              });
+            } catch (_) {}
+          };
+          item.on('updated', onUpdated);
           item.once('done', async (_e, state) => {
+            item.removeListener('updated', onUpdated);
             cleanup();
             if (state === 'completed') {
               // Extract icon from the downloaded archive so it shows immediately
@@ -545,7 +561,17 @@ app.whenReady().then(() => {
       const altExt = type.toLowerCase() === 'xapk' ? 'apk' : 'xapk';
       const altPath = path.join(getAppsDownloadsDir(), `${packageName}.${altExt}`);
       if (fs.existsSync(altPath)) {
-        send(`⚠ Stale ${altExt.toUpperCase()} file found. Deleting — please re-download as ${type}.\n`);
+        if (type.toLowerCase() === 'xapk') {
+          // .apk found for an XAPK-typed entry — was renamed from .xapk during a previous install
+          // because APKPure served a plain APK through the XAPK URL. Install it directly.
+          send(`Installing ${packageName}.apk (plain APK)...\n`);
+          const out = await runAdbRaw(['install', '-r', altPath]);
+          if (out.includes('Success')) { send('✓ Installed successfully\n'); return { success: true }; }
+          send(`✗ ${out.trim()}\n`);
+          return { success: false, error: out.trim() };
+        }
+        // APK type but XAPK found — stale file from a catalog type change. Delete it.
+        send(`⚠ Stale XAPK file found. Deleting — please re-download as APK.\n`);
         try { fs.unlinkSync(altPath); } catch (_) {}
         return { success: false, error: `Old file deleted. Re-download as ${type} then try again.` };
       }
