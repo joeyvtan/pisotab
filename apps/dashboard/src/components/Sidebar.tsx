@@ -75,7 +75,7 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
         </div>
       </div>
 
-      <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+      <nav className="flex-1 p-3 space-y-1 overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-600 [&::-webkit-scrollbar-thumb]:rounded-full">
         {NAV.filter(item => canSee(item.visibleTo, user?.role)).map(item => {
           const badgeCount = item.badge && (!item.badgeRole || item.badgeRole === user?.role) ? badges[item.badge] : 0;
           return (
