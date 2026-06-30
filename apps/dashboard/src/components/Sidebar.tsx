@@ -22,7 +22,7 @@ const NAV: { href: string; icon: string; label: string; visibleTo: string; badge
   { href: '/dashboard/analytics',         icon: '📈', label: 'Analytics',         visibleTo: 'all'        },
   { href: '/dashboard/pricing',           icon: '💰', label: 'Pricing',           visibleTo: 'all'        },
   { href: '/dashboard/buy-license',       icon: '🛒', label: 'Buy License',       visibleTo: 'adminOnly'  },
-  { href: '/dashboard/purchase-requests', icon: '📨', label: 'Purchase Requests', visibleTo: 'admin',      badge: 'pending_requests' },
+  { href: '/dashboard/purchase-requests', icon: '📨', label: 'Purchase Requests', visibleTo: 'admin',      badge: 'pending_requests', badgeRole: 'superadmin' },
   { href: '/dashboard/users',             icon: '👥', label: 'Users',             visibleTo: 'admin',      badge: 'pending_users',    badgeRole: 'superadmin' },
   { href: '/dashboard/licenses',          icon: '🔑', label: 'Licenses',          visibleTo: 'admin'      },
   { href: '/dashboard/gcash-settings',    icon: '💳', label: 'GCash Settings',    visibleTo: 'superadmin' },
@@ -75,7 +75,7 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
         </div>
       </div>
 
-      <nav className="flex-1 p-3 space-y-1 overflow-y-auto scrollbar-hide">
+      <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
         {NAV.filter(item => canSee(item.visibleTo, user?.role)).map(item => {
           const badgeCount = item.badge && (!item.badgeRole || item.badgeRole === user?.role) ? badges[item.badge] : 0;
           return (

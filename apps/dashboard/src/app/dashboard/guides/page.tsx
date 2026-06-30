@@ -225,31 +225,32 @@ export default function GuidesPage() {
           )}
         </div>
 
-        {/* Flash Tool */}
+        {/* Setup Tool */}
         <div className="py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <span className="text-2xl">⚡</span>
+              <span className="text-2xl">🛠️</span>
               <div>
-                <div className="text-white text-sm font-medium">ESP32 Flash Tool</div>
+                <div className="text-white text-sm font-medium">JJTPisoTab Setup Tool (Windows)</div>
                 <div className="text-slate-500 text-xs">
-                  {flasherUrl ? 'Hosted on Google Drive' : 'Espressif official website'}
+                  {flasherUrl ? 'Download link configured' : 'No download URL set'}
                 </div>
               </div>
             </div>
-            <a href={flasherUrl || 'https://www.espressif.com/en/support/download/other-tools'}
-              target="_blank" rel="noopener noreferrer"
-              className="text-xs px-3 py-1.5 rounded bg-orange-600 hover:bg-orange-500 text-white transition-colors">
-              Download
-            </a>
+            {flasherUrl && (
+              <a href={flasherUrl} target="_blank" rel="noopener noreferrer"
+                className="text-xs px-3 py-1.5 rounded bg-orange-600 hover:bg-orange-500 text-white transition-colors">
+                Download
+              </a>
+            )}
           </div>
           {isSuperAdmin && (
             <UrlField
-              label="Flash Tool URL (Google Drive folder or file)"
+              label="JJTPisoTab Setup Tool Download URL"
               settingKey="flasher_download_url"
               value={flasherUrl}
               onChange={setFlasherUrl}
-              placeholder="https://drive.google.com/drive/folders/..."
+              placeholder="https://drive.google.com/file/d/..."
             />
           )}
         </div>
@@ -386,21 +387,17 @@ export default function GuidesPage() {
           <div className="bg-slate-800 rounded-lg p-4">
             <div className="flex items-center gap-2 mb-2">
               <span className="w-6 h-6 rounded-full bg-orange-600 text-white text-xs font-bold flex items-center justify-center shrink-0">2</span>
-              <p className="text-slate-200 font-semibold">Flash the ESP32 Firmware (.bin)</p>
-              <span className="ml-auto text-xs px-2 py-0.5 rounded-full bg-yellow-900/60 text-yellow-300 font-medium shrink-0">ESP32 / Coin mode only</span>
+              <p className="text-slate-200 font-semibold">Flash the ESP32 / ESP8266 Firmware</p>
+              <span className="ml-auto text-xs px-2 py-0.5 rounded-full bg-yellow-900/60 text-yellow-300 font-medium shrink-0">Coin mode only</span>
             </div>
-            <p className="text-yellow-400/80 text-xs mb-2 ml-8">⚡ Skip if using <strong>USB mode</strong> — no ESP32 hardware required.</p>
+            <p className="text-yellow-400/80 text-xs mb-2 ml-8">⚡ Skip if using <strong>USB mode</strong> — no ESP hardware required.</p>
             <ol className="list-decimal list-inside space-y-1 text-xs text-slate-400 ml-8">
-              <li>Download the <strong className="text-slate-300">ESP32 Firmware (.bin)</strong> and <strong className="text-slate-300">Flash Download Tool</strong> from the Downloads section above</li>
-              <li>Install and open the <strong className="text-slate-300">ESP32 Flash Download Tool</strong></li>
-              <li>When prompted, select chip type: <code className="bg-slate-700 px-1 rounded">ESP32</code>, work mode: <code className="bg-slate-700 px-1 rounded">Develop</code>, load mode: <code className="bg-slate-700 px-1 rounded">USB</code></li>
-              <li>In the SPIDownload tab, click the <strong className="text-slate-300">...</strong> button and browse to select your <code className="bg-slate-700 px-1 rounded">.bin</code> firmware file</li>
-              <li>Set the flash address to <code className="bg-slate-700 px-1 rounded">0x0</code> and check the checkbox next to the file row</li>
-              <li>Connect the ESP32 board to your PC via USB cable</li>
-              <li>Select the correct <strong className="text-slate-300">COM port</strong> from the dropdown (check Device Manager if unsure)</li>
-              <li>Set SPI speed: <code className="bg-slate-700 px-1 rounded">40MHz</code>, SPI mode: <code className="bg-slate-700 px-1 rounded">DIO</code></li>
-              <li>Click <strong className="text-slate-300">START</strong> — the progress bar will fill to 100% when done</li>
-              <li>When complete, the tool shows <strong className="text-green-400">FINISH</strong> — unplug and replug the ESP32</li>
+              <li>Download and install the <strong className="text-slate-300">JJTPisoTab Setup Tool</strong> from the Downloads section above</li>
+              <li>Open the Setup Tool and go to the <strong className="text-slate-300">ESP Flasher</strong> tab</li>
+              <li>Select your chip type: <code className="bg-slate-700 px-1 rounded">ESP32</code> or <code className="bg-slate-700 px-1 rounded">ESP8266</code> depending on your hardware</li>
+              <li>Connect the ESP board to your PC via USB cable — select the correct <strong className="text-slate-300">COM port</strong></li>
+              <li>Click <strong className="text-slate-300">Flash</strong> — the tool flashes the bundled firmware automatically</li>
+              <li>Wait for <strong className="text-green-400">Flash Complete</strong> — then unplug and replug the ESP board</li>
             </ol>
           </div>
 
@@ -429,15 +426,26 @@ export default function GuidesPage() {
               <span className="w-6 h-6 rounded-full bg-orange-600 text-white text-xs font-bold flex items-center justify-center shrink-0">4</span>
               <p className="text-slate-200 font-semibold">Install the Android Kiosk App (APK)</p>
             </div>
-            <ol className="list-decimal list-inside space-y-1 text-xs text-slate-400 ml-8">
+            <p className="text-xs text-slate-300 font-medium ml-8 mb-1">Option A — Via JJTPisoTab Setup Tool <span className="text-green-400">(Recommended)</span></p>
+            <ol className="list-decimal list-inside space-y-1 text-xs text-slate-400 ml-8 mb-3">
+              <li>Open the <strong className="text-slate-300">JJTPisoTab Setup Tool</strong> → go to the <strong className="text-slate-300">Device Setup</strong> tab</li>
+              <li>On the tablet: <strong className="text-slate-300">Settings → About phone</strong>, tap <strong className="text-slate-300">Build number</strong> 7 times → enable <strong className="text-slate-300">USB Debugging</strong> in Developer options</li>
+              <li>Connect the tablet to your PC via USB — accept the debugging prompt on the tablet</li>
+              <li>Click <strong className="text-slate-300">Install PisoTab APK</strong> — the tool installs the app automatically</li>
+            </ol>
+            <p className="text-xs text-slate-300 font-medium ml-8 mb-1">Option B — Manual install</p>
+            <ol className="list-decimal list-inside space-y-1 text-xs text-slate-400 ml-8 mb-3">
               <li>Download the APK from the Downloads section above</li>
-              <li>On your Android tablet, go to <strong className="text-slate-300">Settings → Security</strong> and enable <strong className="text-slate-300">Install Unknown Apps</strong></li>
-              <li>Open the downloaded APK file and install it</li>
+              <li>On the tablet: <strong className="text-slate-300">Settings → Security</strong> → enable <strong className="text-slate-300">Install Unknown Apps</strong></li>
+              <li>Open the downloaded APK and install it</li>
+            </ol>
+            <p className="text-xs text-slate-300 font-medium ml-8 mb-1">After install (both options):</p>
+            <ol className="list-decimal list-inside space-y-1 text-xs text-slate-400 ml-8">
               <li>Launch <strong className="text-slate-300">PisoTab</strong> — the idle screen will appear</li>
-              <li>Long-press the <strong className="text-slate-300">bottom-right corner</strong> of the screen for 2 seconds → enter Admin PIN <code className="bg-slate-700 px-1 rounded">1234</code></li>
-              <li>Go to <strong className="text-slate-300">Connection Settings</strong> → enter the Backend URL: <code className="bg-slate-700 px-1 rounded">{BASE_URL}</code></li>
+              <li>Long-press the <strong className="text-slate-300">bottom-right corner</strong> for 2 seconds → enter Admin PIN <code className="bg-slate-700 px-1 rounded">1234</code></li>
+              <li>Go to <strong className="text-slate-300">Connection Settings</strong> → enter Backend URL: <code className="bg-slate-700 px-1 rounded">{BASE_URL}</code></li>
               <li>Go to <strong className="text-slate-300">Device Settings</strong> → paste your Device ID from the dashboard</li>
-              <li>Tap <strong className="text-slate-300">Connect</strong> — the status should change to <span className="text-green-400">Connected</span></li>
+              <li>Tap <strong className="text-slate-300">Connect</strong> — status should change to <span className="text-green-400">Connected</span></li>
             </ol>
           </div>
 

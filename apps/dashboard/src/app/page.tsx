@@ -241,9 +241,9 @@ export default function LandingPage() {
             {/* Connector line — desktop only */}
             <div className="hidden md:block absolute top-6 left-1/4 right-1/4 h-0.5 bg-slate-700" />
             <StepCard step={1} title="Register & Install"
-              desc="Create your free account, download the APK, and install it on your Android tablet." />
+              desc="Create your free account, download the JJTPisoTab Setup Tool, and set up your tablet and ESP32 in minutes." />
             <StepCard step={2} title="Configure"
-              desc="Set up your devices, pricing tiers, and optionally connect an ESP32 coin acceptor." />
+              desc="Set your pricing, allowed apps, and connect an ESP32 or ESP8266 coin acceptor — or use USB charge mode." />
             <StepCard step={3} title="Start Earning"
               desc="Customers insert coins or connect USB — the timer starts automatically. You monitor from the web." />
           </div>
@@ -263,12 +263,16 @@ export default function LandingPage() {
           {firmwareUrl
             ? <ExternalDownloadCard label="ESP32 Firmware (.bin)" icon="🔌" desc="Latest firmware for the coin acceptor module." href={firmwareUrl} />
             : <DownloadCard label="ESP32 Firmware (.bin)" icon="🔌" file={downloads.firmware} />}
-          <ExternalDownloadCard
-            label="ESP32 Flash Tool"
-            icon="⚡"
-            desc="Windows GUI tool by Espressif for flashing .bin firmware to ESP32."
-            href={flasherUrl || 'https://www.espressif.com/en/support/download/other-tools'}
-          />
+          {flasherUrl
+            ? <ExternalDownloadCard label="JJTPisoTab Setup Tool" icon="🛠️"
+                desc="All-in-one Windows setup tool — flash ESP32/ESP8266 firmware and install the PisoTab APK on your tablet via USB. No manual steps needed."
+                href={flasherUrl} />
+            : <div className="bg-slate-800 border border-slate-700 rounded-xl p-6 text-center">
+                <div className="text-4xl mb-3">🛠️</div>
+                <h3 className="text-white font-semibold mb-1">JJTPisoTab Setup Tool</h3>
+                <p className="text-slate-500 text-sm">Not yet available</p>
+              </div>
+          }
         </div>
         <p className="text-center text-slate-500 text-sm">
           7-day free trial included · No license key needed to start
@@ -310,19 +314,17 @@ export default function LandingPage() {
             <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
               <div className="flex items-center gap-3 mb-3">
                 <span className="w-7 h-7 rounded-full bg-red-600 flex items-center justify-center text-white font-bold text-sm shrink-0">2</span>
-                <h3 className="text-white font-semibold">Flash the ESP32 Firmware (.bin)</h3>
-                <span className="ml-auto text-xs px-2 py-0.5 rounded-full bg-yellow-900/60 text-yellow-300 font-medium shrink-0">ESP32 / Coin mode only</span>
+                <h3 className="text-white font-semibold">Flash the ESP32 / ESP8266 Firmware</h3>
+                <span className="ml-auto text-xs px-2 py-0.5 rounded-full bg-yellow-900/60 text-yellow-300 font-medium shrink-0">Coin mode only</span>
               </div>
               <p className="text-yellow-400/80 text-xs mb-3 ml-10">⚡ Skip this step if you are using <strong>USB mode</strong> (charge-based timer) — no ESP32 hardware required.</p>
               <ol className="list-decimal list-inside space-y-1.5 text-slate-400 ml-10">
-                <li>Download the <strong className="text-slate-300">ESP32 Firmware (.bin)</strong> and <strong className="text-slate-300">Flash Download Tool</strong> from the Downloads section above.</li>
-                <li>Install and open the <strong className="text-slate-300">ESP32 Flash Download Tool</strong>.</li>
-                <li>When prompted, select chip type: <code className="bg-slate-700 px-1.5 py-0.5 rounded text-red-300 font-mono">ESP32</code>, work mode: <code className="bg-slate-700 px-1.5 py-0.5 rounded text-red-300 font-mono">Develop</code>, load mode: <code className="bg-slate-700 px-1.5 py-0.5 rounded text-red-300 font-mono">USB</code>.</li>
-                <li>In the SPIDownload tab, click <strong className="text-slate-300">...</strong> and select your <code className="bg-slate-700 px-1.5 py-0.5 rounded text-red-300 font-mono">.bin</code> firmware file.</li>
-                <li>Set flash address to <code className="bg-slate-700 px-1.5 py-0.5 rounded text-red-300 font-mono">0x0</code> and check the checkbox next to the file row.</li>
-                <li>Connect ESP32 to your PC via USB, select the correct <strong className="text-slate-300">COM port</strong>.</li>
-                <li>Set SPI speed: <code className="bg-slate-700 px-1.5 py-0.5 rounded text-red-300 font-mono">40MHz</code>, SPI mode: <code className="bg-slate-700 px-1.5 py-0.5 rounded text-red-300 font-mono">DIO</code>.</li>
-                <li>Click <strong className="text-slate-300">START</strong> — wait for the progress bar to reach 100% and show <span className="text-green-400">FINISH</span>.</li>
+                <li>Download and install the <strong className="text-slate-300">JJTPisoTab Setup Tool</strong> from the Downloads section above.</li>
+                <li>Open the Setup Tool and go to the <strong className="text-slate-300">ESP Flasher</strong> tab.</li>
+                <li>Select your chip type: <code className="bg-slate-700 px-1.5 py-0.5 rounded text-red-300 font-mono">ESP32</code> or <code className="bg-slate-700 px-1.5 py-0.5 rounded text-red-300 font-mono">ESP8266</code> depending on your hardware.</li>
+                <li>Connect the ESP board to your PC via USB — select the correct <strong className="text-slate-300">COM port</strong>.</li>
+                <li>Click <strong className="text-slate-300">Flash</strong> — the tool flashes the firmware automatically.</li>
+                <li>Wait for <span className="text-green-400">Flash Complete</span> — then unplug and replug the ESP board.</li>
               </ol>
             </div>
 
@@ -350,13 +352,25 @@ export default function LandingPage() {
                 <span className="w-7 h-7 rounded-full bg-red-600 flex items-center justify-center text-white font-bold text-sm shrink-0">4</span>
                 <h3 className="text-white font-semibold">Install the Android Kiosk App (APK)</h3>
               </div>
+              <p className="text-slate-400 text-xs mb-2 ml-10 font-medium">Option A — Via JJTPisoTab Setup Tool <span className="text-green-400">(Recommended)</span></p>
+              <ol className="list-decimal list-inside space-y-1.5 text-slate-400 ml-10 mb-4">
+                <li>Open the <strong className="text-slate-300">JJTPisoTab Setup Tool</strong> → go to the <strong className="text-slate-300">Device Setup</strong> tab.</li>
+                <li>On the tablet: <strong className="text-slate-300">Settings → About phone</strong>, tap <strong className="text-slate-300">Build number</strong> 7 times → enable <strong className="text-slate-300">USB Debugging</strong> in Developer options.</li>
+                <li>Connect the tablet to your PC via USB — accept the debugging prompt on the tablet.</li>
+                <li>Click <strong className="text-slate-300">Install PisoTab APK</strong> — the tool installs the app automatically.</li>
+              </ol>
+              <p className="text-slate-400 text-xs mb-2 ml-10 font-medium">Option B — Manual install</p>
+              <ol className="list-decimal list-inside space-y-1.5 text-slate-400 ml-10 mb-4">
+                <li>Download the APK from the Downloads section above.</li>
+                <li>On the tablet: <strong className="text-slate-300">Settings → Security</strong> → enable <strong className="text-slate-300">Install Unknown Apps</strong>.</li>
+                <li>Open the downloaded APK file and install it.</li>
+              </ol>
+              <p className="text-slate-400 text-xs mb-2 ml-10 font-medium">After install (both options):</p>
               <ol className="list-decimal list-inside space-y-1.5 text-slate-400 ml-10">
-                <li>Download the APK from the Downloads section above and install it on your Android tablet.</li>
-                <li>On your tablet go to <strong className="text-slate-300">Settings → Security</strong> and enable <strong className="text-slate-300">Install Unknown Apps</strong>.</li>
                 <li>Launch <strong className="text-slate-300">PisoTab</strong> — the idle screen will appear.</li>
                 <li>Long-press the <strong className="text-slate-300">bottom-right corner</strong> for 2 seconds → enter Admin PIN <code className="bg-slate-700 px-1.5 py-0.5 rounded text-red-300 font-mono">1234</code>.</li>
                 <li>Go to <strong className="text-slate-300">Connection Settings</strong> → enter the Backend URL from your dashboard.</li>
-                <li>Go to <strong className="text-slate-300">Device Settings</strong> → paste your Device ID from the dashboard.</li>
+                <li>Go to <strong className="text-slate-300">Device Settings</strong> → paste your Device ID.</li>
                 <li>Tap <strong className="text-slate-300">Connect</strong> — status should change to <span className="text-green-400">Connected</span>.</li>
               </ol>
             </div>
