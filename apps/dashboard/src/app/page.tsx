@@ -190,16 +190,15 @@ export default function LandingPage() {
           Coin-operated, web-managed, offline-ready — built for Philippine internet shops and rental businesses.
         </p>
         <div className="flex flex-col sm:flex-row gap-4">
-          <Link href="/register"
-            className="px-8 py-3.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-semibold text-lg transition-colors">
-            Start Free Trial
-          </Link>
           <a href="#downloads"
-            className="px-8 py-3.5 rounded-xl border border-slate-600 hover:border-slate-400 text-slate-300 hover:text-white font-semibold text-lg transition-colors">
+            className="px-8 py-3.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-semibold text-lg transition-colors">
             Download App
           </a>
+          <Link href="/login"
+            className="px-8 py-3.5 rounded-xl border border-slate-600 hover:border-slate-400 text-slate-300 hover:text-white font-semibold text-lg transition-colors">
+            Sign In
+          </Link>
         </div>
-        <p className="text-slate-600 text-sm mt-6">7-day free trial · No credit card required</p>
 
         {/* Scroll indicator */}
         <div className="absolute bottom-8 flex flex-col items-center gap-1 text-slate-600 text-xs animate-bounce">
@@ -275,7 +274,7 @@ export default function LandingPage() {
           }
         </div>
         <p className="text-center text-slate-500 text-sm">
-          7-day free trial included · No license key needed to start
+          A valid license key is required to activate your device
         </p>
       </section>
 
@@ -415,7 +414,7 @@ export default function LandingPage() {
               <>
                 <Link href="/register"
                   className="px-8 py-3.5 rounded-xl bg-white text-red-700 font-semibold hover:bg-red-50 transition-colors">
-                  Create Free Account
+                  Register
                 </Link>
                 <Link href="/login"
                   className="px-8 py-3.5 rounded-xl border border-white/40 text-white hover:border-white transition-colors">

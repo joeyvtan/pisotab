@@ -164,7 +164,7 @@ export default function LicensesPage() {
                   <span>Owner: <span className="text-slate-300">{lic.owner_username}</span></span>
                 )}
                 <span>Device: <span className="text-slate-300">{lic.device_name ?? '—'}</span></span>
-                <span>Expires: <span className="text-slate-300">{formatDate(lic.expires_at)}</span></span>
+                <span>Purchased: <span className="text-slate-300">{formatDate(lic.created_at)}</span></span>
               </div>
               {/* Action buttons */}
               <div className="flex flex-wrap gap-2">
