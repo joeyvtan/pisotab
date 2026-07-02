@@ -23,7 +23,6 @@ export default function DeviceCard({ device, tiers, locations, onUpdate }: Props
   const [editBusy, setEditBusy]           = useState(false);
   const [showStart, setShowStart]         = useState(false);
   const [showAddTime, setShowAddTime]     = useState(false);
-  const [showTrial, setShowTrial]         = useState(false);
   const [showRemoteAdmin, setShowRemoteAdmin] = useState(false);
   const [showTransfer, setShowTransfer]   = useState(false);
   const [transferUsers, setTransferUsers] = useState<StaffUser[]>([]);
@@ -34,9 +33,7 @@ export default function DeviceCard({ device, tiers, locations, onUpdate }: Props
   const [selectedTier, setSelectedTier] = useState(tiers[0]?.id || '');
   const [customMins, setCustomMins]     = useState('');
   const [addMins, setAddMins]           = useState('5');
-  const [trialDays, setTrialDays]       = useState(String(device.trial_days_override ?? 7));
   const [busy, setBusy]                 = useState(false);
-  const [trialBusy, setTrialBusy]       = useState(false);
 
   const isActive   = device.status === 'in_session';
   const isUsbMode  = device.session_payment_method === 'usb';
@@ -138,17 +135,6 @@ export default function DeviceCard({ device, tiers, locations, onUpdate }: Props
     } finally { setTransferBusy(false); }
   }
 
-  async function resetTrial() {
-    setTrialBusy(true);
-    try {
-      await api.manageTrial(device.id, { reset: true, trial_days: Number(trialDays) });
-      setShowTrial(false);
-      onUpdate();
-    } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : 'Failed');
-    } finally { setTrialBusy(false); }
-  }
-
   function licenseBadge() {
     const s = device.license_status;
     if (!s) return null;
@@ -156,10 +142,7 @@ export default function DeviceCard({ device, tiers, locations, onUpdate }: Props
       const label = device.license_days_left != null ? `Licensed (${device.license_days_left}d)` : 'Licensed';
       return <span className="text-xs px-2 py-0.5 rounded bg-green-900 text-green-300">{label}</span>;
     }
-    if (s === 'trial') {
-      return <span className="text-xs px-2 py-0.5 rounded bg-amber-900 text-amber-300">Trial — {device.license_days_left}d left</span>;
-    }
-    return <span className="text-xs px-2 py-0.5 rounded bg-red-900 text-red-300">Trial Expired</span>;
+    return <span className="text-xs px-2 py-0.5 rounded bg-slate-700 text-slate-400">No License</span>;
   }
 
   return (
@@ -276,13 +259,7 @@ export default function DeviceCard({ device, tiers, locations, onUpdate }: Props
             onClick={() => setShowRemoteAdmin(true)}>
             ⚙ Remote Admin
           </button>
-          {user?.role === 'superadmin' && !hasLicense && (
-            <button
-              className="text-xs text-slate-500 hover:text-amber-400 transition-colors"
-              onClick={() => setShowTrial(!showTrial)}>
-              ⚙ Trial settings
-            </button>
-          )}
+
           {canManage && (
             <button
               className="text-xs text-slate-500 hover:text-indigo-400 transition-colors"
@@ -376,28 +353,6 @@ export default function DeviceCard({ device, tiers, locations, onUpdate }: Props
         </div>
       )}
 
-      {/* Trial management panel */}
-      {showTrial && user?.role === 'superadmin' && !hasLicense && (
-        <div className="bg-slate-800 border border-amber-700/40 rounded-lg p-3 space-y-3">
-          <p className="text-xs text-amber-400 font-medium">Trial Settings</p>
-          <p className="text-xs text-slate-400">
-            Current: {device.license_status === 'trial_expired' ? 'Expired' : `${device.license_days_left} days left`}
-          </p>
-          <div>
-            <label className="block text-xs text-slate-400 mb-1">Trial duration (days)</label>
-            <input className="input text-sm" type="number" min="1" value={trialDays}
-              onChange={e => setTrialDays(e.target.value)} />
-          </div>
-          <button
-            className="w-full text-sm py-1.5 rounded bg-amber-600 hover:bg-amber-500 text-white transition-colors"
-            onClick={resetTrial} disabled={trialBusy}>
-            {trialBusy ? 'Applying...' : 'Reset Trial with these days'}
-          </button>
-          <p className="text-xs text-slate-500">
-            Resets the trial clock — device gets the entered number of days from now.
-          </p>
-        </div>
-      )}
     </div>
   );
 }
