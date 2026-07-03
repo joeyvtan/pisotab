@@ -12,6 +12,8 @@ contextBridge.exposeInMainWorld('pisotab', {
     checkDeviceOwner:()       => ipcRenderer.invoke('adb:check-owner'),
     checkReceiver:   ()       => ipcRenderer.invoke('adb:check-receiver'),
     pushConfig:      (config) => ipcRenderer.invoke('adb:push-config', config),
+    grantAlertWindow:   ()    => ipcRenderer.invoke('adb:grant-alert-window'),
+    grantSecureSettings:()    => ipcRenderer.invoke('adb:grant-secure-settings'),
     autoBootOnCharge:()       => ipcRenderer.invoke('adb:auto-boot'),
     factoryReset:    ()       => ipcRenderer.invoke('adb:factory-reset'),
     getInstalledVersion: ()   => ipcRenderer.invoke('adb:get-version'),

@@ -60,10 +60,26 @@ export default function Wizard() {
         }
         case 'owner': {
           window.pisotab.adb.onLog(addLog);
-          const result = await window.pisotab.adb.setDeviceOwner();
+
+          const ownerResult = await window.pisotab.adb.setDeviceOwner();
+          if (!ownerResult.success) {
+            window.pisotab.adb.offLog();
+            throw new Error(ownerResult.error || 'Set Device Owner failed. Remove all Google accounts first.');
+          }
+          addLog(ownerResult.alreadySet ? '✓ Device Owner already set (skipped)' : '✓ Device Owner set');
+
+          const alertResult = await window.pisotab.adb.grantAlertWindow();
+          if (!alertResult.success) {
+            window.pisotab.adb.offLog();
+            throw new Error(alertResult.error || 'Failed to grant System Alert Window');
+          }
+          addLog('✓ System Alert Window granted (floating timer overlay)');
+
+          const secureResult = await window.pisotab.adb.grantSecureSettings();
           window.pisotab.adb.offLog();
-          if (!result.success) throw new Error(result.error || 'Set Device Owner failed. Remove all Google accounts first.');
-          addLog(result.alreadySet ? '✓ Device Owner already set (skipped)' : '✓ Device Owner set');
+          if (!secureResult.success) throw new Error(secureResult.error || 'Failed to grant Write Secure Settings');
+          addLog('✓ Write Secure Settings granted (lock screen & kiosk controls)');
+
           break;
         }
         case 'details': {

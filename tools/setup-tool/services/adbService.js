@@ -111,6 +111,24 @@ function setupAdbHandlers(ipcMain, mainWindow, getAssetPath) {
     }
   });
 
+  ipcMain.handle('adb:grant-alert-window', async () => {
+    try {
+      await runAdb(['shell', 'appops', 'set', 'com.pisotab.app', 'SYSTEM_ALERT_WINDOW', 'allow']);
+      return { success: true };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  });
+
+  ipcMain.handle('adb:grant-secure-settings', async () => {
+    try {
+      await runAdb(['shell', 'pm', 'grant', 'com.pisotab.app', 'android.permission.WRITE_SECURE_SETTINGS']);
+      return { success: true };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  });
+
   ipcMain.handle('adb:get-version', async () => {
     try {
       // Get full dumpsys output and parse in Node — pipe operators don't work in spawn
