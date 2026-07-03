@@ -210,7 +210,7 @@ class PrefsManager(context: Context) {
         get() = prefs.getString("license_key", "") ?: ""
         set(v) = prefs.edit { putString("license_key", v) }
 
-    /** Last known license status cached from API: "active" | "trial" | "trial_expired" | "" */
+    /** Last known license status cached from API: "active" | "unlicensed" | "" */
     var licenseStatus: String
         get() = prefs.getString("license_status", "") ?: ""
         set(v) = prefs.edit { putString("license_status", v) }

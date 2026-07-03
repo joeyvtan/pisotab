@@ -74,6 +74,9 @@ class MainActivity : AppCompatActivity() {
     private val sleepHandler = Handler(Looper.getMainLooper())
     private var isSleeping = false
     private var screenWakeLock: PowerManager.WakeLock? = null
+    // True once any app is launched from the launcher during the current session.
+    // Used to skip deep-freeze wipe when the timer expires mid-game.
+    private var wasAppLaunchedInSession = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         ThemeManager.applyTheme(this)
@@ -114,7 +117,10 @@ class MainActivity : AppCompatActivity() {
         // Launcher grid
         launcherAdapter = LauncherAdapter { item ->
             val launch = packageManager.getLaunchIntentForPackage(item.packageName)
-            if (launch != null) startActivity(launch)
+            if (launch != null) {
+                wasAppLaunchedInSession = true
+                startActivity(launch)
+            }
         }
         rvLauncher.layoutManager = FlexboxLayoutManager(this).apply {
             flexWrap       = FlexWrap.WRAP
@@ -205,7 +211,7 @@ class MainActivity : AppCompatActivity() {
         }
         SyncService.onAddTime = { mins ->
             runOnUiThread {
-                if (vm.prefs.licenseStatus == "trial_expired") return@runOnUiThread
+                if (vm.prefs.licenseStatus != "active") return@runOnUiThread
                 // Only extend the live countdown — do NOT call vm.addTime() here.
                 // vm.addTime() calls api.addTime() which re-broadcasts cmd:add_time,
                 // creating an infinite socket feedback loop that makes the timer
@@ -327,8 +333,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun applyLicenseOverlay() {
-        val expired = vm.prefs.licenseStatus == "trial_expired"
-        screenLicenseExpired.visibility = if (expired) View.VISIBLE else View.GONE
+        val unlicensed = vm.prefs.licenseStatus != "active"
+        screenLicenseExpired.visibility = if (unlicensed) View.VISIBLE else View.GONE
     }
 
     private fun showIdle() {
@@ -357,6 +363,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showActive(secs: Int) {
+        wasAppLaunchedInSession = false
         cancelSleepTimer()
         wakeupScreen()
         stopIdleVideo()
@@ -426,9 +433,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun onExpired() {
         if (vm.prefs.deepFreezeEnabled) {
-            // Deep freeze needs the Session Expired screen to show the countdown + wipe
+            // Deep freeze needs the Session Expired screen to show the countdown + wipe.
+            // Pass skip_wipe=true when the customer had an app open — the countdown still
+            // shows, but wipeAppData() is skipped so an in-progress game is not cleared.
             startActivity(Intent(this, LockScreenActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                putExtra("skip_wipe", wasAppLaunchedInSession)
             })
         } else {
             // No deep freeze — go straight to the Insert Coin to Start idle screen
@@ -475,7 +485,7 @@ class MainActivity : AppCompatActivity() {
         if (!idleVideoActive) WallpaperManager.applyToImageView(ivWallpaper, this, false)
         // Re-register callback in case LockScreenActivity overwrote it
         SyncService.onStartSession = { sessionId, durationSecs, amount ->
-            if (vm.prefs.licenseStatus != "trial_expired") {
+            if (vm.prefs.licenseStatus == "active") {
                 runOnUiThread { vm.startSession(durationSecs / 60, amount, serverSessionId = sessionId, durationSecs = durationSecs) }
             }
         }
@@ -517,7 +527,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun handleSessionIntent(intent: Intent) {
-        if (vm.prefs.licenseStatus == "trial_expired") return
+        if (vm.prefs.licenseStatus != "active") return
         val usbSessionId = intent.getStringExtra("usb_session_id")
         if (!usbSessionId.isNullOrEmpty()) {
             vm.startUsbSession(usbSessionId)

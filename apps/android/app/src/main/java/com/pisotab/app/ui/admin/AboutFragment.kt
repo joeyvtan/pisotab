@@ -80,16 +80,12 @@ class AboutFragment : Fragment() {
                 if (resp.isSuccessful) {
                     val lic = resp.body() ?: return@launch
                     tvLicenseStatus.text = when (lic.status) {
-                        "active"        -> if (lic.days_left != null) "Active — ${lic.days_left} days left" else "Active (Lifetime)"
-                        "trial"         -> "Trial — ${lic.days_left} days left"
-                        "trial_expired" -> "Trial Expired — Enter license key"
-                        else            -> lic.status
+                        "active" -> if (lic.days_left != null) "Active — ${lic.days_left} days left" else "Active (Lifetime)"
+                        else     -> "No License — Activate a key"
                     }
-                    tvLicenseStatus.setTextColor(android.graphics.Color.parseColor(when (lic.status) {
-                        "active"        -> "#22C55E"
-                        "trial"         -> "#F97316"
-                        else            -> "#EF4444"
-                    }))
+                    tvLicenseStatus.setTextColor(android.graphics.Color.parseColor(
+                        if (lic.status == "active") "#22C55E" else "#EF4444"
+                    ))
                 }
             } catch (_: Exception) {
                 tvLicenseStatus.text = "—"
@@ -185,9 +181,7 @@ class AboutFragment : Fragment() {
                     val info = response.body()!!
                     if (info.version_code > BuildConfig.VERSION_CODE) {
                         tvUpdateStatus.text = "Update available: v${info.version_name}"
-                        if (!info.apk_url.isNullOrEmpty()) {
-                            promptDownload(info.apk_url, info.version_name)
-                        }
+                        promptDownload(info.apk_url, info.version_name, info.changelog)
                     } else {
                         tvUpdateStatus.text = "You are on the latest version (v${BuildConfig.VERSION_NAME})."
                     }
@@ -202,11 +196,19 @@ class AboutFragment : Fragment() {
         }
     }
 
-    private fun promptDownload(url: String, version: String) {
-        androidx.appcompat.app.AlertDialog.Builder(requireContext())
+    private fun promptDownload(url: String?, version: String, changelog: String?) {
+        val message = buildString {
+            append("Version $version is available.")
+            if (!changelog.isNullOrEmpty()) append("\n\nWhat's new:\n$changelog")
+            if (url.isNullOrEmpty()) append("\n\nDownload not yet available. Contact your administrator.")
+            else append("\n\nDownload now?")
+        }
+        val builder = androidx.appcompat.app.AlertDialog.Builder(requireContext())
             .setTitle("Update Available")
-            .setMessage("Version $version is available. Download now?")
-            .setPositiveButton("Download") { _, _ ->
+            .setMessage(message)
+            .setNegativeButton("Close", null)
+        if (!url.isNullOrEmpty()) {
+            builder.setPositiveButton("Download") { _, _ ->
                 val request = DownloadManager.Request(Uri.parse(url))
                     .setTitle("PisoTab v$version")
                     .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
@@ -215,7 +217,7 @@ class AboutFragment : Fragment() {
                 dm.enqueue(request)
                 Toast.makeText(requireContext(), "Download started. Check notifications.", Toast.LENGTH_LONG).show()
             }
-            .setNegativeButton("Later", null)
-            .show()
+        }
+        builder.show()
     }
 }

@@ -24,7 +24,7 @@ router.get('/check/:device_id', async (req, res) => {
 
     const now = Math.floor(Date.now() / 1000);
 
-    // Check for active paid license first
+    // Check for an active paid license bound to this device
     const license = await db.get(
       'SELECT * FROM licenses WHERE device_id = ? AND (expires_at IS NULL OR expires_at > ?)',
       [req.params.device_id, now]
@@ -35,27 +35,8 @@ router.get('/check/:device_id', async (req, res) => {
       return res.json({ status: 'active', plan: 'paid', days_left: daysLeft, key: license.key });
     }
 
-    // trial_days_override=0 means admin force-expired the device — check before setting trial clock.
-    const trialDays = device.trial_days_override != null ? device.trial_days_override : TRIAL_DAYS;
-    if (trialDays === 0) {
-      return res.json({ status: 'trial_expired', plan: 'trial', days_left: 0 });
-    }
-
-    // Trial clock starts on first call to this endpoint — not from device.created_at.
-    // This prevents existing devices (registered before licensing was added) from
-    // immediately showing "Trial Expired" on their first check.
-    let trialStart = device.trial_started_at;
-    if (!trialStart) {
-      trialStart = now;
-      await db.run('UPDATE devices SET trial_started_at = ? WHERE id = ?', [trialStart, device.id]);
-    }
-
-    const trialEnd = trialStart + trialDays * 86400;
-    if (now < trialEnd) {
-      return res.json({ status: 'trial', plan: 'trial', days_left: Math.ceil((trialEnd - now) / 86400) });
-    }
-
-    return res.json({ status: 'trial_expired', plan: 'trial', days_left: 0 });
+    // No active license — device must activate a key to operate
+    return res.json({ status: 'unlicensed', plan: 'none', days_left: null });
   } catch (err) { console.error(err); res.status(500).json({ error: 'Server error' }); }
 });
 

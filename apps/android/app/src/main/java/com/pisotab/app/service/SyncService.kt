@@ -88,7 +88,7 @@ class SyncService : Service() {
 
         // Wire SocketManager callbacks → static callbacks (read by ViewModel)
         SocketManager.onStartSession = { id, secs, amount ->
-            if (app.prefs.licenseStatus != "trial_expired") {
+            if (app.prefs.licenseStatus == "active") {
                 val mainCallback = onStartSession
                 if (mainCallback != null) {
                     mainCallback.invoke(id, secs, amount)
@@ -219,7 +219,7 @@ class SyncService : Service() {
                         // so the timer begins within one heartbeat cycle (≤30 s) rather than never.
                         val recoveredSession = body?.active_session
                         if (recoveredSession != null && app.prefs.activeSessionId.isEmpty()
-                            && app.prefs.licenseStatus != "trial_expired") {
+                            && app.prefs.licenseStatus == "active") {
                             android.util.Log.w("SyncService", "Recovering lost session ${recoveredSession.session_id} from heartbeat")
                             val mainCallback = onStartSession
                             if (mainCallback != null) {

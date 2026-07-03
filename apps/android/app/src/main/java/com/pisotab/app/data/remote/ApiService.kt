@@ -192,14 +192,15 @@ data class SessionListItem(
 data class AppVersionResponse(
     val version_code: Int,
     val version_name: String,
-    val apk_url: String?
+    val apk_url: String?,
+    val changelog: String?
 )
 
 data class LoginRequest(val username: String, val password: String)
 data class LoginResponse(val token: String)
 
 data class LicenseStatusResponse(
-    val status: String,   // "active" | "trial" | "trial_expired"
+    val status: String,   // "active" | "unlicensed"
     val plan: String,
     val days_left: Int?
 )
