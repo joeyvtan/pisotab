@@ -175,7 +175,7 @@
 
     </LinearLayout>
 
-    <!-- License expired overlay — blocks all interaction when trial/license is expired -->
+    <!-- License overlay — blocks all interaction when no active license is bound -->
     <LinearLayout
         android:id="@+id/screen_license_expired"
         android:layout_width="match_parent"
@@ -194,7 +194,7 @@
             android:layout_gravity="center" />
 
         <TextView
-            android:text="Trial Expired"
+            android:text="License Required"
             android:textSize="28sp"
             android:textColor="#EF4444"
             android:textStyle="bold"
@@ -204,7 +204,7 @@
             android:layout_gravity="center" />
 
         <TextView
-            android:text="This device's trial period has ended.\nContact your administrator to activate a license."
+            android:text="This device does not have an active license.\nContact your administrator to activate a license key."
             android:textSize="16sp"
             android:textColor="#94A3B8"
             android:gravity="center"
