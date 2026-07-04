@@ -356,6 +356,12 @@ class TimerService : Service() {
     }
 
     private fun endSession() {
+        // Guard: showIdle() sends ACTION_END as defensive cleanup after a session ends.
+        // That causes startService(ACTION_END) to restart a dead TimerService with isRunning=false.
+        // Without this check, endSession() would unconditionally launch LockScreenActivity a second
+        // time — the "countdown screen appears twice" bug. Only proceed if a session is actually running.
+        if (!isRunning) { stopSelf(); return }
+        isRunning = false
         whitelistJob?.cancel()
         timerJob?.cancel()
         val activeId = app.prefs.activeSessionId.takeIf { it.isNotEmpty() } ?: sessionId
