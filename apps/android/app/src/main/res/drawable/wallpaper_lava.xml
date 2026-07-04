@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="360dp"
+    android:height="640dp"
+    android:viewportWidth="360"
+    android:viewportHeight="640">
+
+    <!-- Near-black base with warm undertone -->
+    <path android:fillColor="#0A0300" android:pathData="M0,0 H360 V640 H0 Z"/>
+
+    <!-- Dark charcoal upper zone -->
+    <path android:fillColor="#110600" android:fillAlpha="0.9"
+        android:pathData="M0,0 H360 V280 H0 Z"/>
+
+    <!-- Crimson lava glow — wide spread from bottom center -->
+    <path android:fillColor="#7A0000" android:fillAlpha="0.5"
+        android:pathData="M180,640 m-260,0 a260,180 0 1,0 520,0 a260,180 0 1,0-520,0"/>
+    <path android:fillColor="#CC2200" android:fillAlpha="0.4"
+        android:pathData="M180,640 m-180,0 a180,130 0 1,0 360,0 a180,130 0 1,0-360,0"/>
+    <path android:fillColor="#FF4400" android:fillAlpha="0.35"
+        android:pathData="M180,640 m-110,0 a110,80 0 1,0 220,0 a110,80 0 1,0-220,0"/>
+    <path android:fillColor="#FF6600" android:fillAlpha="0.3"
+        android:pathData="M180,640 m-60,0 a60,50 0 1,0 120,0 a60,50 0 1,0-120,0"/>
+
+    <!-- Mid-zone heat glow — orange -->
+    <path android:fillColor="#882200" android:fillAlpha="0.25"
+        android:pathData="M180,480 m-160,0 a160,100 0 1,0 320,0 a160,100 0 1,0-320,0"/>
+    <path android:fillColor="#CC3300" android:fillAlpha="0.2"
+        android:pathData="M180,460 m-80,0 a80,60 0 1,0 160,0 a80,60 0 1,0-160,0"/>
+
+    <!-- Left side secondary vent glow -->
+    <path android:fillColor="#880000" android:fillAlpha="0.35"
+        android:pathData="M40,640 m-80,0 a80,90 0 1,0 160,0 a80,90 0 1,0-160,0"/>
+    <path android:fillColor="#CC2200" android:fillAlpha="0.25"
+        android:pathData="M40,640 m-40,0 a40,55 0 1,0 80,0 a80,55 0 1,0-80,0"/>
+
+    <!-- Right side secondary vent glow -->
+    <path android:fillColor="#880000" android:fillAlpha="0.35"
+        android:pathData="M320,640 m-80,0 a80,90 0 1,0 160,0 a80,90 0 1,0-160,0"/>
+    <path android:fillColor="#CC2200" android:fillAlpha="0.25"
+        android:pathData="M320,640 m-40,0 a40,55 0 1,0 80,0 a40,55 0 1,0-80,0"/>
+
+    <!-- Lava crack — main diagonal left -->
+    <path android:fillColor="#00000000" android:strokeColor="#FF5500"
+        android:strokeWidth="1.8" android:strokeAlpha="0.7"
+        android:pathData="M80,640 L130,520 L90,440 L140,360 L110,280"/>
+    <path android:fillColor="#00000000" android:strokeColor="#FF3300"
+        android:strokeWidth="0.8" android:strokeAlpha="0.4"
+        android:pathData="M80,640 L130,520 L90,440 L140,360 L110,280"/>
+
+    <!-- Lava crack — main diagonal right -->
+    <path android:fillColor="#00000000" android:strokeColor="#FF5500"
+        android:strokeWidth="1.8" android:strokeAlpha="0.7"
+        android:pathData="M280,640 L240,530 L270,450 L230,370 L260,300"/>
+    <path android:fillColor="#00000000" android:strokeColor="#FF3300"
+        android:strokeWidth="0.8" android:strokeAlpha="0.4"
+        android:pathData="M280,640 L240,530 L270,450 L230,370 L260,300"/>
+
+    <!-- Lava crack — center branch -->
+    <path android:fillColor="#00000000" android:strokeColor="#FF4400"
+        android:strokeWidth="1.4" android:strokeAlpha="0.65"
+        android:pathData="M180,640 L175,570 L195,510 L170,440 L185,380"/>
+    <!-- Branch off center crack -->
+    <path android:fillColor="#00000000" android:strokeColor="#CC2200"
+        android:strokeWidth="0.9" android:strokeAlpha="0.5"
+        android:pathData="M175,570 L140,550 M195,510 L230,490 M170,440 L130,420"/>
+
+    <!-- Secondary hairline cracks -->
+    <path android:fillColor="#00000000" android:strokeColor="#FF6600"
+        android:strokeWidth="0.7" android:strokeAlpha="0.4"
+        android:pathData="M130,520 L160,505 M90,440 L120,425 M140,360 L170,345
+                          M240,530 L210,515 M270,450 L245,435 M230,370 L205,355"/>
+
+    <!-- Molten lava pools — glowing bright spots -->
+    <path android:fillColor="#331100" android:fillAlpha="0.9"
+        android:pathData="M180,610 m-30,0 a30,18 0 1,0 60,0 a30,18 0 1,0-60,0"/>
+    <path android:fillColor="#882200" android:fillAlpha="0.85"
+        android:pathData="M180,618 m-18,0 a18,11 0 1,0 36,0 a18,11 0 1,0-36,0"/>
+    <path android:fillColor="#FF4400" android:fillAlpha="0.7"
+        android:pathData="M180,623 m-10,0 a10,6 0 1,0 20,0 a10,6 0 1,0-20,0"/>
+    <path android:fillColor="#FF8800" android:fillAlpha="0.85"
+        android:pathData="M180,626 m-5,0 a5,3 0 1,0 10,0 a5,3 0 1,0-10,0"/>
+    <path android:fillColor="#FFCC44"
+        android:pathData="M180,628 m-2,0 a2,1.5 0 1,0 4,0 a2,1.5 0 1,0-4,0"/>
+
+    <!-- Left pool -->
+    <path android:fillColor="#661100" android:fillAlpha="0.8"
+        android:pathData="M70,628 m-18,0 a18,10 0 1,0 36,0 a18,10 0 1,0-36,0"/>
+    <path android:fillColor="#FF3300" android:fillAlpha="0.65"
+        android:pathData="M70,632 m-9,0 a9,5 0 1,0 18,0 a9,5 0 1,0-18,0"/>
+    <path android:fillColor="#FF7700"
+        android:pathData="M70,634 m-3,0 a3,2 0 1,0 6,0 a3,2 0 1,0-6,0"/>
+
+    <!-- Right pool -->
+    <path android:fillColor="#661100" android:fillAlpha="0.8"
+        android:pathData="M295,625 m-18,0 a18,10 0 1,0 36,0 a18,10 0 1,0-36,0"/>
+    <path android:fillColor="#FF3300" android:fillAlpha="0.65"
+        android:pathData="M295,630 m-9,0 a9,5 0 1,0 18,0 a9,5 0 1,0-18,0"/>
+    <path android:fillColor="#FF7700"
+        android:pathData="M295,633 m-3,0 a3,2 0 1,0 6,0 a3,2 0 1,0-6,0"/>
+
+    <!-- Flying ember particles -->
+    <path android:fillColor="#FF8800"
+        android:pathData="M145,380 m-2,0 a2,2 0 1,0 4,0 a2,2 0 1,0-4,0
+                          M220,350 m-1.5,0 a1.5,1.5 0 1,0 3,0 a1.5,1.5 0 1,0-3,0
+                          M100,310 m-1.5,0 a1.5,1.5 0 1,0 3,0 a1.5,1.5 0 1,0-3,0
+                          M265,290 m-1.5,0 a1.5,1.5 0 1,0 3,0 a1.5,1.5 0 1,0-3,0
+                          M175,260 m-1,0 a1,1 0 1,0 2,0 a1,1 0 1,0-2,0"/>
+    <path android:fillColor="#FFCC00" android:fillAlpha="0.8"
+        android:pathData="M160,320 m-1,0 a1,1 0 1,0 2,0 a1,1 0 1,0-2,0
+                          M235,280 m-1,0 a1,1 0 1,0 2,0 a1,1 0 1,0-2,0
+                          M120,260 m-1,0 a1,1 0 1,0 2,0 a1,1 0 1,0-2,0"/>
+    <path android:fillColor="#FF4400" android:fillAlpha="0.6"
+        android:pathData="M190,220 m-1,0 a1,1 0 1,0 2,0 a1,1 0 1,0-2,0
+                          M140,200 m-0.8,0 a0.8,0.8 0 1,0 1.6,0 a0.8,0.8 0 1,0-1.6,0
+                          M250,230 m-0.8,0 a0.8,0.8 0 1,0 1.6,0 a0.8,0.8 0 1,0-1.6,0
+                          M80,180 m-0.8,0 a0.8,0.8 0 1,0 1.6,0 a0.8,0.8 0 1,0-1.6,0
+                          M290,210 m-0.8,0 a0.8,0.8 0 1,0 1.6,0 a0.8,0.8 0 1,0-1.6,0"/>
+
+    <!-- Very faint top cool-down zone -->
+    <path android:fillColor="#000000" android:fillAlpha="0.35"
+        android:pathData="M0,0 H360 V200 H0 Z"/>
+
+</vector>

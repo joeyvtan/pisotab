@@ -30,7 +30,13 @@ object KioskManager {
      */
     fun startLockTask(activity: Activity, allowedPackages: Set<String> = emptySet()) {
         try {
-            val packages = (setOf(activity.packageName) + allowedPackages).toTypedArray()
+            // Always include browser packages so OAuth / login flows (Chrome Custom Tabs) work.
+            // Lock task mode blocks startActivity() for packages not in the whitelist — Chrome CCT
+            // opened by Facebook for login is killed immediately if Chrome isn't whitelisted here,
+            // even though the user never explicitly added Chrome to their allowed-apps list.
+            // Use the same hardcoded set as the whitelist enforcer — queryIntentActivities() returns
+            // an empty list on Android 11+ without a <queries> manifest declaration.
+            val packages = (setOf(activity.packageName) + allowedPackages + com.pisotab.app.service.TimerService.EXEMPT_PACKAGES).toTypedArray()
             setLockTaskPackages(activity, *packages)
             activity.startLockTask()
         } catch (_: Exception) {}

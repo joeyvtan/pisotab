@@ -74,7 +74,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun startSession(durationMins: Int, amountPaid: Double, pricingTierId: String? = null, serverSessionId: String? = null) {
+    fun startSession(durationMins: Int, amountPaid: Double, pricingTierId: String? = null, serverSessionId: String? = null, durationSecs: Int = durationMins * 60) {
         viewModelScope.launch {
             val deviceId = prefs.deviceId
             // Use server-assigned ID if provided (triggered by socket cmd:start from dashboard)
@@ -86,7 +86,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 deviceId = deviceId,
                 startedAt = System.currentTimeMillis() / 1000,
                 durationMins = durationMins,
-                timeRemainingSecs = durationMins * 60,
+                timeRemainingSecs = durationSecs,
                 status = "active",
                 amountPaid = amountPaid,
                 paymentMethod = if (!serverSessionId.isNullOrEmpty()) "manual" else "coin",

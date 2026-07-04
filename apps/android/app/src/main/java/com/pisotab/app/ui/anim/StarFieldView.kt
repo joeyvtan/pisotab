@@ -1,98 +1,91 @@
 package com.pisotab.app.ui.anim
 
 import android.content.Context
-import android.graphics.Canvas
-import android.graphics.Color
-import android.graphics.Paint
+import android.graphics.*
 import android.util.AttributeSet
 import android.view.View
 import android.view.animation.AnimationUtils
-import kotlin.math.sin
+import kotlin.math.*
 import kotlin.random.Random
 
+/** Warp-speed starfield — stars accelerate outward from center like flying through hyperspace. */
 class StarFieldView @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null
 ) : View(context, attrs) {
 
     private data class Star(
-        val x: Float,
-        val y: Float,
-        val baseRadius: Float,
-        val phase: Double,
-        val twinkleSpeed: Double,
-        val color: Int
+        val angle: Double,
+        var radius: Float,
+        val speed: Float,   // base px/sec at edge
+        val color: Int,
+        val size: Float
     )
 
-    private val stars = ArrayList<Star>(150)
-    private var initialized = false
-    private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val stars  = ArrayList<Star>(200)
+    private val paint  = Paint(Paint.ANTI_ALIAS_FLAG)
+    private var cx     = 0f; private var cy = 0f; private var maxR = 0f
+    private var lastMs = 0L
 
-    // Warm white, cool blue-white, pale yellow — natural star colors
     private val starColors = intArrayOf(
-        Color.parseColor("#FFFFFF"),
-        Color.parseColor("#CCE4FF"),
-        Color.parseColor("#FFEEDD"),
-        Color.parseColor("#E8E0FF"),
-        Color.parseColor("#C8DFFF")
+        Color.WHITE,
+        Color.parseColor("#CCE8FF"),
+        Color.parseColor("#AABBFF"),
+        Color.parseColor("#FFEECC"),
+        Color.parseColor("#00FFEE"),
+        Color.parseColor("#FF88CC"),
     )
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+        cx = w / 2f; cy = h / 2f
+        maxR = hypot(cx, cy) * 1.05f
         stars.clear()
-        // Large bright stars
-        repeat(12) {
-            stars.add(Star(
-                x = Random.nextFloat() * w,
-                y = Random.nextFloat() * h,
-                baseRadius = Random.nextFloat() * 1.8f + 2.2f,
-                phase = Random.nextDouble() * Math.PI * 2,
-                twinkleSpeed = Random.nextDouble() * 0.6 + 0.25,
-                color = starColors[Random.nextInt(starColors.size)]
-            ))
-        }
-        // Medium stars
-        repeat(45) {
-            stars.add(Star(
-                x = Random.nextFloat() * w,
-                y = Random.nextFloat() * h,
-                baseRadius = Random.nextFloat() * 0.9f + 1.0f,
-                phase = Random.nextDouble() * Math.PI * 2,
-                twinkleSpeed = Random.nextDouble() * 1.0 + 0.35,
-                color = Color.WHITE
-            ))
-        }
-        // Dim distant stars — most numerous, barely visible
-        repeat(90) {
-            stars.add(Star(
-                x = Random.nextFloat() * w,
-                y = Random.nextFloat() * h,
-                baseRadius = Random.nextFloat() * 0.5f + 0.3f,
-                phase = Random.nextDouble() * Math.PI * 2,
-                twinkleSpeed = Random.nextDouble() * 1.5 + 0.5,
-                color = Color.parseColor("#99BBDD")
-            ))
-        }
-        initialized = true
+        // Seed with randomised starting radii so it looks alive immediately
+        repeat(200) { stars.add(newStar(spreadRadius = true)) }
+    }
+
+    private fun newStar(spreadRadius: Boolean = false): Star {
+        val r = if (spreadRadius) Random.nextFloat() * maxR else Random.nextFloat() * maxR * 0.08f
+        return Star(
+            angle  = Random.nextDouble() * Math.PI * 2,
+            radius = r,
+            speed  = Random.nextFloat() * 200f + 80f,
+            color  = starColors[Random.nextInt(starColors.size)],
+            size   = Random.nextFloat() * 1.6f + 0.5f
+        )
     }
 
     override fun onDraw(canvas: Canvas) {
-        if (!initialized) { postInvalidateOnAnimation(); return }
+        val now = AnimationUtils.currentAnimationTimeMillis()
+        val dt  = if (lastMs == 0L) 0.016f else ((now - lastMs) / 1000f).coerceAtMost(0.05f)
+        lastMs  = now
 
-        val t = AnimationUtils.currentAnimationTimeMillis() / 1000.0
+        for (i in stars.indices) {
+            val s   = stars[i]
+            val frac = (s.radius / maxR).coerceIn(0f, 1f)
 
-        for (star in stars) {
-            val twinkle = (sin(t * star.twinkleSpeed + star.phase) * 0.5 + 0.5).toFloat()
-            val alpha = (twinkle * 205 + 50).toInt().coerceIn(0, 255)
-            val radius = star.baseRadius * (0.65f + twinkle * 0.45f)
-            paint.color = star.color
-            paint.alpha = alpha
-            canvas.drawCircle(star.x, star.y, radius, paint)
+            // Warp acceleration: exponential speed-up as star moves outward
+            val accel     = s.speed * (frac * frac * 4f + 0.04f)
+            val newRadius = s.radius + accel * dt
+
+            val oldX = cx + cos(s.angle).toFloat() * s.radius
+            val oldY = cy + sin(s.angle).toFloat() * s.radius
+            val newX = cx + cos(s.angle).toFloat() * newRadius.coerceAtMost(maxR)
+            val newY = cy + sin(s.angle).toFloat() * newRadius.coerceAtMost(maxR)
+
+            val alpha  = (frac * 210 + 40).toInt().coerceIn(0, 255)
+            val stroke = s.size * (0.4f + frac * 2.5f)
+
+            paint.color       = s.color
+            paint.alpha       = alpha
+            paint.strokeWidth = stroke
+            paint.strokeCap   = Paint.Cap.ROUND
+            canvas.drawLine(oldX, oldY, newX, newY, paint)
+
+            stars[i] = if (newRadius >= maxR) newStar() else s.copy(radius = newRadius)
         }
 
         postInvalidateOnAnimation()
     }
 
-    override fun onAttachedToWindow() {
-        super.onAttachedToWindow()
-        invalidate()
-    }
+    override fun onAttachedToWindow() { super.onAttachedToWindow(); lastMs = 0L; invalidate() }
 }

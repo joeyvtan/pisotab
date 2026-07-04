@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="360dp"
+    android:height="640dp"
+    android:viewportWidth="360"
+    android:viewportHeight="640">
+
+    <!-- Deep navy base -->
+    <path android:fillColor="#030B18" android:pathData="M0,0 H360 V640 H0 Z"/>
+
+    <!-- Wide electric-blue radial glow — upper center -->
+    <path android:fillColor="#0044CC" android:fillAlpha="0.18"
+        android:pathData="M180,200 m-220,0 a220,220 0 1,0 440,0 a220,220 0 1,0-440,0"/>
+    <path android:fillColor="#0088FF" android:fillAlpha="0.12"
+        android:pathData="M180,200 m-130,0 a130,130 0 1,0 260,0 a130,130 0 1,0-260,0"/>
+
+    <!-- Bottom accent glow — deep blue -->
+    <path android:fillColor="#001A66" android:fillAlpha="0.6"
+        android:pathData="M0,520 H360 V640 H0 Z"/>
+    <path android:fillColor="#003399" android:fillAlpha="0.3"
+        android:pathData="M180,640 m-200,0 a200,100 0 1,0 400,0 a200,100 0 1,0-400,0"/>
+
+    <!-- Horizontal grid lines -->
+    <path android:fillColor="#00000000" android:strokeColor="#00CCFF"
+        android:strokeWidth="0.6" android:strokeAlpha="0.18"
+        android:pathData="M0,80 L360,80 M0,160 L360,160 M0,240 L360,240
+                          M0,320 L360,320 M0,400 L360,400 M0,480 L360,480
+                          M0,560 L360,560"/>
+
+    <!-- Vertical grid lines -->
+    <path android:fillColor="#00000000" android:strokeColor="#00CCFF"
+        android:strokeWidth="0.6" android:strokeAlpha="0.18"
+        android:pathData="M60,0 L60,640 M120,0 L120,640 M180,0 L180,640
+                          M240,0 L240,640 M300,0 L300,640"/>
+
+    <!-- Diagonal accent lines — top-left sweep -->
+    <path android:fillColor="#00000000" android:strokeColor="#00AAFF"
+        android:strokeWidth="0.8" android:strokeAlpha="0.12"
+        android:pathData="M0,160 L120,0 M0,320 L240,0 M0,480 L360,0 M60,640 L360,180 M180,640 L360,340"/>
+
+    <!-- Bright grid nodes at key intersections -->
+    <path android:fillColor="#00EEFF"
+        android:pathData="M60,80 m-2.5,0 a2.5,2.5 0 1,0 5,0 a2.5,2.5 0 1,0-5,0
+                          M180,80 m-2.5,0 a2.5,2.5 0 1,0 5,0 a2.5,2.5 0 1,0-5,0
+                          M300,80 m-2.5,0 a2.5,2.5 0 1,0 5,0 a2.5,2.5 0 1,0-5,0
+                          M60,240 m-2.5,0 a2.5,2.5 0 1,0 5,0 a2.5,2.5 0 1,0-5,0
+                          M300,240 m-2.5,0 a2.5,2.5 0 1,0 5,0 a2.5,2.5 0 1,0-5,0
+                          M120,320 m-2.5,0 a2.5,2.5 0 1,0 5,0 a2.5,2.5 0 1,0-5,0
+                          M240,320 m-2.5,0 a2.5,2.5 0 1,0 5,0 a2.5,2.5 0 1,0-5,0
+                          M60,400 m-2.5,0 a2.5,2.5 0 1,0 5,0 a2.5,2.5 0 1,0-5,0
+                          M300,400 m-2.5,0 a2.5,2.5 0 1,0 5,0 a2.5,2.5 0 1,0-5,0
+                          M120,480 m-2.5,0 a2.5,2.5 0 1,0 5,0 a2.5,2.5 0 1,0-5,0
+                          M240,480 m-2.5,0 a2.5,2.5 0 1,0 5,0 a2.5,2.5 0 1,0-5,0
+                          M60,560 m-2.5,0 a2.5,2.5 0 1,0 5,0 a2.5,2.5 0 1,0-5,0
+                          M300,560 m-2.5,0 a2.5,2.5 0 1,0 5,0 a2.5,2.5 0 1,0-5,0"/>
+
+    <!-- Dim secondary nodes -->
+    <path android:fillColor="#0099CC" android:fillAlpha="0.6"
+        android:pathData="M120,160 m-1.5,0 a1.5,1.5 0 1,0 3,0 a1.5,1.5 0 1,0-3,0
+                          M240,160 m-1.5,0 a1.5,1.5 0 1,0 3,0 a1.5,1.5 0 1,0-3,0
+                          M60,320 m-1.5,0 a1.5,1.5 0 1,0 3,0 a1.5,1.5 0 1,0-3,0
+                          M300,320 m-1.5,0 a1.5,1.5 0 1,0 3,0 a1.5,1.5 0 1,0-3,0
+                          M180,400 m-1.5,0 a1.5,1.5 0 1,0 3,0 a1.5,1.5 0 1,0-3,0
+                          M180,560 m-1.5,0 a1.5,1.5 0 1,0 3,0 a1.5,1.5 0 1,0-3,0"/>
+
+    <!-- Central glowing hub — 4-layer orb -->
+    <path android:fillColor="#001F5C" android:fillAlpha="0.9"
+        android:pathData="M180,240 m-52,0 a52,52 0 1,0 104,0 a52,52 0 1,0-104,0"/>
+    <path android:fillColor="#0055BB" android:fillAlpha="0.75"
+        android:pathData="M180,240 m-34,0 a34,34 0 1,0 68,0 a34,34 0 1,0-68,0"/>
+    <path android:fillColor="#0099FF" android:fillAlpha="0.7"
+        android:pathData="M180,240 m-18,0 a18,18 0 1,0 36,0 a18,18 0 1,0-36,0"/>
+    <path android:fillColor="#44DDFF" android:fillAlpha="0.9"
+        android:pathData="M180,240 m-7,0 a7,7 0 1,0 14,0 a7,7 0 1,0-14,0"/>
+    <path android:fillColor="#CCFFFF"
+        android:pathData="M180,240 m-2.5,0 a2.5,2.5 0 1,0 5,0 a2.5,2.5 0 1,0-5,0"/>
+
+    <!-- Hub connection spokes -->
+    <path android:fillColor="#00000000" android:strokeColor="#00AAFF"
+        android:strokeWidth="1.5" android:strokeAlpha="0.45"
+        android:pathData="M180,240 L60,240 M180,240 L300,240 M180,240 L180,160 M180,240 L180,320"/>
+
+    <!-- Secondary hub — lower right -->
+    <path android:fillColor="#002244" android:fillAlpha="0.9"
+        android:pathData="M300,480 m-28,0 a28,28 0 1,0 56,0 a28,28 0 1,0-56,0"/>
+    <path android:fillColor="#004488" android:fillAlpha="0.8"
+        android:pathData="M300,480 m-16,0 a16,16 0 1,0 32,0 a16,16 0 1,0-32,0"/>
+    <path android:fillColor="#0077CC" android:fillAlpha="0.8"
+        android:pathData="M300,480 m-7,0 a7,7 0 1,0 14,0 a7,7 0 1,0-14,0"/>
+    <path android:fillColor="#88DDFF"
+        android:pathData="M300,480 m-2,0 a2,2 0 1,0 4,0 a2,2 0 1,0-4,0"/>
+
+    <!-- Secondary hub — upper left -->
+    <path android:fillColor="#002244" android:fillAlpha="0.9"
+        android:pathData="M60,160 m-24,0 a24,24 0 1,0 48,0 a24,24 0 1,0-48,0"/>
+    <path android:fillColor="#0066AA" android:fillAlpha="0.8"
+        android:pathData="M60,160 m-12,0 a12,12 0 1,0 24,0 a12,12 0 1,0-24,0"/>
+    <path android:fillColor="#00AAEE"
+        android:pathData="M60,160 m-4,0 a4,4 0 1,0 8,0 a4,4 0 1,0-8,0"/>
+
+    <!-- Horizontal scan highlight band -->
+    <path android:fillColor="#00FFFF" android:fillAlpha="0.03"
+        android:pathData="M0,235 H360 V245 H0 Z"/>
+
+</vector>

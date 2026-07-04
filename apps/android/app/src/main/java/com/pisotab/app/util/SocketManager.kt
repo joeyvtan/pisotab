@@ -18,7 +18,7 @@ object SocketManager {
     private var isConnecting = false
 
     // Callbacks set by the service
-    var onStartSession: ((sessionId: String, durationMins: Int, amountPaid: Double) -> Unit)? = null
+    var onStartSession: ((sessionId: String, durationSecs: Int, amountPaid: Double) -> Unit)? = null
     var onPauseSession: (() -> Unit)? = null
     var onResumeSession: (() -> Unit)? = null
     var onEndSession: ((sessionId: String) -> Unit)? = null
@@ -65,11 +65,21 @@ object SocketManager {
             // Dashboard started a session for this device
             socket?.on("cmd:start") { args ->
                 val data = args.firstOrNull() as? JSONObject ?: return@on
-                val sessionId = data.optString("session_id", "")
+                val sessionId    = data.optString("session_id", "")
                 val durationMins = data.optInt("duration_mins", 5)
-                val amountPaid = data.optDouble("amount_paid", 0.0)
-                Log.d(TAG, "cmd:start — $sessionId ${durationMins}m")
-                onStartSession?.invoke(sessionId, durationMins, amountPaid)
+                val durationSecs = data.optInt("duration_secs", durationMins * 60)
+                val amountPaid   = data.optDouble("amount_paid", 0.0)
+                // started_at is the Unix second when the backend created the session.
+                // The ESP32 LCD starts its countdown at that exact moment.
+                // We subtract elapsed time so the Android timer starts at the same value
+                // the LCD is currently showing, eliminating the 2-5s processing-delay drift.
+                val startedAt = data.optLong("started_at", 0L)
+                val elapsedSecs = if (startedAt > 0L)
+                    ((System.currentTimeMillis() / 1000L) - startedAt).coerceIn(0L, 30L).toInt()
+                else 0
+                val effectiveSecs = (durationSecs - elapsedSecs).coerceAtLeast(1)
+                Log.d(TAG, "cmd:start — $sessionId ${effectiveSecs}s (orig=${durationSecs}s elapsed=${elapsedSecs}s)")
+                onStartSession?.invoke(sessionId, effectiveSecs, amountPaid)
             }
 
             // Dashboard paused the session

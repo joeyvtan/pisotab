@@ -97,6 +97,11 @@ class LockScreenActivity : AppCompatActivity() {
     }
 
     private fun startDeepFreezeCountdown(totalSecs: Int) {
+        // skip_wipe=true when the session expired while a game was in the foreground.
+        // The countdown still shows (session is over), but app data is not wiped so
+        // in-progress game state is preserved. Wipe only when device was on lock/idle screen.
+        val skipWipe = intent.getBooleanExtra("skip_wipe", false)
+
         val tvLabel     = findViewById<TextView>(R.id.tv_deep_freeze_label)
         val tvCountdown = findViewById<TextView>(R.id.tv_deep_freeze_countdown)
         tvLabel.visibility     = View.VISIBLE
@@ -111,8 +116,14 @@ class LockScreenActivity : AppCompatActivity() {
                 secsLeft--
                 tvCountdown.text = secsLeft.toString()
                 if (secsLeft <= 0) {
-                    // finish() is called inside wipeAppData() after all async clears complete.
-                    wipeAppData()
+                    if (skipWipe) {
+                        // Game was active — skip wipe, just return to idle
+                        finish()
+                    } else {
+                        // Device was idle/on lock screen — wipe app data as configured.
+                        // finish() is called inside wipeAppData() after all async clears complete.
+                        wipeAppData()
+                    }
                 } else {
                     handler.postDelayed(this, 1_000L)
                 }

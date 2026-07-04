@@ -104,6 +104,7 @@ class TimerService : Service() {
     private var floatingView: View? = null
     private var floatingTimerText: TextView? = null
     private var floatingParams: WindowManager.LayoutParams? = null
+    private var floatingHomeView: View? = null
     private var hasBeepedAt10 = false
 
     override fun onCreate() {
@@ -317,7 +318,6 @@ class TimerService : Service() {
 
     private fun onSessionExpired() {
         whitelistJob?.cancel()
-        removeFloatingView()
         val activeId = app.prefs.activeSessionId.takeIf { it.isNotEmpty() } ?: sessionId
         // Clear prefs SYNCHRONOUSLY before launching MainActivity.
         // syncFromDb() in onResume() checks prefs.activeSessionId first — if empty it returns
@@ -331,11 +331,13 @@ class TimerService : Service() {
             db.sessionDao().updateStatus(activeId, "ended")
             try { api.endSession(activeId) } catch (_: Exception) {}
         }
-        // If onTick is set, MainActivity is alive and handles the Expired transition itself
-        // via onTimeTick(0) → SessionState.Expired → onExpired().
+        // If onTick is set, MainActivity is alive — onTick(0) was already called in the timer
+        // loop before this function runs, so the Expired transition is already queued on the
+        // main thread via runOnUiThread in the callback.
         // If onTick is null, MainActivity was destroyed (customer pressed Back) and we must
-        // launch the next screen directly. Only go to LockScreenActivity when deep freeze is
-        // enabled (needs the countdown + wipe UI); otherwise go straight to MainActivity idle.
+        // launch the next screen directly. The launch happens BEFORE removeFloatingView() so
+        // the TYPE_APPLICATION_OVERLAY window is still visible — Android 10+ requires a visible
+        // window for background activity starts; removing it first silently drops the launch.
         if (onTick == null) {
             val target = if (app.prefs.deepFreezeEnabled)
                 com.pisotab.app.ui.LockScreenActivity::class.java
@@ -343,19 +345,24 @@ class TimerService : Service() {
                 com.pisotab.app.ui.MainActivity::class.java
             startActivity(Intent(this, target).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                // MainActivity was destroyed while the session ran — a game was almost
+                // certainly in the foreground. Skip the data wipe so in-progress game
+                // state is preserved (wipe only on idle/lock-screen expiry).
+                if (app.prefs.deepFreezeEnabled) putExtra("skip_wipe", true)
             })
         }
+        removeFloatingView()
         stopSelf()
     }
 
     private fun endSession() {
         whitelistJob?.cancel()
-        removeFloatingView()
         timerJob?.cancel()
         val activeId = app.prefs.activeSessionId.takeIf { it.isNotEmpty() } ?: sessionId
         app.prefs.activeSessionId = ""
         val finalElapsed = timeRemainingSecs
         val wasUsb = isUsbMode
+        isUsbMode = false
         CoroutineScope(Dispatchers.IO).launch {
             if (wasUsb) {
                 // Use timerSecondsPerCoin as the authoritative rate for USB earnings —
@@ -366,7 +373,7 @@ class TimerService : Service() {
                 val secsPerCoin   = app.prefs.timerSecondsPerCoin.coerceAtLeast(1)
                 val offsetSecs    = app.prefs.usbTimerOffsetSecs
                 val effectiveSecs = finalElapsed + offsetSecs
-                val totalAmount   = effectiveSecs.toDouble() / secsPerCoin
+                val totalAmount   = (effectiveSecs / secsPerCoin).toDouble()
                 val durationMins  = effectiveSecs / 60
                 try { db.sessionDao().updateAmountPaid(activeId, totalAmount) } catch (_: Exception) {}
                 // Sync final earnings to backend — USB sessions start with amount_paid=0
@@ -376,30 +383,31 @@ class TimerService : Service() {
             db.sessionDao().updateStatus(activeId, "ended")
             try { api.endSession(activeId) } catch (_: Exception) {}
         }
-        // Mirror onSessionExpired(): route to the correct next screen when MainActivity is gone.
-        // USB sessions never reach onSessionExpired() (timer counts up), so this is the only
-        // path that transitions after USB disconnect when MainActivity was destroyed.
-        if (onTick == null) {
-            val target = if (app.prefs.deepFreezeEnabled)
-                com.pisotab.app.ui.LockScreenActivity::class.java
-            else
-                com.pisotab.app.ui.MainActivity::class.java
-            startActivity(Intent(this, target).apply {
+        // Always launch the correct next screen directly from the service, BEFORE removing the
+        // overlay. On Android 10+, a background service cannot start activities unless the app has
+        // a visible window — TYPE_APPLICATION_OVERLAY counts as that visible window. If the overlay
+        // is removed first, the startActivity() is silently dropped, leaving the screen stuck.
+        // This handles all cases: kiosk mode (MainActivity in foreground), user on another app
+        // (MainActivity in background), and MainActivity destroyed.
+        // FLAG_ACTIVITY_SINGLE_TOP prevents MainActivity recreation when already at the top.
+        if (app.prefs.deepFreezeEnabled) {
+            startActivity(Intent(this, com.pisotab.app.ui.LockScreenActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                putExtra("skip_wipe", true)
             })
         } else {
-            // MainActivity is alive — signal Expired state.
-            // Clear isUsbMode first so the USB guard in MainActivity (secs<=0 && !isUsbMode) passes.
-            isUsbMode = false
-            onTick?.invoke(0)
+            startActivity(Intent(this, com.pisotab.app.ui.MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                        Intent.FLAG_ACTIVITY_SINGLE_TOP
+            })
         }
+        removeFloatingView()
         stopSelf()
     }
 
     // ── Floating overlay helpers ────────────────────────────────────────────
 
     private fun createFloatingView() {
-        if (!app.prefs.floatingTimerEnabled) return
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) return
 
         // Remove any existing overlay before creating a new one.
@@ -412,6 +420,87 @@ class TimerService : Service() {
 
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
 
+        val wm = windowManager!!
+
+        if (!app.prefs.floatingTimerEnabled) {
+            // ── Timer disabled: standalone draggable ⌂ only ───────────────────
+            // The [← timer ⌂] overlay is hidden, so show a standalone home button
+            // so the user can still return to the launcher. Draggable so it doesn't
+            // permanently block any touch target on the game screen.
+            val navHome = TextView(this).apply {
+                text = "⌂"
+                textSize = 20f
+                setTextColor(Color.WHITE)
+                setPadding(32, 14, 32, 14)
+                gravity = Gravity.CENTER
+                background = floatBg(urgent = false)
+            }
+            // Use TOP|START gravity so the y coordinate increases downward — matching rawY
+            // from touch events. BOTTOM gravity inverts the y axis: dragging down increases y
+            // (distance from bottom) which moves the button UP — the reverse of what the user
+            // expects. TOP|START also makes the position stable when other apps change
+            // navigation bar visibility (BOTTOM anchor shifts with screen height changes).
+            val dm = resources.displayMetrics
+            val navHomeParams = WindowManager.LayoutParams(
+                WindowManager.LayoutParams.WRAP_CONTENT,
+                WindowManager.LayoutParams.WRAP_CONTENT,
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+                    WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+                else @Suppress("DEPRECATION") WindowManager.LayoutParams.TYPE_PHONE,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+                PixelFormat.TRANSLUCENT
+            ).apply {
+                gravity = Gravity.TOP or Gravity.START
+                x = dm.widthPixels / 2 - 80   // approximately centered horizontally
+                y = dm.heightPixels - 300       // near the bottom
+            }
+            var nhDownX = 0f; var nhDownY = 0f
+            var nhStartX = 0; var nhStartY = 0; var nhDragged = false
+            navHome.setOnTouchListener { _, event ->
+                when (event.action) {
+                    MotionEvent.ACTION_DOWN -> {
+                        nhDownX = event.rawX; nhDownY = event.rawY
+                        nhStartX = navHomeParams.x; nhStartY = navHomeParams.y
+                        nhDragged = false
+                        true
+                    }
+                    MotionEvent.ACTION_MOVE -> {
+                        val dx = (event.rawX - nhDownX).toInt()
+                        val dy = (event.rawY - nhDownY).toInt()
+                        if (!nhDragged && (kotlin.math.abs(dx) > 8 || kotlin.math.abs(dy) > 8)) nhDragged = true
+                        if (nhDragged) {
+                            navHomeParams.x = nhStartX + dx
+                            navHomeParams.y = nhStartY + dy
+                            try { wm.updateViewLayout(navHome, navHomeParams) } catch (_: Exception) {}
+                        }
+                        true
+                    }
+                    MotionEvent.ACTION_UP -> {
+                        if (!nhDragged) {
+                            startActivity(Intent(this@TimerService, MainActivity::class.java).apply {
+                                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                            })
+                        }
+                        true
+                    }
+                    else -> false
+                }
+            }
+            try { wm.addView(navHome, navHomeParams) } catch (_: Exception) {}
+            floatingHomeView = navHome
+            return
+        }
+
+        // ── Timer enabled: [← timer ⌂] overlay only ───────────────────────────
+        // The overlay already contains a ⌂ button, so no separate home button is needed.
+
+        val backBtn = TextView(this).apply {
+            text = "←"
+            textSize = 18f
+            setTextColor(Color.parseColor("#94A3B8"))
+            setPadding(24, 18, 8, 18)
+            gravity = Gravity.CENTER
+        }
         val timerText = TextView(this).apply {
             text = floatFmt(timeRemainingSecs)
             textSize = 18f
@@ -429,6 +518,7 @@ class TimerService : Service() {
         val container = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             background = floatBg(urgent = false)
+            addView(backBtn)
             addView(timerText)
             addView(homeBtn)
         }
@@ -451,8 +541,9 @@ class TimerService : Service() {
             y = 300
         }
 
-        // Touch listener on timerText so dragging moves the container window.
-        // homeBtn gets its own click listener — no conflict since listeners are on different views.
+        // timerText is the drag handle — it has no click listener so returning true on
+        // ACTION_DOWN does not suppress any button. backBtn and homeBtn have their own
+        // click listeners and sit beside timerText, so they receive events independently.
         val capturedContainer = floatingView!!
         val capturedParams    = floatingParams!!
         val capturedWm        = windowManager!!
@@ -474,11 +565,13 @@ class TimerService : Service() {
                 else -> false
             }
         }
-        homeBtn.setOnClickListener {
+        val toMain: () -> Unit = {
             startActivity(Intent(this@TimerService, MainActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
             })
         }
+        backBtn.setOnClickListener { toMain() }
+        homeBtn.setOnClickListener { toMain() }
 
         try { capturedWm.addView(capturedContainer, capturedParams) } catch (_: Exception) {}
     }
@@ -522,6 +615,11 @@ class TimerService : Service() {
         }
         floatingView = null
         floatingTimerText = null
+
+        floatingHomeView?.let { v ->
+            try { windowManager?.removeView(v) } catch (_: Exception) {}
+        }
+        floatingHomeView = null
     }
 
     private fun floatBg(urgent: Boolean) = GradientDrawable().apply {
